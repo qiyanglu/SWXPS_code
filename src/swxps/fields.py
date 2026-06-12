@@ -5,6 +5,7 @@ from __future__ import annotations
 from collections.abc import Sequence
 from dataclasses import dataclass
 from math import erf, sqrt
+from typing import Literal
 
 import numpy as np
 
@@ -158,8 +159,10 @@ def transfer_matrix_reflection_amplitude(
     angle_deg: float,
     energy_ev: float,
     layers: Sequence[Layer],
-    roughness_step: float = 0.5,
-    width_factor: float = 4.0,
+    roughness_step: float | Sequence[float] = 1.0,
+    roughness_profile: Literal["erf", "linear"] = "erf",
+    erf_truncation_factor: float = 4.0,
+    linear_width_factor: float = sqrt(3.0),
 ) -> complex:
     """Return the reflection amplitude from transfer matrices.
 
@@ -172,7 +175,9 @@ def transfer_matrix_reflection_amplitude(
         energy_ev,
         layers,
         roughness_step=roughness_step,
-        width_factor=width_factor,
+        roughness_profile=roughness_profile,
+        erf_truncation_factor=erf_truncation_factor,
+        linear_width_factor=linear_width_factor,
     )
     return upward[0] / downward[0]
 
@@ -181,8 +186,10 @@ def transfer_matrix_reflectivity(
     angle_deg: float,
     energy_ev: float,
     layers: Sequence[Layer],
-    roughness_step: float = 0.5,
-    width_factor: float = 4.0,
+    roughness_step: float | Sequence[float] = 1.0,
+    roughness_profile: Literal["erf", "linear"] = "erf",
+    erf_truncation_factor: float = 4.0,
+    linear_width_factor: float = sqrt(3.0),
 ) -> float:
     """Return reflectivity from the transfer-matrix solution."""
 
@@ -191,7 +198,9 @@ def transfer_matrix_reflectivity(
         energy_ev,
         layers,
         roughness_step=roughness_step,
-        width_factor=width_factor,
+        roughness_profile=roughness_profile,
+        erf_truncation_factor=erf_truncation_factor,
+        linear_width_factor=linear_width_factor,
     )
     return float(abs(amplitude) ** 2)
 
@@ -200,8 +209,10 @@ def transfer_matrix_field_amplitudes(
     angle_deg: float,
     energy_ev: float,
     layers: Sequence[Layer],
-    roughness_step: float = 0.5,
-    width_factor: float = 4.0,
+    roughness_step: float | Sequence[float] = 1.0,
+    roughness_profile: Literal["erf", "linear"] = "erf",
+    erf_truncation_factor: float = 4.0,
+    linear_width_factor: float = sqrt(3.0),
 ) -> tuple[np.ndarray, np.ndarray]:
     """Return downward and upward amplitudes in each transfer-matrix layer.
 
@@ -213,7 +224,9 @@ def transfer_matrix_field_amplitudes(
     effective_layers = effective_layers_with_roughness(
         layers,
         step=roughness_step,
-        width_factor=width_factor,
+        profile=roughness_profile,
+        erf_truncation_factor=erf_truncation_factor,
+        linear_width_factor=linear_width_factor,
     )
 
     return _transfer_matrix_field_amplitudes_sharp(angle_deg, energy_ev, effective_layers)
@@ -261,8 +274,10 @@ def transfer_matrix_electric_field_profile(
     energy_ev: float,
     layers: Sequence[Layer],
     step: float = 1.0,
-    roughness_step: float = 0.5,
-    width_factor: float = 4.0,
+    roughness_step: float | Sequence[float] = 1.0,
+    roughness_profile: Literal["erf", "linear"] = "erf",
+    erf_truncation_factor: float = 4.0,
+    linear_width_factor: float = sqrt(3.0),
 ) -> FieldProfile:
     """Return a transfer-matrix electric-field profile.
 
@@ -274,7 +289,9 @@ def transfer_matrix_electric_field_profile(
     effective_layers = effective_layers_with_roughness(
         layers,
         step=roughness_step,
-        width_factor=width_factor,
+        profile=roughness_profile,
+        erf_truncation_factor=erf_truncation_factor,
+        linear_width_factor=linear_width_factor,
     )
 
     depths, layer_indices = depth_grid(effective_layers, step)
@@ -314,16 +331,25 @@ def transfer_matrix_electric_field_profile(
 
 def effective_layers_with_roughness(
     layers: Sequence[Layer],
-    step: float = 0.5,
-    width_factor: float = 4.0,
+    step: float | Sequence[float] = 1.0,
+    profile: Literal["erf", "linear"] = "erf",
+    erf_truncation_factor: float = 4.0,
+    linear_width_factor: float = sqrt(3.0),
 ) -> list[Layer]:
-    """Return a sharp-interface effective stack with graded rough interfaces."""
+    """Return a sharp-interface effective stack with graded rough interfaces.
+
+    ``step`` may be a scalar slice thickness used for every finite layer, or a
+    sequence with one slice thickness per finite layer.
+    """
 
     _validate_field_inputs(0.0, layers)
-    if step <= 0:
-        raise ValueError("step must be positive")
-    if width_factor <= 0:
-        raise ValueError("width_factor must be positive")
+    finite_steps = _roughness_steps_for_finite_layers(layers, step)
+    if erf_truncation_factor <= 0:
+        raise ValueError("erf_truncation_factor must be positive")
+    if linear_width_factor <= 0:
+        raise ValueError("linear_width_factor must be positive")
+    if profile not in {"erf", "linear"}:
+        raise ValueError("profile must be 'erf' or 'linear'")
     if not _has_roughness(layers):
         return list(layers)
 
@@ -331,8 +357,7 @@ def effective_layers_with_roughness(
     if total_thickness <= 0:
         return [layers[0], layers[-1]]
 
-    n_slices = max(1, int(np.ceil(total_thickness / step)))
-    edges = np.linspace(0.0, total_thickness, n_slices + 1)
+    edges = _finite_layer_edges(layers, finite_steps)
     centers = 0.5 * (edges[:-1] + edges[1:])
 
     boundaries = _nominal_boundaries(layers)
@@ -342,7 +367,9 @@ def effective_layers_with_roughness(
             center,
             layers,
             boundaries,
-            width_factor,
+            profile,
+            erf_truncation_factor,
+            linear_width_factor,
         )
         finite_layers.append(
             Layer(
@@ -354,6 +381,40 @@ def effective_layers_with_roughness(
         )
 
     return [Layer(0.0, layers[0].delta, layers[0].beta), *finite_layers, Layer(0.0, layers[-1].delta, layers[-1].beta)]
+
+
+def _roughness_steps_for_finite_layers(
+    layers: Sequence[Layer],
+    step: float | Sequence[float],
+) -> np.ndarray:
+    finite_count = max(0, len(layers) - 2)
+    if np.asarray(step).ndim == 0:
+        steps = np.full(finite_count, float(step), dtype=float)
+    else:
+        steps = np.asarray(step, dtype=float)
+        if len(steps) != finite_count:
+            raise ValueError("step sequence must have one value per finite layer")
+    if np.any(steps <= 0) or not np.all(np.isfinite(steps)):
+        raise ValueError("step values must be positive and finite")
+    return steps
+
+
+def _finite_layer_edges(layers: Sequence[Layer], steps: np.ndarray) -> np.ndarray:
+    edges: list[float] = []
+    current_depth = 0.0
+    for layer, step in zip(layers[1:-1], steps):
+        n_slices = max(1, int(np.ceil(layer.thickness / step)))
+        local_edges = np.linspace(
+            current_depth,
+            current_depth + layer.thickness,
+            n_slices + 1,
+        )
+        if edges:
+            edges.extend(float(value) for value in local_edges[1:])
+        else:
+            edges.extend(float(value) for value in local_edges)
+        current_depth += layer.thickness
+    return np.asarray(edges, dtype=float)
 
 
 def _finite_layer_start_depths(layers: Sequence[Layer]) -> np.ndarray:
@@ -403,16 +464,24 @@ def _graded_delta_beta_at_depth(
     depth: float,
     layers: Sequence[Layer],
     boundaries: np.ndarray,
-    width_factor: float,
+    profile: Literal["erf", "linear"],
+    erf_truncation_factor: float,
+    linear_width_factor: float,
 ) -> tuple[float, float]:
     nearest = int(np.argmin(np.abs(boundaries - depth)))
     sigma = layers[nearest + 1].roughness
+    active_width_factor = (
+        erf_truncation_factor if profile == "erf" else linear_width_factor
+    )
 
-    if sigma > 0 and abs(depth - boundaries[nearest]) <= width_factor * sigma:
+    if sigma > 0 and abs(depth - boundaries[nearest]) <= active_width_factor * sigma:
         above = layers[nearest]
         below = layers[nearest + 1]
-        fraction = 0.5 * (
-            1.0 + erf((depth - boundaries[nearest]) / (sqrt(2.0) * sigma))
+        fraction = _roughness_fraction(
+            depth - boundaries[nearest],
+            sigma,
+            profile,
+            linear_width_factor,
         )
         delta = (1.0 - fraction) * above.delta + fraction * below.delta
         beta = (1.0 - fraction) * above.beta + fraction * below.beta
@@ -421,6 +490,19 @@ def _graded_delta_beta_at_depth(
     nominal_index = int(np.searchsorted(boundaries[1:], depth, side="right")) + 1
     nominal_index = min(max(nominal_index, 1), len(layers) - 2)
     return float(layers[nominal_index].delta), float(layers[nominal_index].beta)
+
+
+def _roughness_fraction(
+    distance: float,
+    sigma: float,
+    profile: Literal["erf", "linear"],
+    linear_width_factor: float,
+) -> float:
+    if profile == "erf":
+        return 0.5 * (1.0 + erf(distance / (sqrt(2.0) * sigma)))
+
+    half_width = linear_width_factor * sigma
+    return float(np.clip(0.5 + 0.5 * distance / half_width, 0.0, 1.0))
 
 
 def _validate_field_inputs(angle_deg: float, layers: Sequence[Layer]) -> None:

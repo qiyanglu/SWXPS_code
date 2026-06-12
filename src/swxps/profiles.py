@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from math import sqrt
+from typing import Literal
 
 import numpy as np
 
@@ -22,7 +24,9 @@ def sample_stack_property(
     stack: SimulationStack,
     values_by_material: dict[str, float],
     step: float = 1.0,
-    width_factor: float = 4.0,
+    roughness_profile: Literal["erf", "linear"] = "erf",
+    erf_truncation_factor: float = 4.0,
+    linear_width_factor: float = sqrt(3.0),
 ) -> tuple[np.ndarray, np.ndarray]:
     """Sample one material property through the finite stack depth."""
 
@@ -35,7 +39,9 @@ def sample_stack_property(
         stack.optical_layers,
         values_by_layer,
         depth,
-        width_factor=width_factor,
+        profile=roughness_profile,
+        erf_truncation_factor=erf_truncation_factor,
+        linear_width_factor=linear_width_factor,
     )
     return depth, values
 
@@ -44,7 +50,9 @@ def sample_concentration_profiles(
     stack: SimulationStack,
     concentration_by_name: dict[str, dict[str, float]],
     step: float = 1.0,
-    width_factor: float = 4.0,
+    roughness_profile: Literal["erf", "linear"] = "erf",
+    erf_truncation_factor: float = 4.0,
+    linear_width_factor: float = sqrt(3.0),
 ) -> StackProfiles:
     """Sample multiple named concentration profiles through a stack."""
 
@@ -59,7 +67,9 @@ def sample_concentration_profiles(
             stack.optical_layers,
             values_by_layer,
             depth,
-            width_factor=width_factor,
+            profile=roughness_profile,
+            erf_truncation_factor=erf_truncation_factor,
+            linear_width_factor=linear_width_factor,
         )
     return StackProfiles(depth=depth, profiles=profiles)
 

@@ -136,6 +136,35 @@ def test_effective_layers_discretize_rough_interfaces():
     assert all(layer.roughness == 0.0 for layer in effective)
 
 
+def test_effective_layers_accept_per_finite_layer_steps():
+    layers = [
+        Layer(thickness=0.0),
+        Layer(thickness=10.0, delta=5.0e-6, roughness=2.0),
+        Layer(thickness=20.0, delta=2.0e-6, roughness=2.0),
+        Layer(thickness=0.0, delta=1.0e-5, roughness=2.0),
+    ]
+
+    effective = effective_layers_with_roughness(layers, step=[2.0, 5.0])
+
+    assert len(effective[1:-1]) == 9
+    np.testing.assert_allclose(
+        [layer.thickness for layer in effective[1:-1]],
+        [2.0] * 5 + [5.0] * 4,
+    )
+
+
+def test_effective_layers_reject_wrong_number_of_layer_steps():
+    layers = [
+        Layer(thickness=0.0),
+        Layer(thickness=10.0, roughness=2.0),
+        Layer(thickness=20.0, roughness=2.0),
+        Layer(thickness=0.0, roughness=2.0),
+    ]
+
+    with np.testing.assert_raises(ValueError):
+        effective_layers_with_roughness(layers, step=[1.0])
+
+
 def test_transfer_matrix_roughness_damps_high_angle_reflectivity():
     sharp_layers = [
         Layer(thickness=0.0),

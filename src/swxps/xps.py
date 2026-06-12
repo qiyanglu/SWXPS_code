@@ -5,6 +5,7 @@ from __future__ import annotations
 from collections.abc import Sequence
 from dataclasses import dataclass
 from math import erf, sqrt
+from typing import Literal
 
 import numpy as np
 
@@ -77,7 +78,10 @@ def normalized_rocking_curve(
     imfp_by_layer: Sequence[float],
     emission_angle_deg: float = 0.0,
     field_step: float = 1.0,
-    roughness_step: float = 1.0,
+    roughness_step: float | Sequence[float] = 1.0,
+    roughness_profile: Literal["erf", "linear"] = "erf",
+    erf_truncation_factor: float = 4.0,
+    linear_width_factor: float = sqrt(3.0),
     offpeak_mask: np.ndarray | None = None,
 ) -> RockingCurve:
     """Return a normalized SW-XPS rocking curve with constant cross section."""
@@ -99,16 +103,25 @@ def normalized_rocking_curve(
             layers=layers,
             step=field_step,
             roughness_step=roughness_step,
+            roughness_profile=roughness_profile,
+            erf_truncation_factor=erf_truncation_factor,
+            linear_width_factor=linear_width_factor,
         )
         concentration = graded_layer_property_at_depth(
             layers,
             concentration_by_layer,
             profile.depth,
+            profile=roughness_profile,
+            erf_truncation_factor=erf_truncation_factor,
+            linear_width_factor=linear_width_factor,
         )
         attenuation_coefficient = graded_layer_property_at_depth(
             layers,
             1.0 / imfp_by_layer,
             profile.depth,
+            profile=roughness_profile,
+            erf_truncation_factor=erf_truncation_factor,
+            linear_width_factor=linear_width_factor,
         )
         attenuation_length = 1.0 / attenuation_coefficient
         raw.append(
@@ -156,16 +169,22 @@ def graded_layer_property_at_depth(
     layers: Sequence[Layer],
     values_by_layer: Sequence[float],
     depth: np.ndarray,
-    width_factor: float = 4.0,
+    profile: Literal["erf", "linear"] = "erf",
+    erf_truncation_factor: float = 4.0,
+    linear_width_factor: float = sqrt(3.0),
 ) -> np.ndarray:
-    """Return a layer property sampled with error-function roughness grading."""
+    """Return a layer property sampled with selected roughness grading."""
 
     values_by_layer = np.asarray(values_by_layer, dtype=float)
     depth = np.asarray(depth, dtype=float)
     if len(values_by_layer) != len(layers):
         raise ValueError("values_by_layer must have one value per layer")
-    if width_factor <= 0:
-        raise ValueError("width_factor must be positive")
+    if erf_truncation_factor <= 0:
+        raise ValueError("erf_truncation_factor must be positive")
+    if linear_width_factor <= 0:
+        raise ValueError("linear_width_factor must be positive")
+    if profile not in {"erf", "linear"}:
+        raise ValueError("profile must be 'erf' or 'linear'")
 
     nominal_index = nominal_layer_index_at_depth(layers, depth)
     values = values_by_layer[nominal_index].copy()
@@ -175,17 +194,17 @@ def graded_layer_property_at_depth(
         sigma = layers[interface_index + 1].roughness
         if sigma <= 0:
             continue
-        mask = np.abs(depth - boundary) <= width_factor * sigma
+        active_width_factor = (
+            erf_truncation_factor if profile == "erf" else linear_width_factor
+        )
+        mask = np.abs(depth - boundary) <= active_width_factor * sigma
         if not np.any(mask):
             continue
-        fraction = 0.5 * (
-            1.0
-            + np.array(
-                [
-                    erf((z - boundary) / (sqrt(2.0) * sigma))
-                    for z in depth[mask]
-                ]
-            )
+        fraction = _roughness_fraction(
+            depth[mask] - boundary,
+            sigma,
+            profile,
+            linear_width_factor,
         )
         above = values_by_layer[interface_index]
         below = values_by_layer[interface_index + 1]
@@ -201,6 +220,27 @@ def _nominal_boundaries(layers: Sequence[Layer]) -> np.ndarray:
         current_depth += layer.thickness
         boundaries.append(current_depth)
     return np.asarray(boundaries, dtype=float)
+
+
+def _roughness_fraction(
+    distance: np.ndarray,
+    sigma: float,
+    profile: Literal["erf", "linear"],
+    linear_width_factor: float,
+) -> np.ndarray:
+    if profile == "erf":
+        return 0.5 * (
+            1.0
+            + np.array(
+                [
+                    erf(value / (sqrt(2.0) * sigma))
+                    for value in np.asarray(distance, dtype=float)
+                ]
+            )
+        )
+
+    half_width = linear_width_factor * sigma
+    return np.clip(0.5 + 0.5 * np.asarray(distance, dtype=float) / half_width, 0.0, 1.0)
 
 
 def _cumulative_trapezoid(x: np.ndarray, y: np.ndarray) -> np.ndarray:

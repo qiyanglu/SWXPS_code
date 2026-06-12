@@ -306,6 +306,14 @@ Required tests for this milestone:
    - Rough interfaces should appear as smooth concentration transitions.
    - Profiles should support multiple elements/material properties on the same depth grid.
 
+11. Roughness discretization controls
+   - Keep the default graded-interface slice thickness at 1 Angstrom for user-facing simulations.
+   - Allow users to provide either one global roughness slice thickness or one slice thickness per finite layer.
+   - Allow roughness grading shape to be selected explicitly, initially `erf` or `linear`, while keeping `erf` as the default.
+   - Split the error-function truncation factor from the linear ramp width factor, because they represent different things.
+   - Match the default linear ramp to the same RMS roughness by treating it as the CDF of a uniform height distribution, so the ramp half-width is `sqrt(3) * roughness`.
+   - Add tests that verify per-layer slice counts and linear roughness grading.
+
 Suggested command:
 
 `python -m pytest`
@@ -322,6 +330,7 @@ The implementation is acceptable when:
 - The normalized SW-XPS rocking curve is finite, positive, and normalized by explicitly selected off-peak angles.
 - High-level simulation functions have explicit dataclass inputs and outputs suitable for later optimization loops.
 - Stack concentration profiles can be inspected before RC simulation to verify layer sequence and roughness behavior.
+- Graded roughness slicing is user-controllable and reports predictable slice counts for a known stack.
 - The code remains transparent enough that each equation maps clearly to the physics above.
 
 ## Progress log
@@ -359,4 +368,6 @@ The implementation is acceptable when:
 - 2026-06-12: Planned stack profile visualization for checking concentration distributions and roughness before RC simulation.
 - 2026-06-12: Implemented stack concentration profile sampling and an LNO/STO La/Ti/O concentration-versus-depth visualization example.
 - 2026-06-12: Verified with `python -m pytest`; all 36 tests passed.
+- 2026-06-12: Planned user-controllable roughness discretization with scalar or per-layer slice thickness and selectable grading shape.
+- 2026-06-12: Planned separate roughness-width controls and RMS-matched linear ramp defaults for comparing error-function and linear roughness descriptions.
 - Remaining: Review normalized XPS rocking curves against experimental examples before adding cross sections, fitting, p-polarization, or online optical-constant database features.

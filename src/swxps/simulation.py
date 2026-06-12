@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from dataclasses import dataclass
+from math import sqrt
+from typing import Literal
 
 import numpy as np
 
@@ -64,7 +66,10 @@ class ReflectivityRequest:
     energy_ev: float
     stack: SimulationStack
     angle_offset: float = 0.0
-    roughness_step: float = 1.0
+    roughness_step: float | Sequence[float] = 1.0
+    roughness_profile: Literal["erf", "linear"] = "erf"
+    erf_truncation_factor: float = 4.0
+    linear_width_factor: float = sqrt(3.0)
 
 
 @dataclass(frozen=True)
@@ -97,7 +102,10 @@ class RockingCurveRequest:
     core_levels: tuple[CoreLevelRequest, ...]
     angle_offset: float = 0.0
     field_step: float = 1.0
-    roughness_step: float = 1.0
+    roughness_step: float | Sequence[float] = 1.0
+    roughness_profile: Literal["erf", "linear"] = "erf"
+    erf_truncation_factor: float = 4.0
+    linear_width_factor: float = sqrt(3.0)
     offpeak_mask: np.ndarray | None = None
 
 
@@ -133,6 +141,9 @@ def simulate_reflectivity(request: ReflectivityRequest) -> ReflectivityResult:
                 request.energy_ev,
                 layers,
                 roughness_step=request.roughness_step,
+                roughness_profile=request.roughness_profile,
+                erf_truncation_factor=request.erf_truncation_factor,
+                linear_width_factor=request.linear_width_factor,
             )
             for angle in calculation_angle
         ],
@@ -159,6 +170,9 @@ def simulate_rocking_curve(
         angle_offset=request.angle_offset,
         field_step=request.field_step,
         roughness_step=request.roughness_step,
+        roughness_profile=request.roughness_profile,
+        erf_truncation_factor=request.erf_truncation_factor,
+        linear_width_factor=request.linear_width_factor,
         offpeak_mask=request.offpeak_mask,
     )
     return simulate_rocking_curves(one_core_request).core_levels[0]
@@ -181,6 +195,9 @@ def simulate_rocking_curves(request: RockingCurveRequest) -> RockingCurveResult:
             layers=layers,
             step=request.field_step,
             roughness_step=request.roughness_step,
+            roughness_profile=request.roughness_profile,
+            erf_truncation_factor=request.erf_truncation_factor,
+            linear_width_factor=request.linear_width_factor,
         )
         for angle in calculation_angle
     )
@@ -229,6 +246,9 @@ def _simulate_core_from_profiles(
                 concentration_by_layer,
                 imfp_by_layer,
                 core_level.emission_angle_deg,
+                request.roughness_profile,
+                request.erf_truncation_factor,
+                request.linear_width_factor,
             )
             for profile in profiles
         ],
@@ -268,16 +288,25 @@ def _integrate_core_profile(
     concentration_by_layer: Sequence[float],
     imfp_by_layer: Sequence[float],
     emission_angle_deg: float,
+    roughness_profile: Literal["erf", "linear"],
+    erf_truncation_factor: float,
+    linear_width_factor: float,
 ) -> float:
     concentration = graded_layer_property_at_depth(
         layers,
         concentration_by_layer,
         profile.depth,
+        profile=roughness_profile,
+        erf_truncation_factor=erf_truncation_factor,
+        linear_width_factor=linear_width_factor,
     )
     attenuation_coefficient = graded_layer_property_at_depth(
         layers,
         1.0 / np.asarray(imfp_by_layer, dtype=float),
         profile.depth,
+        profile=roughness_profile,
+        erf_truncation_factor=erf_truncation_factor,
+        linear_width_factor=linear_width_factor,
     )
     attenuation_length = 1.0 / attenuation_coefficient
     return integrate_xps_intensity(

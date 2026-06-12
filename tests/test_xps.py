@@ -45,6 +45,46 @@ def test_graded_layer_property_smooths_rough_interface():
     assert sampled[0] > sampled[1] > sampled[2]
 
 
+def test_graded_layer_property_supports_linear_profile():
+    layers = [
+        Layer(thickness=0.0),
+        Layer(thickness=10.0, roughness=2.0),
+        Layer(thickness=0.0),
+    ]
+    values = [0.0, 1.0, 1.0]
+    depth = np.array([0.0, 2.0, 4.0])
+
+    sampled = graded_layer_property_at_depth(
+        layers,
+        values,
+        depth,
+        profile="linear",
+        linear_width_factor=2.0,
+    )
+
+    np.testing.assert_allclose(sampled, [0.5, 0.75, 1.0])
+
+
+def test_linear_profile_default_matches_uniform_rms_width():
+    layers = [
+        Layer(thickness=0.0),
+        Layer(thickness=10.0, roughness=2.0),
+        Layer(thickness=0.0),
+    ]
+    values = [0.0, 1.0, 1.0]
+    half_width = np.sqrt(3.0) * 2.0
+    depth = np.array([0.0, half_width])
+
+    sampled = graded_layer_property_at_depth(
+        layers,
+        values,
+        depth,
+        profile="linear",
+    )
+
+    np.testing.assert_allclose(sampled, [0.5, 1.0])
+
+
 def test_constant_field_uniform_concentration_normalizes_flat():
     layers = [
         Layer(thickness=0.0),

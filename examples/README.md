@@ -50,6 +50,25 @@ It plots the same LaNiO3/SrTiO3 stack with sharp interfaces and with 3 Angstrom
 RMS roughness, so the damping of fringes and Bragg features can be seen
 directly.
 
+## Roughness Profile Shape Comparison
+
+Run:
+
+```powershell
+python examples/compare_lno_sto_roughness_profiles.py
+```
+
+This creates:
+
+```text
+examples/lno_sto_roughness_profile_comparison.png
+```
+
+It calculates the same 3 Angstrom rough LNO/STO stack twice, once with
+error-function roughness grading and once with RMS-matched linear roughness
+grading. The top panel compares reflectivity, and the lower panel plots the
+fractional difference between the two models.
+
 ## Electric Field Profile
 
 Run:
@@ -135,3 +154,20 @@ examples/lno_sto_stack_profile.png
 It plots La, Ti, and O relative concentration versus depth for the 20 Angstrom /
 20 Angstrom LNO/STO stack. The broadened transitions show the same
 error-function roughness model used by the SW-XPS simulations.
+
+## Roughness Profile Concentration Comparison
+
+Run:
+
+```powershell
+python examples/compare_lno_sto_concentration_profiles.py
+```
+
+This creates:
+
+```text
+examples/lno_sto_concentration_profile_comparison.png
+```
+
+It compares La and Ti concentration profiles for the same 3 Angstrom rough
+LNO/STO stack using error-function and RMS-matched linear roughness grading.
