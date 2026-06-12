@@ -29,6 +29,11 @@ This repository implements a transparent Python program for simulating x-ray ref
 - Use Python.
 - Use numpy for numerical calculations.
 - Use scipy only when needed.
+- Always use JAX, Flax.nnx, Optax for deep learning jobs.
+- Always use tensorflow_probability.substrates.jax for probabilistic modeling jobs.
+- Always use tensorflow.data for dataset management.
+- Always use JAX for autodifferentiation.      
+- Always use optuna for hyperparameter search.
 - Keep the core Parratt calculation independent of xraydb or other optical-constant databases.
 - Write small functions with clear names.
 - Add tests before adding major new features.
@@ -46,5 +51,8 @@ Every implementation of reflectivity must pass:
 4. Reflectivity should not become unphysically larger than 1 except for small numerical tolerance.
 
 ## Planning rule
+Always create or update `PLAN.md` for every non-trivial task before making code changes.
+Keep `PLAN.md` concise and current as work progresses.
 
-For any substantial change, first create or update an execution plan following PLANS.md.
+
+
