@@ -1,0 +1,25 @@
+# Python caches
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# Local environments and packaging outputs
+.venv/
+venv/
+env/
+build/
+dist/
+*.egg-info/
+
+# Editor and OS files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Generated example figures
+examples/*.png
+examples/*.pdf
+
+# Local reference paper copy; avoid uploading copyrighted PDFs by accident.
+/1.4790171.pdf
