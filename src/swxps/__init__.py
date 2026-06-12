@@ -14,6 +14,7 @@ from .fields import (
     transfer_matrix_reflection_amplitude,
 )
 from .imfp import IMFPTable, imfp_from_file, imfp_path, load_imfp
+from .jax_forward import reflectivity_forward_jax
 from .layers import Layer, refractive_index, vacuum
 from .optical_constants import (
     OpticalConstantsTable,
@@ -99,6 +100,7 @@ __all__ = [
     "parratt_reflection_amplitudes",
     "parratt_reflectivity",
     "refractive_index",
+    "reflectivity_forward_jax",
     "sample_concentration_profiles",
     "sample_stack_property",
     "simulate_reflectivity",

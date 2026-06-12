@@ -6,11 +6,30 @@ build-backend = "setuptools.build_meta"
 name = "swxps"
 version = "0.1.0"
 description = "Transparent x-ray reflectivity calculations for multilayer thin films."
-requires-python = ">=3.9"
-dependencies = ["numpy"]
+requires-python = ">=3.10"
+dependencies = [
+    "numpy==1.26.4",
+]
 
 [project.optional-dependencies]
-plot = ["matplotlib"]
+plot = [
+    "matplotlib==3.9.2",
+]
+test = [
+    "pytest==9.0.3",
+]
+ml = [
+    "jax==0.4.36.dev20241118+ed250b898",
+    "jaxlib==0.4.36.dev20241118",
+    "flax==0.10.1",
+    "optax==0.2.4",
+    "optuna==4.8.0",
+]
+probability = [
+    "tfp-nightly==0.26.0.dev20241119",
+    "tensorflow-cpu==2.18.0",
+    "keras==3.6.0",
+]
 
 [tool.setuptools.packages.find]
 where = ["src"]
