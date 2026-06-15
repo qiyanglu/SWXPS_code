@@ -8,20 +8,20 @@ import sys
 import matplotlib.pyplot as plt
 import numpy as np
 
-REPO_ROOT = Path(__file__).resolve().parents[1]
+REPO_ROOT = Path(__file__).resolve().parents[2]
 SRC_DIR = REPO_ROOT / "src"
 if str(SRC_DIR) not in sys.path:
     sys.path.insert(0, str(SRC_DIR))
 
 from swxps import (
     CoreLevelRequest,
+    LayerTemplate,
     ReflectivityRequest,
     RockingCurveRequest,
-    SimulationStack,
-    StackLayer,
+    StackTemplate,
+    SuperlatticeTemplate,
     energy_to_wavelength,
     imfp_from_file,
-    layer_from_file,
     simulate_reflectivity,
     simulate_rocking_curves,
 )
@@ -32,45 +32,25 @@ def make_lno_sto_superlattice(
     repeats: int,
     layer_thickness: float,
     roughness: float,
-) -> list[Layer]:
+) -> object:
     """Return vacuum / [LaNiO3 / SrTiO3]xN / SrTiO3 substrate."""
 
-    lno_file = REPO_ROOT / "OPC" / "LaNiO3.dat"
-    sto_file = REPO_ROOT / "OPC" / "SrTiO3.dat"
-
-    layers = [StackLayer("vacuum", thickness=0.0)]
-    for _ in range(repeats):
-        lno = layer_from_file(lno_file, energy_ev, thickness=layer_thickness, roughness=roughness)
-        sto = layer_from_file(sto_file, energy_ev, thickness=layer_thickness, roughness=roughness)
-        layers.append(
-            StackLayer(
-                "LNO",
-                thickness=lno.thickness,
-                delta=lno.delta,
-                beta=lno.beta,
-                roughness=lno.roughness,
-            )
-        )
-        layers.append(
-            StackLayer(
-                "STO",
-                thickness=sto.thickness,
-                delta=sto.delta,
-                beta=sto.beta,
-                roughness=sto.roughness,
-            )
-        )
-    substrate = layer_from_file(sto_file, energy_ev, thickness=0.0, roughness=roughness)
-    layers.append(
-        StackLayer(
-            "STO",
-            thickness=substrate.thickness,
-            delta=substrate.delta,
-            beta=substrate.beta,
-            roughness=substrate.roughness,
-        )
+    template = StackTemplate(
+        energy_ev=energy_ev,
+        base_dir=REPO_ROOT,
+        parts=(
+            LayerTemplate.vacuum(),
+            SuperlatticeTemplate(
+                repeats=repeats,
+                period=(
+                    LayerTemplate.from_file("LNO", "OPC/LaNiO3.dat", layer_thickness, roughness),
+                    LayerTemplate.from_file("STO", "OPC/SrTiO3.dat", layer_thickness, roughness),
+                ),
+            ),
+            LayerTemplate.from_file("STO", "OPC/SrTiO3.dat", 0.0, roughness),
+        ),
     )
-    return SimulationStack(tuple(layers))
+    return template.build()
 
 
 def main() -> None:
@@ -226,7 +206,7 @@ def main() -> None:
     ax_ti.set_xlim(angles.min(), angles.max())
     fig.tight_layout()
 
-    output_path = REPO_ROOT / "examples" / "lno_la4d_o1s_ti2p_rocking_curves.png"
+    output_path = Path(__file__).resolve().parent / "lno_la4d_o1s_ti2p_rocking_curves.png"
     fig.savefig(output_path, dpi=200)
     print(f"LNO IMFP at La 4d KE {la4d_kinetic_energy_ev:.1f} eV: {lno_la4d_imfp:.2f} Angstrom")
     print(f"STO IMFP at La 4d KE {la4d_kinetic_energy_ev:.1f} eV: {sto_la4d_imfp:.2f} Angstrom")

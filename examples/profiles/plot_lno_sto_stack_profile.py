@@ -7,16 +7,16 @@ import sys
 
 import matplotlib.pyplot as plt
 
-REPO_ROOT = Path(__file__).resolve().parents[1]
+REPO_ROOT = Path(__file__).resolve().parents[2]
 SRC_DIR = REPO_ROOT / "src"
 if str(SRC_DIR) not in sys.path:
     sys.path.insert(0, str(SRC_DIR))
 
 from swxps import (
-    SimulationStack,
-    StackLayer,
+    LayerTemplate,
+    StackTemplate,
+    SuperlatticeTemplate,
     imfp_from_file,
-    layer_from_file,
     sample_concentration_profiles,
 )
 
@@ -26,34 +26,25 @@ def make_lno_sto_stack(
     repeats: int,
     layer_thickness: float,
     roughness: float,
-) -> SimulationStack:
+) -> object:
     """Return vacuum / [LaNiO3 / SrTiO3]xN / SrTiO3 substrate."""
 
-    lno_file = REPO_ROOT / "OPC" / "LaNiO3.dat"
-    sto_file = REPO_ROOT / "OPC" / "SrTiO3.dat"
-
-    stack_layers = [StackLayer("vacuum", thickness=0.0)]
-    for _ in range(repeats):
-        lno = layer_from_file(lno_file, energy_ev, thickness=layer_thickness, roughness=roughness)
-        sto = layer_from_file(sto_file, energy_ev, thickness=layer_thickness, roughness=roughness)
-        stack_layers.append(
-            StackLayer("LNO", lno.thickness, lno.delta, lno.beta, lno.roughness)
-        )
-        stack_layers.append(
-            StackLayer("STO", sto.thickness, sto.delta, sto.beta, sto.roughness)
-        )
-
-    substrate = layer_from_file(sto_file, energy_ev, thickness=0.0, roughness=roughness)
-    stack_layers.append(
-        StackLayer(
-            "STO",
-            substrate.thickness,
-            substrate.delta,
-            substrate.beta,
-            substrate.roughness,
-        )
+    template = StackTemplate(
+        energy_ev=energy_ev,
+        base_dir=REPO_ROOT,
+        parts=(
+            LayerTemplate.vacuum(),
+            SuperlatticeTemplate(
+                repeats=repeats,
+                period=(
+                    LayerTemplate.from_file("LNO", "OPC/LaNiO3.dat", layer_thickness, roughness),
+                    LayerTemplate.from_file("STO", "OPC/SrTiO3.dat", layer_thickness, roughness),
+                ),
+            ),
+            LayerTemplate.from_file("STO", "OPC/SrTiO3.dat", 0.0, roughness),
+        ),
     )
-    return SimulationStack(tuple(stack_layers))
+    return template.build()
 
 
 def draw_layer_boundaries(ax: plt.Axes, repeats: int, layer_thickness: float) -> None:
@@ -147,7 +138,7 @@ def main() -> None:
     ax.legend(loc="lower right", fontsize=8)
     fig.tight_layout()
 
-    output_path = REPO_ROOT / "examples" / "lno_sto_stack_profile.png"
+    output_path = Path(__file__).resolve().parent / "lno_sto_stack_profile.png"
     fig.savefig(output_path, dpi=200)
     print(f"La 4d IMFP at {la4d_kinetic_energy_ev:.1f} eV: {la4d_imfp:.2f} Angstrom")
     print(f"Ti 2p IMFP at {ti2p_kinetic_energy_ev:.1f} eV: {ti2p_imfp:.2f} Angstrom")

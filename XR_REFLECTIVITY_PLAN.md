@@ -435,4 +435,19 @@ The implementation is acceptable when:
 - 2026-06-12: Planned user-controllable roughness discretization with scalar or per-layer slice thickness and selectable grading shape.
 - 2026-06-12: Planned separate roughness-width controls and RMS-matched linear ramp defaults for comparing error-function and linear roughness descriptions.
 - 2026-06-15: Planned an initial fitting milestone using `scikit-optimize` Bayesian optimization, with optimizer-independent parameter mapping, objective evaluation, dataset weighting, and fit-history records.
-- Remaining: Review normalized XPS rocking curves against experimental examples before adding cross sections, p-polarization, or online optical-constant database features. Implement fitting first on synthetic data, then move to experimental data only after the objective and BO adapter are validated.
+- 2026-06-15: Implemented optimizer-independent fitting helpers for bounded parameters, stack updates, reflectivity and SW-XPS residuals, joint objectives, and fit-history records.
+- 2026-06-15: Implemented a thin `scikit-optimize` Bayesian-optimization backend with package-native settings and result dataclasses.
+- 2026-06-15: Added fitting and BO adapter tests; verified with `python -m pytest`; all 47 tests passed.
+- 2026-06-15: Added a synthetic C/LNO/STO dataset generator with reflectivity plus normalized La 4d, O 1s, Ti 2p, and C 1s rocking curves for later BO fitting tests.
+- 2026-06-15: Added a finite-layer fitting constraint so roughness cannot exceed layer thickness while still allowing semi-infinite substrate interface roughness.
+- 2026-06-15: Reorganized examples into per-example folders and updated scripts to write outputs next to each example.
+- 2026-06-15: Added a BO fitting example for the synthetic C/LNO/STO dataset with history CSV, convergence plot, and best-fit comparison plot outputs.
+- 2026-06-15: Added GP surrogate-slice diagnostic plots that show objective mean and standard deviation versus each fit parameter.
+- 2026-06-15: Added a high-level `FittingProblem` API and `run_bayesian_fit` wrapper so users can provide datasets, stack builders, parameter bounds, initial guesses, and independent dataset weights without hand-writing objective plumbing.
+- 2026-06-15: Added declarative stack templates, including `SuperlatticeTemplate`, so common stacks can be described without manual layer-append loops.
+- 2026-06-15: Updated examples to use declarative stack templates and added StackTemplate boundary validation for vacuum first layer and zero-thickness semi-infinite substrate last layer.
+- 2026-06-15: Added reusable fitting diagnostics utilities for history CSV export, convergence plots, best-fit plots, and GP surrogate-slice plots.
+- 2026-06-15: Added a staged multi-start BO fitting driver that fits selected parameter groups first, carries best values forward as fixed values, repeats each stage with independent seeds, and exports a per-stage summary.
+- 2026-06-15: Planned a reusable sample-stack schematic visualization utility that can draw fitted multilayer stacks, collapse repeated interior layers, annotate layer thicknesses, and show incident/reflected x-rays plus a stylized standing wave.
+- 2026-06-15: Implemented stack schematic plotting utilities and a fitted C/LNO/STO schematic example based on saved BO best-fit parameters.
+- Remaining: Review normalized XPS rocking curves against experimental examples before adding cross sections, p-polarization, or online optical-constant database features. Continue validating BO recovery quality before moving to experimental data.

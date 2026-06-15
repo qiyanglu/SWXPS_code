@@ -8,18 +8,19 @@ import sys
 import matplotlib.pyplot as plt
 import numpy as np
 
-REPO_ROOT = Path(__file__).resolve().parents[1]
+REPO_ROOT = Path(__file__).resolve().parents[2]
 SRC_DIR = REPO_ROOT / "src"
 if str(SRC_DIR) not in sys.path:
     sys.path.insert(0, str(SRC_DIR))
 
 from swxps import (
     Layer,
+    LayerTemplate,
+    StackTemplate,
+    SuperlatticeTemplate,
     energy_to_wavelength,
-    layer_from_file,
     transfer_matrix_electric_field_profile,
     transfer_matrix_reflectivity,
-    vacuum,
 )
 
 
@@ -31,36 +32,22 @@ def make_lno_sto_superlattice(
 ) -> list[Layer]:
     """Return vacuum / [LaNiO3 / SrTiO3]xN / SrTiO3 substrate."""
 
-    lno_file = REPO_ROOT / "OPC" / "LaNiO3.dat"
-    sto_file = REPO_ROOT / "OPC" / "SrTiO3.dat"
-
-    layers = [vacuum()]
-    for _ in range(repeats):
-        layers.append(
-            layer_from_file(
-                lno_file,
-                energy_ev,
-                thickness=layer_thickness,
-                roughness=roughness,
-            )
-        )
-        layers.append(
-            layer_from_file(
-                sto_file,
-                energy_ev,
-                thickness=layer_thickness,
-                roughness=roughness,
-            )
-        )
-    layers.append(
-        layer_from_file(
-            sto_file,
-            energy_ev,
-            thickness=0.0,
-            roughness=roughness,
-        )
+    template = StackTemplate(
+        energy_ev=energy_ev,
+        base_dir=REPO_ROOT,
+        parts=(
+            LayerTemplate.vacuum(),
+            SuperlatticeTemplate(
+                repeats=repeats,
+                period=(
+                    LayerTemplate.from_file("LNO", "OPC/LaNiO3.dat", layer_thickness, roughness),
+                    LayerTemplate.from_file("STO", "OPC/SrTiO3.dat", layer_thickness, roughness),
+                ),
+            ),
+            LayerTemplate.from_file("STO", "OPC/SrTiO3.dat", 0.0, roughness),
+        ),
     )
-    return layers
+    return template.build().optical_layers
 
 
 def shade_top_layers(ax: plt.Axes, layer_thickness: float, max_depth: float) -> None:
@@ -190,7 +177,7 @@ def main() -> None:
     ax_e.legend(loc="best", ncols=2)
     fig.tight_layout()
 
-    output_path = REPO_ROOT / "examples" / "lno_sto_top100_offpeak_fields.png"
+    output_path = Path(__file__).resolve().parent / "lno_sto_top100_offpeak_fields.png"
     fig.savefig(output_path, dpi=200)
     print(f"Saved {output_path}")
 
