@@ -22,4 +22,4 @@ examples/*.png
 examples/*.pdf
 
 # Local reference paper copy; avoid uploading copyrighted PDFs by accident.
-/1.4790171.pdf
+references/*.pdf

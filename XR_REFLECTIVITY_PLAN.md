@@ -19,7 +19,9 @@ The first milestone will support:
 - A semi-infinite substrate as the last layer.
 - s-polarization only.
 
-This milestone will not implement fitting, XPS intensities, p-polarization, or online optical-constant databases.
+This first milestone did not implement fitting, XPS intensities, p-polarization, or online optical-constant databases.
+
+A later fitting milestone will add Bayesian optimization for experimental reflectivity and SW-XPS rocking-curve data. The first optimizer backend will use `scikit-optimize`, but the fitting layer should be written so that the Bayesian-optimization backend can be replaced later without changing the forward simulation API.
 
 ## Physics background
 
@@ -136,6 +138,22 @@ m lambda = 2 d sin(theta)
 
 for integer order m.
 
+For fitting experimental data, the forward model should remain separate from the optimizer. A trial parameter vector x is mapped to physical stack and instrument parameters, then passed to the existing simulation API. The optimizer only sees a scalar objective:
+
+F(x) = sum_j w_j chi_j^2(x) + P(x)
+
+where j runs over datasets such as reflectivity and one or more SW-XPS rocking curves, w_j are user-selected dataset weights, and P(x) is an optional penalty for invalid or discouraged parameter combinations. Reflectivity residuals should support logarithmic comparison because the signal spans many orders of magnitude:
+
+chi_R^2 = mean([log10(R_exp + floor) - log10(R_sim + floor)]^2)
+
+Normalized SW-XPS rocking-curve residuals can initially use weighted mean-squared differences:
+
+chi_RC,j^2 = mean([(I_exp,j - I_sim,j) / sigma_j]^2)
+
+if experimental uncertainties are available, or unweighted mean-squared differences otherwise. Parameters should be physically bounded. For LNO/STO superlattice fitting, an initial small parameter set may include common LNO thickness, common STO thickness, internal superlattice roughness, substrate/interface roughness, top surface roughness, and incidence-angle offset.
+
+The initial Bayesian optimizer will use Gaussian-process Bayesian optimization through `scikit-optimize`. The fitting code must isolate optimizer-specific concepts such as search dimensions, acquisition function, random initialization, and optimization state from reusable concepts such as parameter definitions, stack construction, objective evaluation, dataset weighting, and result records.
+
 ## Files to create or modify
 
 Expected package layout:
@@ -181,6 +199,17 @@ Expected package layout:
 - `src/swxps/profiles.py`
   - Sample material or element concentration profiles versus depth.
   - Use the same error-function roughness grading as the XPS model.
+- `src/swxps/fitting.py`
+  - Optimizer-independent fitting dataclasses and objective helpers.
+  - Parameter definitions with names, bounds, initial values if supplied, and physical units.
+  - Mapping from trial vectors to simulation requests.
+  - Residual/objective functions for reflectivity and normalized SW-XPS rocking curves.
+  - Fit history records that do not depend on a specific optimizer package.
+- `src/swxps/optimizers.py` or `src/swxps/bo.py`
+  - First Bayesian-optimization backend using `scikit-optimize`.
+  - Adapter from generic fitting parameter definitions to `skopt.space` dimensions.
+  - Optimizer result conversion back to package-native result dataclasses.
+  - Keep this module thin so another optimizer can replace `scikit-optimize` later.
 - `tests/test_reflectivity.py`
   - Unit tests for the required physical checks.
 - `tests/test_optical_constants.py`
@@ -195,6 +224,10 @@ Expected package layout:
   - Unit tests for the high-level simulation API, angle offsets, and multi-core-level RC outputs.
 - `tests/test_profiles.py`
   - Unit tests for stack profile sampling and rough-interface smoothing.
+- `tests/test_fitting.py`
+  - Unit tests for parameter-vector mapping, objective calculation, and fit history records.
+- `tests/test_bo.py`
+  - Unit tests for the `scikit-optimize` adapter using a cheap synthetic objective or monkeypatched simulation.
 - `examples/plot_lno_sto_reflectivity.py`
   - Example visualization for a LaNiO3/SrTiO3 multilayer using manually supplied optical constants.
 - `examples/plot_lno_sto_field_profile.py`
@@ -205,6 +238,9 @@ Expected package layout:
   - Example visualization of La, Ti, and O concentration profiles versus depth.
 - `examples/README.md`
   - Short instructions for running the example.
+- `examples/fit_lno_sto_synthetic_bo.py`
+  - Synthetic Bayesian-optimization example using known LNO/STO-like parameters.
+  - Recover a small parameter set from simulated reflectivity and/or SW-XPS rocking curves before using experimental data.
 
 ## Implementation steps
 
@@ -245,6 +281,16 @@ Expected package layout:
 28. Include angle offset as an explicit simulation input.
 29. Add stack profile sampling for visualizing element concentration versus depth.
 30. Add an LNO/STO example showing roughness-broadened La, Ti, and O concentration profiles.
+31. Add an optimizer-independent fitting layer that wraps the existing high-level simulation API.
+32. Define fitting parameters as named bounded quantities, with a clean conversion from vector values to physical simulation requests.
+33. Add dataset containers for experimental reflectivity and normalized SW-XPS rocking curves, including optional uncertainties and dataset weights.
+34. Add residual functions for logarithmic reflectivity comparison and normalized rocking-curve comparison.
+35. Add a scalar joint objective that can combine reflectivity and multiple SW-XPS rocking curves.
+36. Add fit-history records storing parameter values, objective values, and per-dataset residual contributions.
+37. Add a thin `scikit-optimize` Bayesian-optimization backend for the first implementation.
+38. Keep BO-specific details behind a small adapter so later optimizers can be added without changing objective or simulation code.
+39. Validate BO first on synthetic data generated from known parameters, starting with fewer than 10 parameters.
+40. Only after synthetic recovery works, use the same fitting API on experimental datasets.
 
 ## Tests
 
@@ -314,6 +360,21 @@ Required tests for this milestone:
    - Match the default linear ramp to the same RMS roughness by treating it as the CDF of a uniform height distribution, so the ramp half-width is `sqrt(3) * roughness`.
    - Add tests that verify per-layer slice counts and linear roughness grading.
 
+12. Fitting objective and parameter mapping
+   - Parameter definitions should preserve names, bounds, units, and vector order.
+   - Vector-to-stack mapping should update only the intended thicknesses, roughnesses, and angle offset.
+   - Invalid parameter combinations should return a clear error or a finite penalty, according to the chosen objective policy.
+   - Reflectivity residuals should support logarithmic comparison with a configurable positive floor.
+   - Rocking-curve residuals should support optional experimental uncertainties and dataset weights.
+   - Joint objectives should report both the total scalar objective and per-dataset contributions.
+
+13. Bayesian-optimization backend
+   - The first BO backend should use `scikit-optimize`.
+   - Tests should use a cheap synthetic objective rather than expensive full simulations.
+   - The BO adapter should not import or modify low-level physics functions.
+   - The optimizer result should include best parameters, best objective, and evaluation history.
+   - A synthetic LNO/STO-like example should recover known parameters within physically reasonable tolerance.
+
 Suggested command:
 
 `python -m pytest`
@@ -331,6 +392,9 @@ The implementation is acceptable when:
 - High-level simulation functions have explicit dataclass inputs and outputs suitable for later optimization loops.
 - Stack concentration profiles can be inspected before RC simulation to verify layer sequence and roughness behavior.
 - Graded roughness slicing is user-controllable and reports predictable slice counts for a known stack.
+- Fitting objectives can combine reflectivity and SW-XPS rocking curves while keeping the forward simulation API unchanged.
+- Bayesian optimization through `scikit-optimize` can recover a small synthetic parameter set before being trusted on experimental data.
+- Optimizer-specific code is isolated enough that a different backend can replace `scikit-optimize` later.
 - The code remains transparent enough that each equation maps clearly to the physics above.
 
 ## Progress log
@@ -370,4 +434,5 @@ The implementation is acceptable when:
 - 2026-06-12: Verified with `python -m pytest`; all 36 tests passed.
 - 2026-06-12: Planned user-controllable roughness discretization with scalar or per-layer slice thickness and selectable grading shape.
 - 2026-06-12: Planned separate roughness-width controls and RMS-matched linear ramp defaults for comparing error-function and linear roughness descriptions.
-- Remaining: Review normalized XPS rocking curves against experimental examples before adding cross sections, fitting, p-polarization, or online optical-constant database features.
+- 2026-06-15: Planned an initial fitting milestone using `scikit-optimize` Bayesian optimization, with optimizer-independent parameter mapping, objective evaluation, dataset weighting, and fit-history records.
+- Remaining: Review normalized XPS rocking curves against experimental examples before adding cross sections, p-polarization, or online optical-constant database features. Implement fitting first on synthetic data, then move to experimental data only after the objective and BO adapter are validated.
