@@ -229,7 +229,7 @@ examples/synthetic_c_lno_sto/lno_sto_c_bo_stack_schematic.png
 
 The schematic shows the top layers, the bottom substrate region, an ellipsis for
 collapsed repeated layers, annotated thicknesses/roughnesses, incident and
-reflected x-ray waves, and a stylized standing-wave pattern.
+diffracted x-ray waves, and a stylized standing-wave pattern.
 
 The intended fitting API is:
 

@@ -228,19 +228,24 @@ Expected package layout:
   - Unit tests for parameter-vector mapping, objective calculation, and fit history records.
 - `tests/test_bo.py`
   - Unit tests for the `scikit-optimize` adapter using a cheap synthetic objective or monkeypatched simulation.
-- `examples/plot_lno_sto_reflectivity.py`
+- `examples/reflectivity/plot_lno_sto_reflectivity.py`
   - Example visualization for a LaNiO3/SrTiO3 multilayer using manually supplied optical constants.
-- `examples/plot_lno_sto_field_profile.py`
+- `examples/fields/plot_lno_sto_field_profile.py`
   - Example visualization of standing-wave field intensity through a LaNiO3/SrTiO3 multilayer.
-- `examples/plot_lno4d_rocking_curve.py`
-  - Example normalized La 4d rocking curve for the LaNiO3/SrTiO3 multilayer.
-- `examples/plot_lno_sto_stack_profile.py`
+- `examples/xps/plot_lno_la4d_rocking_curve.py`
+  - Example normalized La 4d, O 1s, and Ti 2p rocking curves for the LaNiO3/SrTiO3 multilayer.
+- `examples/profiles/plot_lno_sto_stack_profile.py`
   - Example visualization of La, Ti, and O concentration profiles versus depth.
 - `examples/README.md`
-  - Short instructions for running the example.
-- `examples/fit_lno_sto_synthetic_bo.py`
-  - Synthetic Bayesian-optimization example using known LNO/STO-like parameters.
-  - Recover a small parameter set from simulated reflectivity and/or SW-XPS rocking curves before using experimental data.
+  - Short instructions for running the examples and interpreting generated outputs.
+- `examples/synthetic_c_lno_sto/generate_lno_sto_c_synthetic_data.py`
+  - Synthetic C/LNO/STO data generator with reflectivity and La 4d, O 1s, Ti 2p, and C 1s RCs.
+- `examples/synthetic_c_lno_sto/fit_lno_sto_c_synthetic_bo.py`
+  - Normal BO fitting example using the synthetic C/LNO/STO data.
+- `examples/synthetic_c_lno_sto/fit_lno_sto_c_synthetic_staged_bo.py`
+  - Staged multi-start BO fitting example using the same synthetic data.
+- `examples/synthetic_c_lno_sto/plot_fitted_stack_schematic.py`
+  - Schematic visualization of the best-fit C/LNO/STO stack.
 
 ## Implementation steps
 
@@ -448,6 +453,7 @@ The implementation is acceptable when:
 - 2026-06-15: Updated examples to use declarative stack templates and added StackTemplate boundary validation for vacuum first layer and zero-thickness semi-infinite substrate last layer.
 - 2026-06-15: Added reusable fitting diagnostics utilities for history CSV export, convergence plots, best-fit plots, and GP surrogate-slice plots.
 - 2026-06-15: Added a staged multi-start BO fitting driver that fits selected parameter groups first, carries best values forward as fixed values, repeats each stage with independent seeds, and exports a per-stage summary.
-- 2026-06-15: Planned a reusable sample-stack schematic visualization utility that can draw fitted multilayer stacks, collapse repeated interior layers, annotate layer thicknesses, and show incident/reflected x-rays plus a stylized standing wave.
+- 2026-06-15: Planned a reusable sample-stack schematic visualization utility that can draw fitted multilayer stacks, collapse repeated interior layers, annotate layer thicknesses, and show incident/diffracted x-rays plus a stylized standing wave.
 - 2026-06-15: Implemented stack schematic plotting utilities and a fitted C/LNO/STO schematic example based on saved BO best-fit parameters.
+- 2026-06-16: Updated README descriptions for the current fitting workflow and planned tracking representative `.png` and `.csv` example outputs in GitHub.
 - Remaining: Review normalized XPS rocking curves against experimental examples before adding cross sections, p-polarization, or online optical-constant database features. Continue validating BO recovery quality before moving to experimental data.

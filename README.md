@@ -11,7 +11,10 @@ The current code focuses on readable, testable simulations for:
 - Optical constants loaded from Henke-style `.dat` files in `OPC`
 - IMFP values loaded from tabulated files in `IMFP`
 - Normalized standing-wave XPS rocking curves with constant cross sections
-- Stack/concentration profile visualization utilities
+- Optimizer-independent fitting objectives for reflectivity and SW-XPS RCs
+- Bayesian optimization through `scikit-optimize`
+- Declarative stack templates, including superlattices
+- Stack/concentration/schematic visualization utilities
 
 ## Install
 
@@ -35,22 +38,51 @@ python -m pytest
 
 ## Examples
 
-Example scripts live in `examples`.
+Example scripts live in topic-specific subfolders under `examples`.
 
 ```powershell
-python examples/plot_lno_sto_reflectivity.py
-python examples/compare_lno_sto_roughness.py
-python examples/plot_lno_sto_field_profile.py
-python examples/plot_lno_la4d_rocking_curve.py
-python examples/plot_lno_sto_stack_profile.py
+python examples/reflectivity/plot_lno_sto_reflectivity.py
+python examples/roughness/compare_lno_sto_roughness.py
+python examples/fields/plot_lno_sto_field_profile.py
+python examples/xps/plot_lno_la4d_rocking_curve.py
+python examples/profiles/plot_lno_sto_stack_profile.py
+python examples/synthetic_c_lno_sto/generate_lno_sto_c_synthetic_data.py
+python examples/synthetic_c_lno_sto/fit_lno_sto_c_synthetic_bo.py
 ```
 
-The generated figures are intentionally ignored by Git. Re-run the examples to
-regenerate them locally.
+Generated `.png` figures and `.csv` example data are tracked so the GitHub repo
+shows representative outputs without requiring a local run first.
+
+## Key Files
+
+Core simulation modules:
+
+- `src/swxps/reflectivity.py`: Parratt recursion, Fresnel amplitudes, and roughness correction.
+- `src/swxps/fields.py`: transfer-matrix reflectivity and electric-field profiles.
+- `src/swxps/xps.py`: depth integration and normalized SW-XPS rocking-curve helpers.
+- `src/swxps/simulation.py`: high-level request/result API for reflectivity and RC simulations.
+- `src/swxps/profiles.py`: concentration and material-profile sampling versus depth.
+
+Fitting and optimization modules:
+
+- `src/swxps/fitting.py`: fitting parameters, datasets, weighted objectives, and fit history.
+- `src/swxps/bo.py`: `scikit-optimize` Bayesian optimization and staged multi-start fitting.
+- `src/swxps/fit_diagnostics.py`: history CSV export and fit/surrogate diagnostic plots.
+- `src/swxps/stack_builders.py`: declarative layer and superlattice stack construction.
+- `src/swxps/stack_visualization.py`: schematic stack drawings from fitted parameters.
+
+Example outputs:
+
+- `examples/synthetic_c_lno_sto/lno_sto_c_synthetic_data.csv`: deterministic synthetic reflectivity and RC data.
+- `examples/synthetic_c_lno_sto/lno_sto_c_synthetic_data.png`: simulated C/LNO/STO reflectivity and RCs.
+- `examples/synthetic_c_lno_sto/lno_sto_c_bo_best_fit.png`: normal BO best-fit comparison.
+- `examples/synthetic_c_lno_sto/lno_sto_c_bo_surrogate_slices.png`: 1D GP surrogate slices.
+- `examples/synthetic_c_lno_sto/lno_sto_c_bo_lno_sto_surrogate_2d_3d.png`: LNO/STO 2D/3D surrogate surface.
+- `examples/synthetic_c_lno_sto/lno_sto_c_bo_stack_schematic.png`: fitted-stack schematic visualization.
 
 ## Current Scope
 
-The package is intended as a transparent simulation backend. Fitting and
-optimization are not implemented yet, but the high-level request/result objects
-in `swxps.simulation` are designed so future fitting code can call the
-simulation functions directly.
+The package is now a transparent simulation and early fitting backend. The BO
+workflow has been validated on synthetic C/LNO/STO data, but experimental-data
+fitting still needs careful parameter bounds, weighting choices, and physical
+cross-checks before results should be treated as quantitative.

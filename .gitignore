@@ -17,12 +17,9 @@ dist/
 .DS_Store
 Thumbs.db
 
-# Generated example figures
-examples/*.png
+# Generated example PDFs
 examples/*.pdf
-examples/**/*.png
 examples/**/*.pdf
-examples/**/*_bo_*.csv
 
 # Local reference paper copy; avoid uploading copyrighted PDFs by accident.
 references/*.pdf
