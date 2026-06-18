@@ -11,6 +11,10 @@ from swxps import (
     transfer_matrix_electric_field_profile,
     transfer_matrix_reflectivity,
 )
+from swxps.fields import (
+    transfer_matrix_electric_field_profiles,
+    transfer_matrix_reflectivity_array,
+)
 
 
 def test_depth_grid_covers_finite_layers_only():
@@ -92,6 +96,36 @@ def test_transfer_matrix_reflectivity_matches_parratt_for_sharp_stack():
     np.testing.assert_allclose(transfer, parratt, rtol=1e-11, atol=1e-13)
 
 
+def test_batched_transfer_matrix_reflectivity_matches_scalar():
+    layers = [
+        Layer(thickness=0.0),
+        Layer(thickness=20.0, delta=5.0e-6, beta=1.0e-7, roughness=2.0),
+        Layer(thickness=30.0, delta=2.5e-6, beta=8.0e-8, roughness=3.0),
+        Layer(thickness=0.0, delta=1.0e-5, beta=2.0e-7, roughness=2.0),
+    ]
+    angles = np.linspace(0.5, 5.0, 25)
+
+    batched = transfer_matrix_reflectivity_array(
+        angles,
+        3000.0,
+        layers,
+        roughness_step=0.5,
+    )
+    scalar = np.array(
+        [
+            transfer_matrix_reflectivity(
+                angle,
+                3000.0,
+                layers,
+                roughness_step=0.5,
+            )
+            for angle in angles
+        ]
+    )
+
+    np.testing.assert_allclose(batched, scalar, rtol=1e-12, atol=1e-14)
+
+
 def test_transfer_matrix_identical_index_stack_has_unit_field_intensity():
     layers = [
         Layer(thickness=0.0),
@@ -108,6 +142,37 @@ def test_transfer_matrix_identical_index_stack_has_unit_field_intensity():
     )
 
     np.testing.assert_allclose(profile.intensity, 1.0, rtol=1e-12, atol=1e-12)
+
+
+def test_batched_transfer_matrix_field_profiles_match_scalar():
+    layers = [
+        Layer(thickness=0.0),
+        Layer(thickness=20.0, delta=5.0e-6, beta=1.0e-7, roughness=2.0),
+        Layer(thickness=30.0, delta=2.5e-6, beta=8.0e-8, roughness=3.0),
+        Layer(thickness=0.0, delta=1.0e-5, beta=2.0e-7, roughness=2.0),
+    ]
+    angles = np.array([1.0, 2.0, 3.0])
+
+    batched = transfer_matrix_electric_field_profiles(
+        angles,
+        3000.0,
+        layers,
+        step=2.0,
+        roughness_step=1.0,
+    )
+
+    for angle, profile in zip(angles, batched):
+        scalar = transfer_matrix_electric_field_profile(
+            angle,
+            3000.0,
+            layers,
+            step=2.0,
+            roughness_step=1.0,
+        )
+        np.testing.assert_allclose(profile.depth, scalar.depth)
+        np.testing.assert_array_equal(profile.layer_index, scalar.layer_index)
+        np.testing.assert_allclose(profile.electric_field, scalar.electric_field)
+        np.testing.assert_allclose(profile.intensity, scalar.intensity)
 
 
 def test_effective_layers_leave_zero_roughness_stack_unchanged():

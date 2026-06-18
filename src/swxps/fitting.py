@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field
+from time import perf_counter
 from typing import Literal
 
 import numpy as np
@@ -118,6 +119,7 @@ class FitEvaluation:
     parameters: dict[str, float]
     objective: float
     contributions: tuple[FitContribution, ...]
+    timings: dict[str, float] = field(default_factory=dict)
 
 
 @dataclass(frozen=True)
@@ -210,28 +212,64 @@ class FittingProblem:
     def evaluate(self, values: dict[str, float]) -> FitEvaluation:
         """Evaluate one named parameter set."""
 
+        total_start = perf_counter()
         all_values = self._merge_values(values)
-        simulation = self.simulate(all_values)
+        stack_start = perf_counter()
+        stack = self.stack_builder(all_values)
+        if self.validate_roughness:
+            validate_finite_layer_roughness(stack)
+        stack_seconds = perf_counter() - stack_start
+        angle_offset = _angle_offset(all_values, self.angle_offset_parameter)
+
         contributions: list[FitContribution] = []
+        reflectivity_seconds = 0.0
+        rocking_curve_seconds = 0.0
+        scoring_seconds = 0.0
         if self.reflectivity is not None:
-            if simulation.reflectivity is None:
-                raise ValueError("reflectivity simulation is missing")
+            reflectivity_start = perf_counter()
+            reflectivity_result = simulate_reflectivity(
+                ReflectivityRequest(
+                    angles=self.reflectivity.angles,
+                    energy_ev=self.photon_energy_ev,
+                    stack=stack,
+                    angle_offset=angle_offset,
+                    roughness_step=self.roughness_step,
+                    roughness_profile=self.roughness_profile,
+                )
+            )
+            reflectivity_seconds = perf_counter() - reflectivity_start
+            scoring_start = perf_counter()
             contributions.append(
                 FitContribution(
                     name=self.reflectivity.name,
                     raw=reflectivity_log_mse(
                         self.reflectivity,
-                        simulation.reflectivity.reflectivity,
+                        reflectivity_result.reflectivity,
                     ),
                     weight=self.reflectivity.weight,
                 )
             )
+            scoring_seconds += perf_counter() - scoring_start
         if self.rocking_curves:
-            if simulation.rocking_curves is None:
-                raise ValueError("rocking-curve simulation is missing")
+            rocking_curve_start = perf_counter()
+            rocking_curve_result = simulate_rocking_curves(
+                RockingCurveRequest(
+                    angles=self.rocking_curves[0].angles,
+                    photon_energy_ev=self.photon_energy_ev,
+                    stack=stack,
+                    core_levels=self.core_levels,
+                    angle_offset=angle_offset,
+                    field_step=self.field_step,
+                    roughness_step=self.roughness_step,
+                    roughness_profile=self.roughness_profile,
+                    offpeak_mask=self.offpeak_mask,
+                )
+            )
+            rocking_curve_seconds = perf_counter() - rocking_curve_start
+            scoring_start = perf_counter()
             result_by_name = {
                 core.name: core.curve.intensity
-                for core in simulation.rocking_curves.core_levels
+                for core in rocking_curve_result.core_levels
             }
             for data in self.rocking_curves:
                 if data.name not in result_by_name:
@@ -243,7 +281,18 @@ class FittingProblem:
                         weight=data.weight,
                     )
                 )
-        return evaluation_from_contributions(all_values, contributions)
+            scoring_seconds += perf_counter() - scoring_start
+        return evaluation_from_contributions(
+            all_values,
+            contributions,
+            timings={
+                "stack_seconds": stack_seconds,
+                "reflectivity_simulation_seconds": reflectivity_seconds,
+                "rocking_curve_simulation_seconds": rocking_curve_seconds,
+                "scoring_seconds": scoring_seconds,
+                "objective_total_seconds": perf_counter() - total_start,
+            },
+        )
 
     def simulate(self, values: dict[str, float]) -> FitSimulation:
         """Simulate all datasets for one named parameter set."""
@@ -427,6 +476,7 @@ def rocking_curve_contributions(
 def evaluation_from_contributions(
     parameters: dict[str, float],
     contributions: Sequence[FitContribution],
+    timings: dict[str, float] | None = None,
 ) -> FitEvaluation:
     """Build a total objective from per-dataset contributions."""
 
@@ -435,6 +485,7 @@ def evaluation_from_contributions(
         parameters=dict(parameters),
         objective=total,
         contributions=tuple(contributions),
+        timings={} if timings is None else dict(timings),
     )
 
 

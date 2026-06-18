@@ -25,6 +25,7 @@ def test_save_fit_history_csv_writes_objective_contributions_and_parameters(tmp_
                     FitContribution("A", raw=1.0, weight=2.0),
                     FitContribution("B", raw=0.5, weight=1.0),
                 ),
+                timings={"rocking_curve_simulation_seconds": 0.25},
             ),
         )
     )
@@ -39,6 +40,7 @@ def test_save_fit_history_csv_writes_objective_contributions_and_parameters(tmp_
     assert data["A_weighted"] == 2.0
     assert data["B_raw"] == 0.5
     assert data["B_weighted"] == 0.5
+    assert data["rocking_curve_simulation_seconds"] == 0.25
     assert data["x"] == 1.0
 
 

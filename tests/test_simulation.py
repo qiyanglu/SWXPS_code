@@ -93,3 +93,61 @@ def test_simulate_rocking_curve_requires_imfp_for_materials():
         assert "missing value for material" in str(error)
     else:
         raise AssertionError("missing IMFP values should raise ValueError")
+
+
+def test_core_level_request_can_select_emitting_layers():
+    angles = np.array([1.0, 2.0])
+    stack = SimulationStack(
+        (
+            StackLayer("vacuum", thickness=0.0),
+            StackLayer("A", thickness=10.0),
+            StackLayer("A", thickness=10.0),
+            StackLayer("B", thickness=0.0),
+        )
+    )
+    all_a = CoreLevelRequest(
+        name="A all",
+        binding_energy_ev=100.0,
+        concentration_by_material={"A": 1.0},
+        imfp_by_material={"vacuum": 20.0, "A": 20.0, "B": 20.0},
+    )
+    top_a = CoreLevelRequest(
+        name="A top",
+        binding_energy_ev=100.0,
+        concentration_by_material={"A": 1.0},
+        imfp_by_material={"vacuum": 20.0, "A": 20.0, "B": 20.0},
+        emitting_layer_indices=(1,),
+    )
+    request = RockingCurveRequest(
+        angles=angles,
+        photon_energy_ev=3000.0,
+        stack=stack,
+        core_levels=(all_a, top_a),
+        field_step=2.0,
+    )
+
+    result = simulate_rocking_curves(request)
+    raw_by_name = {core.name: core.curve.raw_intensity for core in result.core_levels}
+
+    assert np.all(raw_by_name["A top"] < raw_by_name["A all"])
+
+
+def test_core_level_request_rejects_invalid_emitting_layer_index():
+    angles = np.array([1.0])
+    core = CoreLevelRequest(
+        name="A",
+        binding_energy_ev=100.0,
+        concentration_by_material={"A": 1.0},
+        imfp_by_material={"vacuum": 20.0, "A": 20.0, "B": 20.0},
+        emitting_layer_indices=(99,),
+    )
+    request = RockingCurveRequest(
+        angles=angles,
+        photon_energy_ev=3000.0,
+        stack=make_test_stack(),
+        core_levels=(core,),
+        field_step=2.0,
+    )
+
+    with np.testing.assert_raises(ValueError):
+        simulate_rocking_curves(request)

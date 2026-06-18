@@ -100,7 +100,7 @@ def plot_stack_schematic(
     colors = _material_colors([layer.material for layer in visible if not layer.is_gap])
 
     fig_height = max(6.0, 0.52 * len(visible) + 2.5)
-    fig, ax = plt.subplots(figsize=(9.8, fig_height))
+    fig, ax = plt.subplots(figsize=(10.8, fig_height))
     x0 = 0.0
     skew = 0.58
     depth_scale = 0.34
@@ -160,7 +160,15 @@ def plot_stack_schematic(
             annotated_signatures,
             collapse_repeated_annotations,
         ):
-            _annotate_thickness(ax, layer, x0 + width + skew + 0.42, top, bottom)
+            _annotate_thickness(
+                ax,
+                layer,
+                x0 + width + skew + 0.42,
+                top,
+                bottom,
+                guide_top=(x0 + width + skew, top - depth_scale),
+                guide_bottom=(x0 + width + skew, bottom - depth_scale),
+            )
         if show_roughness and layer.roughness > 0:
             _draw_roughness_hint(ax, x0, width, top, skew, depth_scale)
 
@@ -172,7 +180,7 @@ def plot_stack_schematic(
             depth_edges + 1.0,
             start_index,
             end_index,
-            x0 + width + skew + 1.45,
+            x0 + width + skew + 2.25,
         )
 
     if show_waves:
@@ -180,7 +188,7 @@ def plot_stack_schematic(
 
     if title:
         ax.set_title(title, pad=14, fontsize=18)
-    ax.set_xlim(-1.25, width + skew + 3.15)
+    ax.set_xlim(-1.25, width + skew + 4.15)
     ax.set_ylim(total_height + 2.3, -1.3)
     ax.axis("off")
     fig.tight_layout()
@@ -265,21 +273,57 @@ def _draw_gap(ax, x0, width, top, bottom, skew, depth_scale, collapsed_count) ->
     )
 
 
-def _annotate_thickness(ax, layer: SchematicLayer, x, top, bottom) -> None:
+def _annotate_thickness(
+    ax,
+    layer: SchematicLayer,
+    x,
+    top,
+    bottom,
+    guide_top=None,
+    guide_bottom=None,
+) -> None:
     y_center = 0.5 * (top + bottom)
     if layer.thickness <= 0:
         text = "semi-infinite"
     else:
-        text = f"{layer.thickness:g} A"
+        text = f"{layer.thickness:.2f} A"
     if layer.roughness > 0:
-        text += f"\nsigma={layer.roughness:g} A"
+        text += f"\nsigma={layer.roughness:.2f} A"
     ax.annotate(
         "",
         xy=(x, top),
         xytext=(x, bottom),
         arrowprops={"arrowstyle": "<->", "color": "0.25", "linewidth": 1.15},
     )
-    ax.text(x + 0.14, y_center, text, ha="left", va="center", fontsize=11, color="0.25")
+    guide_x = x - 0.08
+    if guide_top is not None:
+        ax.plot(
+            [guide_top[0], guide_x],
+            [guide_top[1], top],
+            color="0.35",
+            linestyle="--",
+            linewidth=0.8,
+            alpha=0.45,
+        )
+    if guide_bottom is not None:
+        ax.plot(
+            [guide_bottom[0], guide_x],
+            [guide_bottom[1], bottom],
+            color="0.35",
+            linestyle="--",
+            linewidth=0.8,
+            alpha=0.45,
+        )
+    ax.text(
+        x + 0.18,
+        y_center,
+        text,
+        ha="left",
+        va="center",
+        fontsize=11,
+        color="0.25",
+        bbox=_text_background(),
+    )
 
 
 def _annotate_period(
@@ -300,14 +344,15 @@ def _annotate_period(
         arrowprops={"arrowstyle": "<->", "color": "0.15", "linewidth": 1.25},
     )
     ax.text(
-        x + 0.14,
+        x + 0.20,
         0.5 * (top + bottom),
-        f"period={period:g} A",
+        f"period={period:.2f} A",
         ha="left",
         va="center",
         fontsize=11,
         color="0.15",
         fontweight="bold",
+        bbox=_text_background(),
     )
 
 
@@ -325,7 +370,7 @@ def _draw_xray_waves(ax, x0, width, skew) -> None:
         end=(x0 + 1.85, 0.84),
         color="#2f6f9f",
         label="incident x-ray",
-        label_offset=0.38,
+        label_offset=-0.50,
     )
     _draw_wave_arrow(
         ax,
@@ -333,7 +378,7 @@ def _draw_xray_waves(ax, x0, width, skew) -> None:
         end=(x0 + width + skew + 1.55, -0.68),
         color="#b44945",
         label="diffracted x-ray",
-        label_offset=-0.42,
+        label_offset=-0.82,
     )
 
 
@@ -347,7 +392,6 @@ def _draw_wave_arrow(ax, start, end, color, label, label_offset) -> None:
     t = np.linspace(0.0, length, 220)
     points = start + t[:, None] * unit + 0.095 * np.sin(13.0 * np.pi * t / length)[:, None] * normal
     ax.plot(points[:, 0], points[:, 1], color=color, linewidth=3.0)
-    ax.annotate("", xy=end, xytext=points[-12], arrowprops={"arrowstyle": "->", "color": color, "lw": 3.0})
     label_position = start + 0.50 * direction + label_offset * normal
     ax.text(
         label_position[0],
@@ -459,6 +503,15 @@ def _polygon(points, facecolor, edgecolor, linewidth):
     from matplotlib.patches import Polygon
 
     return Polygon(points, closed=True, facecolor=facecolor, edgecolor=edgecolor, linewidth=linewidth)
+
+
+def _text_background() -> dict[str, object]:
+    return {
+        "boxstyle": "round,pad=0.12",
+        "fc": "white",
+        "ec": "none",
+        "alpha": 0.75,
+    }
 
 
 def _load_pyplot():

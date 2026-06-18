@@ -205,6 +205,50 @@ def transfer_matrix_reflectivity(
     return float(abs(amplitude) ** 2)
 
 
+def transfer_matrix_reflectivity_array(
+    angle_deg: np.ndarray,
+    energy_ev: float,
+    layers: Sequence[Layer],
+    roughness_step: float | Sequence[float] = 1.0,
+    roughness_profile: Literal["erf", "linear"] = "erf",
+    erf_truncation_factor: float = 4.0,
+    linear_width_factor: float = sqrt(3.0),
+) -> np.ndarray:
+    """Return transfer-matrix reflectivity for many angles.
+
+    The layer recursion remains explicit, but all angles are propagated in one
+    NumPy batch. Rough-interface discretization is built once for the request.
+    """
+
+    angles = np.asarray(angle_deg, dtype=float)
+    if angles.ndim == 0:
+        return np.asarray(
+            transfer_matrix_reflectivity(
+                float(angles),
+                energy_ev,
+                layers,
+                roughness_step=roughness_step,
+                roughness_profile=roughness_profile,
+                erf_truncation_factor=erf_truncation_factor,
+                linear_width_factor=linear_width_factor,
+            )
+        )
+
+    effective_layers = effective_layers_with_roughness(
+        layers,
+        step=roughness_step,
+        profile=roughness_profile,
+        erf_truncation_factor=erf_truncation_factor,
+        linear_width_factor=linear_width_factor,
+    )
+    downward, upward = _transfer_matrix_field_amplitudes_sharp_batched(
+        angles,
+        energy_ev,
+        effective_layers,
+    )
+    return np.abs(upward[0] / downward[0]) ** 2
+
+
 def transfer_matrix_field_amplitudes(
     angle_deg: float,
     energy_ev: float,
@@ -230,6 +274,64 @@ def transfer_matrix_field_amplitudes(
     )
 
     return _transfer_matrix_field_amplitudes_sharp(angle_deg, energy_ev, effective_layers)
+
+
+def _transfer_matrix_field_amplitudes_sharp_batched(
+    angle_deg: np.ndarray,
+    energy_ev: float,
+    layers: Sequence[Layer],
+) -> tuple[np.ndarray, np.ndarray]:
+    """Return transfer-matrix amplitudes for a sharp stack at many angles."""
+
+    angles = np.asarray(angle_deg, dtype=float)
+    if angles.ndim != 1:
+        raise ValueError("batched transfer-matrix amplitudes require a 1D angle array")
+    if angles.size == 0:
+        return (
+            np.zeros((len(layers), 0), dtype=complex),
+            np.zeros((len(layers), 0), dtype=complex),
+        )
+
+    wavelength = energy_to_wavelength(energy_ev)
+    kz = kz_in_layers(angles, wavelength, [layer.n for layer in layers])
+    thicknesses = np.asarray([layer.thickness for layer in layers], dtype=float)
+
+    total_00 = np.ones(angles.shape, dtype=complex)
+    total_01 = np.zeros(angles.shape, dtype=complex)
+    total_10 = np.zeros(angles.shape, dtype=complex)
+    total_11 = np.ones(angles.shape, dtype=complex)
+    for j in range(len(layers) - 1):
+        m00, m01, m10, m11 = _interface_matrix_elements(kz[j], kz[j + 1])
+        p = np.exp(1j * kz[j] * thicknesses[j])
+        q = np.exp(-1j * kz[j] * thicknesses[j])
+        next_00 = m00 * p * total_00 + m01 * q * total_10
+        next_01 = m00 * p * total_01 + m01 * q * total_11
+        next_10 = m10 * p * total_00 + m11 * q * total_10
+        next_11 = m10 * p * total_01 + m11 * q * total_11
+        total_00, total_01, total_10, total_11 = (
+            next_00,
+            next_01,
+            next_10,
+            next_11,
+        )
+
+    reflection = -total_10 / total_11
+
+    downward = np.zeros((len(layers), angles.size), dtype=complex)
+    upward = np.zeros((len(layers), angles.size), dtype=complex)
+    downward[0] = 1.0 + 0.0j
+    upward[0] = reflection
+
+    for j in range(len(layers) - 1):
+        m00, m01, m10, m11 = _interface_matrix_elements(kz[j], kz[j + 1])
+        p = np.exp(1j * kz[j] * thicknesses[j])
+        q = np.exp(-1j * kz[j] * thicknesses[j])
+        propagated_down = p * downward[j]
+        propagated_up = q * upward[j]
+        downward[j + 1] = m00 * propagated_down + m01 * propagated_up
+        upward[j + 1] = m10 * propagated_down + m11 * propagated_up
+
+    return downward, upward
 
 
 def _transfer_matrix_field_amplitudes_sharp(
@@ -267,6 +369,87 @@ def _transfer_matrix_field_amplitudes_sharp(
         upward[j + 1] = state[1]
 
     return downward, upward
+
+
+def transfer_matrix_electric_field_profiles(
+    angle_deg: np.ndarray,
+    energy_ev: float,
+    layers: Sequence[Layer],
+    step: float = 1.0,
+    roughness_step: float | Sequence[float] = 1.0,
+    roughness_profile: Literal["erf", "linear"] = "erf",
+    erf_truncation_factor: float = 4.0,
+    linear_width_factor: float = sqrt(3.0),
+) -> tuple[FieldProfile, ...]:
+    """Return transfer-matrix electric-field profiles for many angles."""
+
+    angles = np.asarray(angle_deg, dtype=float)
+    if angles.ndim == 0:
+        return (
+            transfer_matrix_electric_field_profile(
+                angle_deg=float(angles),
+                energy_ev=energy_ev,
+                layers=layers,
+                step=step,
+                roughness_step=roughness_step,
+                roughness_profile=roughness_profile,
+                erf_truncation_factor=erf_truncation_factor,
+                linear_width_factor=linear_width_factor,
+            ),
+        )
+    if angles.ndim != 1:
+        raise ValueError("field profiles require a 1D angle array")
+    if angles.size == 0:
+        return ()
+
+    _validate_field_inputs(float(angles[0]), layers)
+    effective_layers = effective_layers_with_roughness(
+        layers,
+        step=roughness_step,
+        profile=roughness_profile,
+        erf_truncation_factor=erf_truncation_factor,
+        linear_width_factor=linear_width_factor,
+    )
+
+    depths, layer_indices = depth_grid(effective_layers, step)
+    if depths.size == 0:
+        return tuple(
+            FieldProfile(
+                depth=depths,
+                electric_field=np.array([], dtype=complex),
+                intensity=np.array([], dtype=float),
+                layer_index=layer_indices,
+            )
+            for _ in angles
+        )
+
+    downward, upward = _transfer_matrix_field_amplitudes_sharp_batched(
+        angles,
+        energy_ev,
+        effective_layers,
+    )
+    wavelength = energy_to_wavelength(energy_ev)
+    kz = kz_in_layers(angles, wavelength, [layer.n for layer in effective_layers])
+    starts = _finite_layer_start_depths(effective_layers)
+
+    sampled_layers = layer_indices
+    local_depth = depths - starts[sampled_layers]
+    phase = kz[sampled_layers] * local_depth[:, np.newaxis]
+    electric_field_by_depth = (
+        downward[sampled_layers] * np.exp(1j * phase)
+        + upward[sampled_layers] * np.exp(-1j * phase)
+    )
+    intensity_by_depth = np.abs(electric_field_by_depth) ** 2
+
+    return tuple(
+        FieldProfile(
+            depth=depths,
+            electric_field=electric_field_by_depth[:, angle_index],
+            intensity=intensity_by_depth[:, angle_index],
+            layer_index=layer_indices,
+        )
+        for angle_index in range(angles.size)
+    )
 
 
 def transfer_matrix_electric_field_profile(
@@ -437,14 +620,29 @@ def _propagation_matrix(kz: complex, thickness: float) -> np.ndarray:
 
 
 def _interface_matrix(kz_top: complex, kz_bottom: complex) -> np.ndarray:
-    ratio = kz_top / kz_bottom
-    return 0.5 * np.array(
+    m00, m01, m10, m11 = _interface_matrix_elements(kz_top, kz_bottom)
+    return np.array(
         [
-            [1.0 + ratio, 1.0 - ratio],
-            [1.0 - ratio, 1.0 + ratio],
+            [m00, m01],
+            [m10, m11],
         ],
         dtype=complex,
     )
+
+
+def _interface_matrix_elements(
+    kz_top: complex | np.ndarray,
+    kz_bottom: complex | np.ndarray,
+) -> tuple[
+    complex | np.ndarray,
+    complex | np.ndarray,
+    complex | np.ndarray,
+    complex | np.ndarray,
+]:
+    ratio = kz_top / kz_bottom
+    same = 0.5 * (1.0 + ratio)
+    opposite = 0.5 * (1.0 - ratio)
+    return same, opposite, opposite, same
 
 
 def _has_roughness(layers: Sequence[Layer]) -> bool:

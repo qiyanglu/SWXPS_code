@@ -219,3 +219,6 @@ def test_fitting_problem_applies_unequal_dataset_weights(monkeypatch):
     np.testing.assert_allclose(raw_by_name["reflectivity"], 1.0, rtol=1e-6)
     np.testing.assert_allclose(raw_by_name["C 1s"], 0.04)
     np.testing.assert_allclose(evaluation.objective, 2.0 * 1.0 + 5.0 * 0.04)
+    assert evaluation.timings["reflectivity_simulation_seconds"] >= 0.0
+    assert evaluation.timings["rocking_curve_simulation_seconds"] >= 0.0
+    assert evaluation.timings["objective_total_seconds"] >= 0.0

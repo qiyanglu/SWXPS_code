@@ -4,6 +4,7 @@ from .bo import (
     BayesianOptimizationResult,
     BayesianOptimizationSettings,
     FitStage,
+    OptimizationTiming,
     StageFitResult,
     StageRunResult,
     StagedFitResult,
@@ -61,6 +62,12 @@ from .optical_constants import (
     load_optical_constants,
     optical_constants_path,
 )
+from .preprocessing import (
+    BackgroundCorrection,
+    normalize_by_background,
+    normalize_by_mean,
+    subtract_edge_polynomial_background,
+)
 from .profiles import (
     StackProfiles,
     sample_concentration_profiles,
@@ -112,6 +119,7 @@ __all__ = [
     "HC_EV_ANGSTROM",
     "BayesianOptimizationResult",
     "BayesianOptimizationSettings",
+    "BackgroundCorrection",
     "CoreLevelRequest",
     "CoreLevelResult",
     "FieldProfile",
@@ -128,6 +136,7 @@ __all__ = [
     "LayerTemplate",
     "LayerUpdate",
     "OpticalConstantsTable",
+    "OptimizationTiming",
     "plot_best_fit",
     "plot_fit_convergence",
     "plot_stack_schematic",
@@ -168,6 +177,8 @@ __all__ = [
     "load_imfp",
     "nominal_layer_index_at_depth",
     "normalized_rocking_curve",
+    "normalize_by_background",
+    "normalize_by_mean",
     "optical_constants_path",
     "parameter_dict",
     "parratt_amplitude",
@@ -192,6 +203,7 @@ __all__ = [
     "stack_from_layers",
     "stack_with_updates",
     "stack_depth_grid",
+    "subtract_edge_polynomial_background",
     "transfer_matrix_electric_field_profile",
     "transfer_matrix_field_amplitudes",
     "transfer_matrix_reflectivity",

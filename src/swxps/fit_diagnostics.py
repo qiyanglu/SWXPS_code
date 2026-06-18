@@ -31,11 +31,19 @@ def save_fit_history_csv(
             for contribution in evaluation.contributions
         }
     )
+    timing_names = sorted(
+        {
+            name
+            for evaluation in history.evaluations
+            for name in evaluation.timings
+        }
+    )
     columns = [
         "evaluation",
         "objective",
         *[f"{name}_raw" for name in contribution_names],
         *[f"{name}_weighted" for name in contribution_names],
+        *timing_names,
         *[parameter.name for parameter in parameters],
     ]
     rows = []
@@ -53,6 +61,7 @@ def save_fit_history_csv(
             by_name[name].weighted if name in by_name else np.nan
             for name in contribution_names
         )
+        row.extend(evaluation.timings.get(name, np.nan) for name in timing_names)
         row.extend(evaluation.parameters[parameter.name] for parameter in parameters)
         rows.append(row)
     np.savetxt(

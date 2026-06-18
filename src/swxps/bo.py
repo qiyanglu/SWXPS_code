@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, replace
+from time import perf_counter
 from typing import Literal
 
 import numpy as np
@@ -26,6 +27,8 @@ class BayesianOptimizationSettings:
     acquisition_function: Literal["EI", "LCB", "PI"] = "EI"
     random_state: int | None = None
     use_initial: bool = True
+    show_progress: bool = False
+    progress_interval: int = 1
 
     def __post_init__(self) -> None:
         if self.n_calls <= 0:
@@ -34,6 +37,18 @@ class BayesianOptimizationSettings:
             raise ValueError("n_initial_points must be positive")
         if self.n_initial_points > self.n_calls:
             raise ValueError("n_initial_points cannot exceed n_calls")
+        if self.progress_interval <= 0:
+            raise ValueError("progress_interval must be positive")
+
+
+@dataclass(frozen=True)
+class OptimizationTiming:
+    """Wall-clock timing summary for one optimizer run."""
+
+    total_seconds: float
+    objective_seconds: float
+    optimizer_overhead_seconds: float
+    evaluations: int
 
 
 @dataclass(frozen=True)
@@ -45,6 +60,7 @@ class BayesianOptimizationResult:
     best_evaluation: FitEvaluation
     history: FitHistory
     raw_result: object
+    timing: OptimizationTiming = OptimizationTiming(0.0, 0.0, 0.0, 0)
 
     def predict_objective(
         self,
@@ -126,8 +142,14 @@ def run_bayesian_optimization(
         for parameter in objective.parameters
     ]
 
+    func = _TimedObjective(
+        objective,
+        show_progress=settings.show_progress,
+        interval=settings.progress_interval,
+    )
+    start = perf_counter()
     raw_result = gp_minimize(
-        func=objective,
+        func=func,
         dimensions=dimensions,
         x0=[initial_vector(objective.parameters)] if settings.use_initial else None,
         n_calls=settings.n_calls,
@@ -135,6 +157,7 @@ def run_bayesian_optimization(
         acq_func=settings.acquisition_function,
         random_state=settings.random_state,
     )
+    total_seconds = perf_counter() - start
 
     best = objective.history.best
     if best is None:
@@ -145,7 +168,45 @@ def run_bayesian_optimization(
         best_evaluation=best,
         history=objective.history,
         raw_result=raw_result,
+        timing=OptimizationTiming(
+            total_seconds=total_seconds,
+            objective_seconds=func.objective_seconds,
+            optimizer_overhead_seconds=max(0.0, total_seconds - func.objective_seconds),
+            evaluations=len(objective.history.evaluations),
+        ),
     )
+
+
+class _TimedObjective:
+    """Timing and optional progress wrapper around a fitting objective."""
+
+    def __init__(
+        self,
+        objective: JointObjective,
+        show_progress: bool,
+        interval: int,
+    ) -> None:
+        self.objective = objective
+        self.show_progress = show_progress
+        self.interval = interval
+        self.best = np.inf
+        self.objective_seconds = 0.0
+
+    def __call__(self, vector: list[float] | np.ndarray) -> float:
+        start = perf_counter()
+        value = float(self.objective(vector))
+        elapsed = perf_counter() - start
+        self.objective_seconds += elapsed
+        self.best = min(self.best, value)
+        count = len(self.objective.history.evaluations)
+        if self.show_progress and (count == 1 or count % self.interval == 0):
+            print(
+                "BO eval "
+                f"{count}: objective={value:.6g}, best={self.best:.6g}, "
+                f"eval_time={elapsed:.3f}s",
+                flush=True,
+            )
+        return value
 
 
 def run_bayesian_fit(

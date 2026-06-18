@@ -9,7 +9,11 @@ from typing import Literal
 
 import numpy as np
 
-from .fields import FieldProfile, transfer_matrix_electric_field_profile, transfer_matrix_reflectivity
+from .fields import (
+    FieldProfile,
+    transfer_matrix_electric_field_profiles,
+    transfer_matrix_reflectivity_array,
+)
 from .layers import Layer
 from .xps import RockingCurve, graded_layer_property_at_depth, integrate_xps_intensity
 
@@ -83,13 +87,19 @@ class ReflectivityResult:
 
 @dataclass(frozen=True)
 class CoreLevelRequest:
-    """Input parameters for one normalized SW-XPS core-level RC."""
+    """Input parameters for one normalized SW-XPS core-level RC.
+
+    Use `emitting_layer_indices` to select the stack layers that emit this
+    core level. Leaving it as `None` keeps all layers with matching material
+    labels active for backward-compatible material-level simulations.
+    """
 
     name: str
     binding_energy_ev: float
     concentration_by_material: dict[str, float]
     imfp_by_material: dict[str, float]
     emission_angle_deg: float = 0.0
+    emitting_layer_indices: tuple[int, ...] | None = None
 
 
 @dataclass(frozen=True)
@@ -134,20 +144,17 @@ def simulate_reflectivity(request: ReflectivityRequest) -> ReflectivityResult:
     angles = np.asarray(request.angles, dtype=float)
     calculation_angle = angles + request.angle_offset
     layers = request.stack.optical_layers
-    reflectivity = np.array(
-        [
-            transfer_matrix_reflectivity(
-                angle,
-                request.energy_ev,
-                layers,
-                roughness_step=request.roughness_step,
-                roughness_profile=request.roughness_profile,
-                erf_truncation_factor=request.erf_truncation_factor,
-                linear_width_factor=request.linear_width_factor,
-            )
-            for angle in calculation_angle
-        ],
-        dtype=float,
+    reflectivity = transfer_matrix_reflectivity_array(
+        calculation_angle,
+        request.energy_ev,
+        layers,
+        roughness_step=request.roughness_step,
+        roughness_profile=request.roughness_profile,
+        erf_truncation_factor=request.erf_truncation_factor,
+        linear_width_factor=request.linear_width_factor,
+    ).astype(
+        float,
+        copy=False,
     )
     return ReflectivityResult(
         angle=angles,
@@ -188,18 +195,15 @@ def simulate_rocking_curves(request: RockingCurveRequest) -> RockingCurveResult:
     angles = np.asarray(request.angles, dtype=float)
     calculation_angle = angles + request.angle_offset
     layers = request.stack.optical_layers
-    profiles = tuple(
-        transfer_matrix_electric_field_profile(
-            angle_deg=float(angle),
-            energy_ev=request.photon_energy_ev,
-            layers=layers,
-            step=request.field_step,
-            roughness_step=request.roughness_step,
-            roughness_profile=request.roughness_profile,
-            erf_truncation_factor=request.erf_truncation_factor,
-            linear_width_factor=request.linear_width_factor,
-        )
-        for angle in calculation_angle
+    profiles = transfer_matrix_electric_field_profiles(
+        calculation_angle,
+        request.photon_energy_ev,
+        layers,
+        step=request.field_step,
+        roughness_step=request.roughness_step,
+        roughness_profile=request.roughness_profile,
+        erf_truncation_factor=request.erf_truncation_factor,
+        linear_width_factor=request.linear_width_factor,
     )
     results = tuple(
         _simulate_core_from_profiles(
@@ -232,27 +236,52 @@ def _simulate_core_from_profiles(
         core_level.concentration_by_material,
         default=0.0,
     )
+    if core_level.emitting_layer_indices is not None:
+        concentration_by_layer = _apply_emitting_layer_filter(
+            concentration_by_layer,
+            core_level.emitting_layer_indices,
+        )
     imfp_by_layer = _values_by_material(
         materials,
         core_level.imfp_by_material,
         default=None,
     )
 
-    raw_intensity = np.array(
-        [
-            _integrate_core_profile(
+    layers = request.stack.optical_layers
+    if profiles:
+        concentration = graded_layer_property_at_depth(
+            layers,
+            concentration_by_layer,
+            profiles[0].depth,
+            profile=request.roughness_profile,
+            erf_truncation_factor=request.erf_truncation_factor,
+            linear_width_factor=request.linear_width_factor,
+        )
+        attenuation_coefficient = graded_layer_property_at_depth(
+            layers,
+            1.0 / np.asarray(imfp_by_layer, dtype=float),
+            profiles[0].depth,
+            profile=request.roughness_profile,
+            erf_truncation_factor=request.erf_truncation_factor,
+            linear_width_factor=request.linear_width_factor,
+        )
+        attenuation_length = 1.0 / attenuation_coefficient
+    else:
+        concentration = np.array([], dtype=float)
+        attenuation_length = np.array([], dtype=float)
+
+    raw_intensity = np.fromiter(
+        (
+            integrate_xps_intensity(
                 profile,
-                request.stack.optical_layers,
-                concentration_by_layer,
-                imfp_by_layer,
-                core_level.emission_angle_deg,
-                request.roughness_profile,
-                request.erf_truncation_factor,
-                request.linear_width_factor,
+                concentration,
+                attenuation_length,
+                emission_angle_deg=core_level.emission_angle_deg,
             )
             for profile in profiles
-        ],
+        ),
         dtype=float,
+        count=len(profiles),
     )
 
     if request.offpeak_mask is None:
@@ -279,41 +308,6 @@ def _simulate_core_from_profiles(
         binding_energy_ev=core_level.binding_energy_ev,
         kinetic_energy_ev=kinetic_energy_ev,
         curve=curve,
-    )
-
-
-def _integrate_core_profile(
-    profile: FieldProfile,
-    layers: Sequence[Layer],
-    concentration_by_layer: Sequence[float],
-    imfp_by_layer: Sequence[float],
-    emission_angle_deg: float,
-    roughness_profile: Literal["erf", "linear"],
-    erf_truncation_factor: float,
-    linear_width_factor: float,
-) -> float:
-    concentration = graded_layer_property_at_depth(
-        layers,
-        concentration_by_layer,
-        profile.depth,
-        profile=roughness_profile,
-        erf_truncation_factor=erf_truncation_factor,
-        linear_width_factor=linear_width_factor,
-    )
-    attenuation_coefficient = graded_layer_property_at_depth(
-        layers,
-        1.0 / np.asarray(imfp_by_layer, dtype=float),
-        profile.depth,
-        profile=roughness_profile,
-        erf_truncation_factor=erf_truncation_factor,
-        linear_width_factor=linear_width_factor,
-    )
-    attenuation_length = 1.0 / attenuation_coefficient
-    return integrate_xps_intensity(
-        profile,
-        concentration,
-        attenuation_length,
-        emission_angle_deg=emission_angle_deg,
     )
 
 
@@ -350,3 +344,21 @@ def _values_by_material(
         else:
             output.append(float(default))
     return output
+
+
+def _apply_emitting_layer_filter(
+    concentration_by_layer: Sequence[float],
+    emitting_layer_indices: Sequence[int],
+) -> list[float]:
+    if not emitting_layer_indices:
+        raise ValueError("emitting_layer_indices must not be empty")
+    layer_count = len(concentration_by_layer)
+    selected = set()
+    for index in emitting_layer_indices:
+        if index < 0 or index >= layer_count:
+            raise ValueError("emitting_layer_indices contains an index outside the stack")
+        selected.add(int(index))
+    return [
+        float(concentration) if index in selected else 0.0
+        for index, concentration in enumerate(concentration_by_layer)
+    ]

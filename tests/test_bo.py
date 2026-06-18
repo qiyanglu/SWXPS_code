@@ -84,6 +84,8 @@ def test_bayesian_optimization_adapter_returns_native_result(monkeypatch):
     assert result.best_objective == 0.0
     assert len(result.history.evaluations) == 2
     assert result.raw_result == FakeRawResult(x=[0.0], fun=0.0)
+    assert result.timing.evaluations == 2
+    assert result.timing.total_seconds >= result.timing.objective_seconds
 
 
 def test_bayesian_optimization_result_predicts_surrogate_mean_and_std():
