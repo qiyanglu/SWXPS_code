@@ -13,6 +13,7 @@ The current code focuses on readable, testable simulations for:
 - Normalized standing-wave XPS rocking curves with constant cross sections
 - Optimizer-independent fitting objectives for reflectivity and SW-XPS RCs
 - Bayesian optimization through `scikit-optimize`
+- Optional local JAX-gradient optimization with SciPy L-BFGS-B
 - Declarative stack templates, including superlattices
 - Stack/concentration/schematic visualization utilities
 
@@ -28,6 +29,12 @@ For plotting examples:
 
 ```powershell
 python -m pip install -e ".[plot]"
+```
+
+For the standalone JAX-gradient optimizer:
+
+```powershell
+python -m pip install -e ".[gradient]"
 ```
 
 ## Run Tests
@@ -67,6 +74,7 @@ Fitting and optimization modules:
 
 - `src/swxps/fitting.py`: fitting parameters, datasets, weighted objectives, and fit history.
 - `src/swxps/bo.py`: `scikit-optimize` Bayesian optimization and staged multi-start fitting.
+- `src/swxps/jax_gradient.py`: standalone JAX-gradient L-BFGS-B optimizer.
 - `src/swxps/fit_diagnostics.py`: history CSV export and fit/surrogate diagnostic plots.
 - `src/swxps/stack_builders.py`: declarative layer and superlattice stack construction.
 - `src/swxps/stack_visualization.py`: schematic stack drawings from fitted parameters.
@@ -86,3 +94,11 @@ The package is now a transparent simulation and early fitting backend. The BO
 workflow has been validated on synthetic C/LNO/STO data, but experimental-data
 fitting still needs careful parameter bounds, weighting choices, and physical
 cross-checks before results should be treated as quantitative.
+
+## JAX Gradient Optimizer
+
+The JAX-gradient optimizer is a local L-BFGS-B optimizer, separate from the BO
+workflow. It requires JAX and SciPy, and it works best from a physically
+reasonable initial structure. Because it is a local optimizer, it can get
+trapped in local minima; use it for refinement or controlled synthetic tests,
+not as a replacement for global Bayesian optimization.

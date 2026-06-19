@@ -297,6 +297,136 @@ Expected package layout:
 39. Validate BO first on synthetic data generated from known parameters, starting with fewer than 10 parameters.
 40. Only after synthetic recovery works, use the same fitting API on experimental datasets.
 
+## Minimal JAX backend experiment
+
+### Goal
+
+Add a small optional JAX backend for the low-level Parratt reflectivity calculation so it can be compared against the existing NumPy implementation for numerical agreement, JIT timing, and differentiability. This is an experiment only: it must coexist with the NumPy backend and must not replace the high-level simulation API, the transfer-matrix roughness path, or the Bayesian-optimization workflow.
+
+### Physics background
+
+Use the same s-polarized Parratt recursion and Nevot-Croce roughness convention as `src/swxps/reflectivity.py`: angles are grazing angles in degrees, energy is in eV, thickness/roughness are in Angstrom, and each layer has `n = 1 - delta + i beta`. The first JAX loss for gradient checks should be a simple scalar mean-squared difference between simulated reflectivity and a fixed target curve, not a fitting objective.
+
+### Files to create or modify
+
+- `src/swxps/reflectivity_jax.py`
+  - Optional JAX implementation of the low-level Parratt core.
+  - JAX 64-bit enablement.
+  - Jitted reflectivity and value-and-gradient helpers.
+- `tests/test_reflectivity_jax.py`
+  - Skip cleanly when JAX is not installed.
+  - Compare the JAX reflectivity result with `parratt_reflectivity` for one representative fixed-shape input.
+  - Check the JAX scalar loss gradient against a finite-difference derivative.
+- `examples/benchmarks/benchmark_jax_reflectivity.py`
+  - Compare NumPy wall time, first JAX JIT call including compilation, repeated JAX JIT calls, and JAX value-and-gradient timing.
+- `pyproject.toml`
+  - Add an optional `jax` extra only if useful for documenting the dependency.
+
+### Implementation steps
+
+1. Identify the smallest NumPy reflectivity core to port; the first target is `parratt_reflectivity` / `parratt_amplitude`, not full SW-XPS rocking curves.
+2. Add a separate JAX module that accepts fixed-shape arrays for angles, layer thicknesses, deltas, betas, and roughnesses.
+3. Use `jax.numpy` only inside traced functions and enable 64-bit precision.
+4. Implement the layer recursion with JAX-compatible control flow such as `jax.lax.scan`.
+5. Add a jitted reflectivity wrapper for fixed-shape inputs.
+6. Add a scalar test loss and a jitted `jax.value_and_grad` wrapper for one differentiable parameter vector.
+7. Add focused tests for NumPy/JAX agreement and a finite-difference gradient check.
+8. Add a benchmark script for local timing diagnostics.
+9. Add a second narrow JAX milestone for Parratt-based electric-field intensities on a precomputed fixed depth grid.
+10. Add JAX attenuation and trapezoidal XPS integration helpers that accept precomputed concentration and IMFP/attenuation arrays.
+11. Add a JAX normalized rocking-curve helper for one fixed core level and fixed off-peak mask.
+12. Compare JAX field intensities and normalized RCs against the existing sharp-interface NumPy Parratt/XPS helpers before attempting transfer-matrix roughness discretization.
+
+### Tests
+
+- Existing tests must continue to pass.
+- New JAX tests should skip when JAX is not installed.
+- For an installed JAX environment, JAX reflectivity should agree with NumPy Parratt reflectivity within tight floating-point tolerances for a fixed representative multilayer.
+- The JAX loss gradient should agree with a central finite-difference derivative for a small perturbation.
+
+### Validation
+
+The JAX backend is useful only if it reproduces the existing NumPy Parratt curve, its compiled repeated-call timing is competitive for fixed-shape arrays, and gradients are finite and numerically plausible. Gradient-based fitting, L-BFGS-B, replacement optimizers, and BO integration are explicitly out of scope for this milestone.
+
+The second milestone is acceptable when JAX field intensities match the existing Parratt field profile for a sharp-interface stack and JAX normalized RCs match the existing `normalized_rocking_curve` behavior for zero roughness. Full transfer-matrix roughness discretization, graded effective-layer construction inside JAX, and multi-core high-level simulation integration remain out of scope until the narrow optical/XPS kernels are validated.
+
+### Transfer-matrix JAX backend milestone
+
+Goal: add an optional JAX/JIT backend that mirrors the current NumPy high-level simulation path closely enough to be selected by fitting or BO drivers without replacing the existing backend. The first practical version should precompute the same roughness-discretized effective stack with the existing NumPy helper, then pass fixed-shape arrays into JAX transfer-matrix kernels for reflectivity, field intensities, and normalized RC integration.
+
+Physics background: use the same sharp-interface transfer-matrix equations currently implemented in `src/swxps/fields.py`, including the same effective-layer roughness approximation from `effective_layers_with_roughness`. Interface and propagation matrices remain the optical core; the JAX implementation should only change the array backend and loop machinery, not the physical model.
+
+Files to create or modify:
+
+- `src/swxps/simulation_jax.py`
+  - Optional high-level JAX simulation entry points returning the same result dataclasses as `simulation.py`.
+  - Conversion from `SimulationStack` / `Layer` objects to fixed-shape arrays outside JIT.
+  - Reuse of existing NumPy effective-layer generation for 1:1 roughness behavior in the first milestone.
+- `src/swxps/reflectivity_jax.py`
+  - Add transfer-matrix batched amplitude, reflectivity, field-intensity, and RC kernels if a separate JAX kernel module is not introduced.
+- `tests/test_simulation_jax.py`
+  - Skip when JAX is unavailable.
+  - Compare JAX reflectivity against `simulate_reflectivity` for rough stacks.
+  - Compare JAX normalized RCs against `simulate_rocking_curves` for one or more core levels.
+- `examples/benchmarks/benchmark_jax_reflectivity.py`
+  - Add timing for the high-level transfer-matrix JAX reflectivity/RC wrappers.
+- `src/swxps/fitting.py`
+  - Add an opt-in simulation backend selector for fitting/BO while keeping NumPy as the default.
+
+Implementation steps:
+
+1. Port `_transfer_matrix_field_amplitudes_sharp_batched` to JAX using fixed-shape arrays and `lax.scan`.
+2. Add JAX transfer-matrix reflectivity for arrays of angles.
+3. Add JAX electric-field intensity sampling on the same fixed depth grid produced from the effective stack.
+4. Add a high-level JAX reflectivity wrapper that calls `effective_layers_with_roughness` before entering JIT.
+5. Add a high-level JAX rocking-curve wrapper that reuses one JAX field calculation for all requested core levels, matching the current NumPy `simulate_rocking_curves` structure.
+6. Keep concentration grading, attenuation arrays, and emitting-layer selection outside JIT initially, using existing NumPy helpers for 1:1 behavior.
+7. Return existing result dataclasses so fitting code can switch backend with minimal adapter code later.
+8. Add tests against the existing NumPy transfer-matrix simulation path, including roughness.
+9. Benchmark NumPy versus first JAX call, repeated JAX call, and JAX RC simulation with multiple core levels.
+10. Add an optional `simulation_backend="jax"` path to `FittingProblem` only after the high-level JAX wrappers return the same result dataclasses.
+
+Validation: JAX reflectivity and RC outputs must match the current NumPy transfer-matrix high-level simulation within floating-point tolerances for fixed representative rough stacks. The first call may be slower because it includes compilation; repeated calls should be measured separately. BO integration should remain opt-in until numerical agreement and repeated-call speed are demonstrated.
+
+### Standalone JAX gradient optimizer milestone
+
+Goal: add a small local optimizer that uses JAX/JIT value-and-gradient callbacks with SciPy `L-BFGS-B`. This optimizer must be separate from the existing Bayesian optimization backend and must not replace the NumPy simulation backend or the BO workflow.
+
+Physics/numerics background: the optimizer sees only a scalar loss and gradient for a fixed differentiable simulation setup. The first implementation should optimize a bounded physical parameter vector, internally scaled to `[0, 1]` so thickness, roughness, and angle-offset parameters have comparable optimizer scales. Gradients returned by JAX with respect to physical parameters must be chain-rule scaled before passing to SciPy in scaled coordinates.
+
+Files to create or modify:
+
+- `src/swxps/jax_gradient.py`
+  - Dataclasses for optimizer settings, iteration history, and result.
+  - `optimize_with_jax_gradient` using SciPy `minimize(..., method="L-BFGS-B")`.
+  - Parameter scaling helpers from physical bounds to `[0, 1]` and back.
+  - Lazy SciPy import so the module can be imported without SciPy installed.
+- `tests/test_jax_gradient.py`
+  - Smoke test for one bounded initial vector.
+  - Verify final loss is lower than initial loss on a simple deterministic objective.
+  - Verify optimized parameters remain within bounds.
+  - Add a JAX-specific test that skips when JAX is unavailable and uses an existing JAX value-and-gradient loss.
+- `scripts/run_jax_gradient_fit.py`
+  - Small representative script that constructs a JAX differentiable reflectivity loss, runs L-BFGS-B, and prints initial loss, final loss, best parameters, status, and wall time.
+- `README.md`
+  - Short note that the JAX gradient optimizer is local, needs a good initial guess, can get trapped in local minima, is separate from BO, and is best used from a physically reasonable starting structure.
+- `pyproject.toml`
+  - Add an optional extra for JAX gradient optimization if useful, including SciPy and JAX.
+
+Implementation steps:
+
+1. Add scaling helpers and result/history dataclasses.
+2. Implement an optimizer function that accepts `FitParameter` definitions and a physical-space value-and-gradient callable.
+3. Convert SciPy scaled vectors to physical vectors before evaluating the JAX loss.
+4. Convert physical gradients back to scaled gradients using the parameter ranges.
+5. Record callback history with iteration, loss, parameter vector, and gradient norm.
+6. Return best parameter dictionary, best loss, SciPy status/message, iteration/evaluation counts, and history.
+7. Keep BO untouched and expose the new optimizer independently.
+8. Add tests for scaling, loss decrease, bounds, and optional JAX value-and-gradient usage.
+9. Add a small script for a one-parameter synthetic reflectivity fit.
+
+Validation: the first optimizer is acceptable when it can reduce a simple bounded loss from one initial vector, keeps all fitted values inside bounds, records a useful history, and can call an existing JAX value-and-gradient function when JAX is installed. Multi-start, BO+gradient hybrids, Adam, Optax, and production experimental fitting scripts are out of scope for this milestone.
+
 ## Tests
 
 Required tests for this milestone:
@@ -491,10 +621,28 @@ The implementation is acceptable when:
 - 2026-06-18: Changed Sample#12 joint cap3 La 4d emission from only the second top LNO slab to both top LNO slabs, matching the Ni 3p emitting-layer selection, then reran the 240-call BO. The best objective improved to 0.00630033 at evaluation 178, with all 240 evaluations finite after the carbon and cap-roughness reparameterizations.
 - 2026-06-18: Ran a small multi-seed Sample#12 joint cap3 BO batch with stronger fixed reflectivity weights, using separate output prefixes for each run. Tested reflectivity weights 0.10 and 0.20 with random seeds 12 and 112 at 120 calls / 50 initial points. The fixed-weight runs showed optimizer variability and improved reflectivity raw error in the best 0.20/seed12 case, but the previous 240-call auto-weight run still had the best combined objective and RC residuals.
 - 2026-06-18: Ran a longer Sample#12 seeded BO batch after archiving older fitting artifacts into `previous_fitting`. Intermediate fixed-weight runs were written to `seeded_BO_runs` for reflectivity weights 0.09, 0.075, and 0.06 with seed 12 at 180 calls / 60 initial points. The best new seeded result was the 0.06-weight run with objective 0.00967951; its main artifacts plus a summary CSV/plot were exported back into the main Sample#12 folder. The archived auto-weight 240-call result remains the best overall objective at 0.00630033.
+- 2026-06-18: Implemented and ran a Sample#12 staged multi-start BO driver for the joint cap3 model. It fits angle/superlattice geometry, cap/C parameters, roughness parameters, then all parameters; writes one subfolder per stage/start; records `summary.csv` and `final_best_parameters.csv`; and promotes the best final fit/stack plots to the run root. Existing generated Sample#12 fitting outputs and previous run folders were archived into `archive_before_staged_multistart`. Verified with `python -m py_compile` and a one-start/four-call staged smoke run, then removed smoke artifacts. The full 3-start, 4-stage, 120-call-per-start run reached best objective 0.0062494 in `04_final_all/start_02_seed_3014`, slightly improving on the previous 0.00630033 single-run best.
 - 2026-06-18: Planned a refresh of `examples/synthetic_c_lno_sto` after the fitting and simulation APIs changed substantially. Goal: archive old synthetic C/LNO/STO BO scripts/artifacts and write a current joint reflectivity-plus-RC BO driver for studying robust BO settings. Physics background: the synthetic stack is vacuum/C/[LNO/STO]x20/STO at 1000 eV, with reflectivity fitted in log space and normalized La 4d, O 1s, Ti 2p, and C 1s rocking curves fitted in linear intensity after off-peak normalization. Files to modify: `examples/synthetic_c_lno_sto/*` and this plan. Implementation steps: move old example files into a subfolder, make a self-contained stack/data/problem builder, add BO controls for staged versus joint fitting and dataset weighting, save history/convergence/best-fit/schematic diagnostics, and verify with a short smoke run. Tests/validation: the script should construct the joint fitting problem, run a small BO job, recover physically plausible parameters near the synthetic truth, and keep reflectivity plus RC simulations finite.
 - 2026-06-18: Refreshed `examples/synthetic_c_lno_sto`: archived previous scripts/artifacts into `previous_fitting`, added `fit_reflectivity_rc_bo.py` with self-contained synthetic data generation, auto reflectivity-weight balancing, direct and staged BO modes, and diagnostic outputs. Regenerated the 161-point synthetic CSV/preview and verified the script with `python -m py_compile` plus a 4-call end-to-end BO smoke run.
 - 2026-06-18: Ran synthetic C/LNO/STO BO comparisons. A 200-call direct single-seed run reached objective `1.931e-4` with near-zero angle offset and was archived under `single_run_outputs`. A staged 2-start run with 100 calls per stage/start reached `5.549e-4`, getting locked into a positive angle-offset/thickness basin; an alternate direct seed-112 run reached `1.147e-3`. Distinct data colors were added for each RC in the synthetic best-fit plot.
 - 2026-06-18: Cleaned the synthetic example directory by moving staged/multi-start comparison outputs into `staged_multistart_outputs`. Ran another direct single BO with 240 calls, 70 initial points, and seed 24; it reached objective `3.919e-4` at evaluation 142, better than staged/multi-start but not better than the archived 200-call seed-12 direct run (`1.931e-4`).
 - 2026-06-18: Planned an automated multi-seed synthetic C/LNO/STO BO driver. Goal: reduce seed luck in the noiseless synthetic benchmark by running repeated direct BO fits, saving per-seed artifacts, writing a summary CSV, and promoting the best run to stable output names. Files to modify: `examples/synthetic_c_lno_sto/fit_reflectivity_rc_bo.py`, synthetic example output folders, and this plan. Validation: compile the script and run a small multi-seed smoke test that creates per-seed histories plus a summary and promoted best-fit artifacts.
 - 2026-06-18: Implemented the synthetic multi-seed BO driver with `--multi-seed`, `--seeds`, `--seed-start`, `--seed-count`, and `--multi-seed-dir`. Each seed writes artifacts in its own subfolder, a summary CSV records objective/contribution/parameter/timing columns, and the best seed is promoted to stable `*_best_*` artifacts in the multi-seed output folder. Verified with `python -m py_compile` and a two-seed four-call smoke run, then removed smoke artifacts.
+- 2026-06-19: Planned and implemented the first minimal JAX backend experiment for the low-level Parratt reflectivity core. Added optional `src/swxps/reflectivity_jax.py` with 64-bit JAX, fixed-shape array inputs, a `lax.scan` Parratt recursion, jitted reflectivity, scalar MSE loss, and jitted value-and-gradient wrapper. Added JAX tests that skip when JAX is unavailable, plus a benchmark script for NumPy/JAX timing. Verified with `python -m pytest`; all 70 existing tests passed and the JAX test module skipped because JAX is not installed in this environment.
+- 2026-06-19: Expanded the minimal JAX experiment beyond reflectivity to include Parratt reflection amplitudes, layer field amplitudes, fixed-depth-grid electric-field intensities, attenuation, raw XPS intensity integration, normalized rocking curves, and a normalized-RC value-and-gradient wrapper. Added skipped-when-unavailable JAX tests for field intensity agreement, normalized RC agreement, and finite-difference RC gradients, and expanded the benchmark script to time field and RC kernels. Verified the non-JAX suite with `python -m pytest`; all 70 existing tests passed and the JAX test module skipped because JAX is still not installed in this environment.
+- 2026-06-19: Added an optional transfer-matrix JAX high-level backend for reflectivity and SW-XPS RCs. The wrapper reuses the existing NumPy effective-layer roughness construction for 1:1 physics, then runs fixed-shape JAX transfer-matrix reflectivity, field-intensity, and normalized-RC kernels. Added skipped-when-unavailable comparison tests against `simulate_reflectivity` and `simulate_rocking_curves`, expanded the benchmark for high-level backend timing, and added `simulation_backend="jax"` to `FittingProblem` while preserving the default NumPy path. Verified with `python -m pytest`; all 70 existing tests passed and the two JAX test modules skipped because JAX is not installed in this environment.
+- 2026-06-19: Planned a synthetic C/LNO/STO BO backend comparison now that JAX is installed locally. Goal: run one direct BO fit with the existing NumPy forward backend and one direct BO fit with the JAX high-level forward backend using identical 40-initial/200-total settings, seed, data stride, parameter bounds, and objective weights. Files to create: a new timestamped output folder under `examples/synthetic_c_lno_sto` containing a comparison runner, per-backend histories/plots, and summary CSV/text files. Validation: both BO runs should complete, save diagnostics, report timing fields from `BayesianOptimizationResult`, and compare best objectives/parameters against the synthetic truth.
+- 2026-06-19: Planned and implemented a standalone JAX-gradient optimizer using SciPy L-BFGS-B in `src/swxps/jax_gradient.py`. The optimizer accepts existing `FitParameter` bounds, optimizes scaled `[0, 1]` variables, calls a physical-space value-and-gradient callback, chain-rule scales gradients for SciPy, records iteration/loss/parameter/gradient-norm history, and returns package-native result dataclasses. Added exports, a `gradient` optional dependency extra, tests for scaling/loss reduction/bounds/existing JAX value-and-gradient callbacks, a small `scripts/run_jax_gradient_fit.py` example, and README documentation that this is a local optimizer separate from BO. Corrected `normalized_rocking_curve_jax` to use the transfer-matrix JAX field kernel so it matches the validated NumPy RC path. Verified with `python -m pytest`; all 81 tests passed with JAX installed.
+- 2026-06-19: Planned a synthetic C/LNO/STO JAX-gradient fitting example. Goal: create a new output folder that runs the standalone `jax_gradient.py` L-BFGS-B optimizer on the synthetic benchmark, saves gradient history and diagnostic plots, evaluates the gradient result with the existing high-level NumPy objective, and compares objective/parameters/wall time against existing BO summaries. Physics note: the current differentiable RC loss uses fixed-shape JAX arrays and a fixed depth grid, so this is an experimental local optimizer comparison rather than an exact replacement for the high-level roughness-discretized BO objective.
+- 2026-06-19: Planned a repair of the synthetic JAX-gradient fitting example after auditing the code. The high-level JAX simulation path is already a 1:1 transfer-matrix counterpart to NumPy, but the first gradient helper bypassed it by using nominal-layer Parratt/RC kernels and fixed concentration grids. Fix: add an exact-objective gradient run that calls `FittingProblem.evaluate` with `simulation_backend="jax"` for every parameter vector so roughness discretization, depth grids, concentration grading, attenuation, and scoring match BO. Since this high-level path has parameter-dependent effective-stack shapes, use finite-difference gradients as a practical bridge inside `optimize_with_jax_gradient`, then compare against BO and the previous approximate-gradient run.
+- 2026-06-19: Planned a Sample#12 JAX-gradient replacement for the joint cap3 BO workflow. Goal: tidy the Sample#12 directory by archiving old `.py` BO scripts, create a new gradient-fitting folder, reuse `fit_sample12_joint_cap3_bo.py` for the data preparation, cap3 stack, dataset weights, and plotting context, then run the high-level JAX simulation objective through the standalone L-BFGS-B gradient optimizer. Physics background: keep the same 815 eV C/LNO/LNO/STO/STO cap3 model, reflectivity log-MSE, and normalized C 1s/Ni 3p/La 4d rocking-curve MSE terms; only replace the optimizer path. Files to modify: `examples/LNO_STO_LNO_case_Sample#12/*`, this plan. Validation: the gradient runner should compile, evaluate the initial objective, write history/contribution/fit/stack artifacts, and print fitted parameters plus derived C and cap roughnesses.
+- 2026-06-19: Implemented and ran the Sample#12 JAX-gradient replacement. Moved the old top-level Sample#12 `.py` scripts into `old_bo_python_scripts`, added `jax_gradient_fit/fit_sample12_joint_cap3_jax_gradient.py`, verified it with `python -m py_compile`, and ran the high-level JAX objective from the staged BO best starting point. The initial NumPy/JAX objective was `0.0062494`; L-BFGS-B converged successfully in 25 iterations and 75 function evaluations, with re-evaluated NumPy/JAX objective `0.00390254`. Artifacts were written under `examples/LNO_STO_LNO_case_Sample#12/jax_gradient_fit`.
+- 2026-06-19: Planned a follow-up Sample#12 gradient multi-attempt run. Goal: run several L-BFGS-B attempts from the staged BO best plus small bounded perturbations, save each attempt in a new subfolder, promote the best attempt to run-root artifacts, and include the old BO superlattice thickness/roughness gradient plot for the fitted repeat stack. Validation: compile the updated runner, run the multi-attempt fit, check the attempt summary, and confirm the promoted best artifacts include best fit, stack schematic, convergence, JAX contributions, NumPy validation contributions, and superlattice profile.
+- 2026-06-19: Implemented the Sample#12 multi-attempt gradient runner update. The script now supports `--attempts`, bounded random perturbations around the selected start, `--output-dir`, per-attempt folders, a promoted best result, clearer `validation_numpy_contributions` naming, and `sample12.save_superlattice_profile_plot` output for the fitted superlattice thickness/roughness profile. Verified with `python -m py_compile`. A first 4-attempt command timed out after completing two attempts; the better completed attempt reached JAX/NumPy objective `0.00368157`. A second completed-output run in `jax_gradient_fit/attempts_run_more_2` used two attempts and promoted attempt 2, reaching JAX/NumPy objective `0.00365685`; it hit the L-BFGS-B iteration limit at 35 iterations, indicating possible room for further local refinement.
+- 2026-06-19: Planned a cleanup of the Sample#12 JAX-gradient output folder followed by one clean longer single-attempt run. Goal: delete old generated run files/subfolders from `examples/LNO_STO_LNO_case_Sample#12/jax_gradient_fit` while preserving `fit_sample12_joint_cap3_jax_gradient.py`, then run one 50-iteration staged-best JAX-gradient refinement into a single new subfolder. Validation: confirm the folder contains only the script plus the new run folder, and report the new objective/contributions/artifact paths.
+- 2026-06-19: Completed the Sample#12 JAX-gradient output cleanup and clean single run. Deleted old generated artifacts/subfolders from `jax_gradient_fit`, preserving only `fit_sample12_joint_cap3_jax_gradient.py`, then ran one staged-best attempt with `--maxiter 50` into `clean_single_50iter`. L-BFGS-B converged before the limit in 25 iterations / 75 function evaluations. Initial JAX objective was `0.0062494`; final JAX and NumPy-validation objectives matched at `0.00390254`. The cleaned folder now contains only the script and `clean_single_50iter`.
+- 2026-06-19: Planned a Sample#13 cleanup plus JAX-gradient cap3 fitting workflow. Goal: reorganize the messy Sample#13 directory into data files, archived BO scripts/artifacts, and a new `jax_gradient_fit` folder mirroring Sample#12; then add a high-level JAX-gradient runner that keeps Sample#13 angle windows, photon energy, RC weights, and old BO geometry while splitting the LNO cap into LNO-1/LNO-2/LNO-bottom. Physics background: the cap stack is `vacuum/C/LNO-1/LNO-2/LNO-bottom/[STO/LNO]x40/STO`; LNO-1 is constrained to 2-20 Angstrom and represents the thin Ni-free top LNO region, so La 4d emits from LNO-1 and LNO-2 while Ni 3p emits only from LNO-2. Files to create/modify: `examples/LNO_STO_LNO_case_Sample#13/old_bo_python_scripts`, `examples/LNO_STO_LNO_case_Sample#13/bo_outputs`, `examples/LNO_STO_LNO_case_Sample#13/jax_gradient_fit/fit_sample13_joint_cap3_jax_gradient.py`, and this plan. Validation: compile the new runner, execute setup evaluation without `--run-fit`, and confirm initial NumPy/JAX objectives are finite with the intended layer-selective emission.
+- 2026-06-19: Updated the Sample#13 JAX-gradient cap3 runner carbon-thickness lower bound from 5 Angstrom to 2 Angstrom, then ran one `--attempts 1 --maxiter 50` fit in `examples/LNO_STO_LNO_case_Sample#13/jax_gradient_fit/clean_single_50iter`. The initial NumPy/JAX objective was `0.036289`; the best NumPy/JAX validation objective improved to `0.0203535`. SciPy terminated with status 2 (`ABNORMAL`) after 43 iterations and 170 function evaluations, so the run improved the fit but did not report clean optimizer convergence.
+- 2026-06-19: Planned a Sample#13 follow-up gradient multi-start after the best single run put `top_lno_layer1_thickness` on its 2 Angstrom lower bound. Goal: relax the LNO-1 lower bound to 1 Angstrom, keep the Ni-free LNO-1 / La-emitting LNO-1+LNO-2 RC selection, and run three 35-iteration bounded perturbation starts in a new output folder. Validation: compile the updated runner, run `--attempts 3 --maxiter 35`, compare the attempt summary, and check whether the relaxed LNO-1 thickness or other parameters remain bound-limited.
+- 2026-06-19: Completed the Sample#13 `top_lno_layer1_thickness >= 1 Angstrom` three-start, 35-iteration gradient run in `examples/LNO_STO_LNO_case_Sample#13/jax_gradient_fit/layer1_1A_multistart_35iter`. The best run was attempt 2 with NumPy/JAX validation objective `0.010005`, improving from the previous single-run objective `0.0203535`; attempts 1 and 2 reached the iteration limit, while attempt 3 converged to a worse local minimum. Best attempt 2 placed `carbon_thickness` at its 15 Angstrom upper bound and `sto_thickness_delta`/`lno_thickness_delta` at their 0 Angstrom lower bounds; `top_lno_layer1_thickness` relaxed to `1.47249 Angstrom`, no longer exactly at the lower bound.
 - Remaining: Review normalized XPS rocking curves against experimental examples before adding cross sections, p-polarization, or online optical-constant database features. Continue validating BO recovery quality before moving to experimental data.

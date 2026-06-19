@@ -12,6 +12,8 @@ dependencies = ["numpy"]
 [project.optional-dependencies]
 plot = ["matplotlib"]
 fit = ["scikit-optimize"]
+jax = ["jax"]
+gradient = ["jax", "scipy"]
 
 [tool.setuptools.packages.find]
 where = ["src"]

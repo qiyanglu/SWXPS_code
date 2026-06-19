@@ -189,6 +189,7 @@ class FittingProblem:
     roughness_profile: Literal["erf", "linear"] = "erf"
     offpeak_mask: np.ndarray | None = None
     validate_roughness: bool = True
+    simulation_backend: Literal["numpy", "jax"] = "numpy"
     fixed_values: dict[str, float] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
@@ -203,6 +204,8 @@ class FittingProblem:
             mask = np.asarray(self.offpeak_mask, dtype=bool)
             if mask.shape != self.rocking_curves[0].angles.shape:
                 raise ValueError("offpeak_mask must match rocking-curve angles")
+        if self.simulation_backend not in {"numpy", "jax"}:
+            raise ValueError("simulation_backend must be 'numpy' or 'jax'")
 
     def objective(self) -> JointObjective:
         """Return a scalar objective ready for an optimizer backend."""
@@ -227,7 +230,7 @@ class FittingProblem:
         scoring_seconds = 0.0
         if self.reflectivity is not None:
             reflectivity_start = perf_counter()
-            reflectivity_result = simulate_reflectivity(
+            reflectivity_result = self._simulate_reflectivity(
                 ReflectivityRequest(
                     angles=self.reflectivity.angles,
                     energy_ev=self.photon_energy_ev,
@@ -252,7 +255,7 @@ class FittingProblem:
             scoring_seconds += perf_counter() - scoring_start
         if self.rocking_curves:
             rocking_curve_start = perf_counter()
-            rocking_curve_result = simulate_rocking_curves(
+            rocking_curve_result = self._simulate_rocking_curves(
                 RockingCurveRequest(
                     angles=self.rocking_curves[0].angles,
                     photon_energy_ev=self.photon_energy_ev,
@@ -304,7 +307,7 @@ class FittingProblem:
         angle_offset = _angle_offset(all_values, self.angle_offset_parameter)
         reflectivity_result = None
         if self.reflectivity is not None:
-            reflectivity_result = simulate_reflectivity(
+            reflectivity_result = self._simulate_reflectivity(
                 ReflectivityRequest(
                     angles=self.reflectivity.angles,
                     energy_ev=self.photon_energy_ev,
@@ -316,7 +319,7 @@ class FittingProblem:
             )
         rocking_curve_result = None
         if self.rocking_curves:
-            rocking_curve_result = simulate_rocking_curves(
+            rocking_curve_result = self._simulate_rocking_curves(
                 RockingCurveRequest(
                     angles=self.rocking_curves[0].angles,
                     photon_energy_ev=self.photon_energy_ev,
@@ -340,6 +343,20 @@ class FittingProblem:
         merged = {name: float(value) for name, value in self.fixed_values.items()}
         merged.update({name: float(value) for name, value in values.items()})
         return merged
+
+    def _simulate_reflectivity(self, request: ReflectivityRequest) -> ReflectivityResult:
+        if self.simulation_backend == "numpy":
+            return simulate_reflectivity(request)
+        from .simulation_jax import simulate_reflectivity_jax
+
+        return simulate_reflectivity_jax(request)
+
+    def _simulate_rocking_curves(self, request: RockingCurveRequest) -> RockingCurveResult:
+        if self.simulation_backend == "numpy":
+            return simulate_rocking_curves(request)
+        from .simulation_jax import simulate_rocking_curves_jax
+
+        return simulate_rocking_curves_jax(request)
 
 
 def parameter_dict(

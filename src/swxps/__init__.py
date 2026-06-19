@@ -54,6 +54,14 @@ from .fitting import (
     validate_finite_layer_roughness,
 )
 from .imfp import IMFPTable, imfp_from_file, imfp_path, load_imfp
+from .jax_gradient import (
+    JaxGradientHistoryRecord,
+    JaxGradientOptimizationResult,
+    JaxGradientOptimizerSettings,
+    optimize_with_jax_gradient,
+    physical_to_scaled,
+    scaled_to_physical,
+)
 from .layers import Layer, refractive_index, vacuum
 from .optical_constants import (
     OpticalConstantsTable,
@@ -132,6 +140,9 @@ __all__ = [
     "FittingProblem",
     "IMFPTable",
     "JointObjective",
+    "JaxGradientHistoryRecord",
+    "JaxGradientOptimizationResult",
+    "JaxGradientOptimizerSettings",
     "Layer",
     "LayerTemplate",
     "LayerUpdate",
@@ -180,10 +191,12 @@ __all__ = [
     "normalize_by_background",
     "normalize_by_mean",
     "optical_constants_path",
+    "optimize_with_jax_gradient",
     "parameter_dict",
     "parratt_amplitude",
     "parratt_reflection_amplitudes",
     "parratt_reflectivity",
+    "physical_to_scaled",
     "reflectivity_contribution",
     "reflectivity_log_mse",
     "refractive_index",
@@ -195,6 +208,7 @@ __all__ = [
     "sample_concentration_profiles",
     "sample_stack_property",
     "schematic_layers",
+    "scaled_to_physical",
     "save_fit_history_csv",
     "save_staged_fit_summary_csv",
     "simulate_reflectivity",
