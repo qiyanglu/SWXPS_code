@@ -49,10 +49,16 @@ tests and must preserve the full regression suite.
 - `benchmarks`: synthetic fitting and performance benchmarks.
 - `runs`: generated local outputs; ignored by Git except its README.
 - `archive`: superseded local experiments; ignored by Git except its README.
-- `docs`: architecture, roadmap, plans, and historical records.
+- `docs`: architecture, roadmap, plans, handoff state, and historical records.
 
 ## Planning rule
 
 For any substantial change, first create or update an execution plan following
 `PLANS.md`. Keep active plans concise and move completed long-form logs to
 `docs/history`.
+
+## Session continuity rule
+
+At the end of any substantial coding session, update `docs/PROJECT_STATE.md`
+and `docs/TODO.md` so the project can be continued from another machine without
+access to the local Codex transcript.

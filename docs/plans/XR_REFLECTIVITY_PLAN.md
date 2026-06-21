@@ -3,7 +3,8 @@
 ## Goal
 
 Maintain the validated reflectivity, field, SW-XPS, and fitting platform while
-improving physical validation and reproducibility of experimental case studies.
+improving physical validation, runtime evidence, and reproducibility of
+experimental case studies.
 
 ## Physics background
 
@@ -21,8 +22,9 @@ case-study files. Generated fit output goes to `runs/`.
 1. Preserve NumPy/JAX numerical parity and reflectivity tests.
 2. Review experimental rocking-curve preprocessing and normalization.
 3. Validate fitted structures against independent physical expectations.
-4. Add cross sections or polarization only through separate planned milestones.
-5. Keep canonical case-study results compact and reproducible.
+4. Profile representative workflows before restructuring performance-critical code.
+5. Add cross sections or polarization only through separate planned milestones.
+6. Keep canonical case-study results compact and reproducible.
 
 ## Tests
 
@@ -37,7 +39,9 @@ constants, IMFPs, chemistry, and optimizer sensitivity have been reviewed.
 
 ## Progress log
 
-- 2026-06-21: The validated suite contains 85 passing tests.
 - 2026-06-21: Tutorials, case studies, benchmarks, runs, and archives were
   separated into dedicated top-level folders.
+- 2026-06-21: Added a representative stage-by-stage performance benchmark and
+  bounded caches for optical-constant and IMFP tables.
+- 2026-06-21: Full validated suite contains 91 passing tests.
 - Remaining: physical review of experimental RC normalization and fit robustness.
