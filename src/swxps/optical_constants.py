@@ -1,8 +1,9 @@
-"""Read and interpolate tabulated x-ray optical constants."""
+"""Read, cache, and interpolate tabulated x-ray optical constants."""
 
 from __future__ import annotations
 
 from dataclasses import dataclass
+from functools import lru_cache
 from pathlib import Path
 
 import numpy as np
@@ -33,24 +34,61 @@ class OpticalConstantsTable:
         beta = np.interp(energy_ev, self.energy_ev, self.beta)
         return float(delta), float(beta)
 
-    def layer_at(self, energy_ev: float, thickness: float, roughness: float = 0.0) -> Layer:
+    def layer_at(
+        self,
+        energy_ev: float,
+        thickness: float,
+        roughness: float = 0.0,
+    ) -> Layer:
         """Return a Layer using constants interpolated at energy in eV."""
 
         delta, beta = self.constants_at(energy_ev)
-        return Layer(thickness=thickness, delta=delta, beta=beta, roughness=roughness)
+        return Layer(
+            thickness=thickness,
+            delta=delta,
+            beta=beta,
+            roughness=roughness,
+        )
 
 
 def load_optical_constants(path: str | Path) -> OpticalConstantsTable:
-    """Load a Henke/LBNL optical-constants file.
+    """Load and cache a Henke/LBNL optical-constants file.
 
     Expected file format:
 
     ``Material Density=value``
     ``Energy(eV), Delta, Beta``
     followed by whitespace-separated numeric rows.
+
+    The cache key includes the resolved path, modification time, and file size,
+    so replacing or rewriting a table automatically triggers a fresh parse.
     """
 
-    path = Path(path)
+    resolved_path = Path(path).resolve()
+    stat = resolved_path.stat()
+    return _load_optical_constants_cached(
+        str(resolved_path),
+        stat.st_mtime_ns,
+        stat.st_size,
+    )
+
+
+def clear_optical_constants_cache() -> None:
+    """Clear all cached optical-constants tables in this process."""
+
+    _load_optical_constants_cached.cache_clear()
+
+
+@lru_cache(maxsize=32)
+def _load_optical_constants_cached(
+    resolved_path: str,
+    modified_time_ns: int,
+    file_size: int,
+) -> OpticalConstantsTable:
+    """Parse one file identified by its resolved path and file metadata."""
+
+    del modified_time_ns, file_size
+    path = Path(resolved_path)
     rows: list[tuple[float, float, float]] = []
     material = path.stem
     density: float | None = None
@@ -62,14 +100,19 @@ def load_optical_constants(path: str | Path) -> OpticalConstantsTable:
                 continue
 
             if line_number == 1:
-                material, density = _parse_header(stripped, fallback_material=material)
+                material, density = _parse_header(
+                    stripped,
+                    fallback_material=material,
+                )
                 continue
             if line_number == 2:
                 continue
 
             parts = stripped.replace(",", " ").split()
             if len(parts) != 3:
-                raise ValueError(f"expected 3 columns in {path} line {line_number}")
+                raise ValueError(
+                    f"expected 3 columns in {path} line {line_number}"
+                )
             rows.append((float(parts[0]), float(parts[1]), float(parts[2])))
 
     if not rows:
@@ -89,7 +132,10 @@ def load_optical_constants(path: str | Path) -> OpticalConstantsTable:
     )
 
 
-def constants_from_file(path: str | Path, energy_ev: float) -> tuple[float, float]:
+def constants_from_file(
+    path: str | Path,
+    energy_ev: float,
+) -> tuple[float, float]:
     """Return interpolated ``(delta, beta)`` from an optical-constants file."""
 
     return load_optical_constants(path).constants_at(energy_ev)
@@ -110,13 +156,19 @@ def layer_from_file(
     )
 
 
-def optical_constants_path(material: str, directory: str | Path = "OPC") -> Path:
+def optical_constants_path(
+    material: str,
+    directory: str | Path = "OPC",
+) -> Path:
     """Return the default ``.dat`` path for a material in an OPC directory."""
 
     return Path(directory) / f"{material}.dat"
 
 
-def _parse_header(line: str, fallback_material: str) -> tuple[str, float | None]:
+def _parse_header(
+    line: str,
+    fallback_material: str,
+) -> tuple[str, float | None]:
     parts = line.split()
     material = parts[0] if parts else fallback_material
     density = None

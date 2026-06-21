@@ -1,8 +1,9 @@
-"""Read and interpolate tabulated electron inelastic mean free paths."""
+"""Read, cache, and interpolate tabulated electron mean free paths."""
 
 from __future__ import annotations
 
 from dataclasses import dataclass
+from functools import lru_cache
 from pathlib import Path
 
 import numpy as np
@@ -19,19 +20,56 @@ class IMFPTable:
     def imfp_at(self, kinetic_energy_ev: float) -> float:
         """Return linearly interpolated IMFP in Angstrom."""
 
-        if kinetic_energy_ev < self.kinetic_energy_ev[0] or kinetic_energy_ev > self.kinetic_energy_ev[-1]:
+        if (
+            kinetic_energy_ev < self.kinetic_energy_ev[0]
+            or kinetic_energy_ev > self.kinetic_energy_ev[-1]
+        ):
             raise ValueError(
                 f"kinetic_energy_ev={kinetic_energy_ev} is outside the table range "
                 f"{self.kinetic_energy_ev[0]} to {self.kinetic_energy_ev[-1]} eV"
             )
 
-        return float(np.interp(kinetic_energy_ev, self.kinetic_energy_ev, self.imfp))
+        return float(
+            np.interp(
+                kinetic_energy_ev,
+                self.kinetic_energy_ev,
+                self.imfp,
+            )
+        )
 
 
 def load_imfp(path: str | Path) -> IMFPTable:
-    """Load an IMFP file with arbitrary headers and two numeric columns."""
+    """Load and cache an IMFP file with headers and two numeric columns.
 
-    path = Path(path)
+    The cache key includes the resolved path, modification time, and file size,
+    so replacing or rewriting a table automatically triggers a fresh parse.
+    """
+
+    resolved_path = Path(path).resolve()
+    stat = resolved_path.stat()
+    return _load_imfp_cached(
+        str(resolved_path),
+        stat.st_mtime_ns,
+        stat.st_size,
+    )
+
+
+def clear_imfp_cache() -> None:
+    """Clear all cached IMFP tables in this process."""
+
+    _load_imfp_cached.cache_clear()
+
+
+@lru_cache(maxsize=32)
+def _load_imfp_cached(
+    resolved_path: str,
+    modified_time_ns: int,
+    file_size: int,
+) -> IMFPTable:
+    """Parse one file identified by its resolved path and file metadata."""
+
+    del modified_time_ns, file_size
+    path = Path(resolved_path)
     material = path.stem
     rows: list[tuple[float, float]] = []
     expect_material = False
@@ -62,7 +100,9 @@ def load_imfp(path: str | Path) -> IMFPTable:
     data = np.asarray(rows, dtype=float)
     kinetic_energy_ev = data[:, 0]
     if np.any(np.diff(kinetic_energy_ev) <= 0):
-        raise ValueError(f"kinetic energy values in {path} must be strictly increasing")
+        raise ValueError(
+            f"kinetic energy values in {path} must be strictly increasing"
+        )
 
     return IMFPTable(
         material=material,
