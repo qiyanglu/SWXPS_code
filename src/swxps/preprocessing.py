@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Literal
 
 import numpy as np
 
@@ -89,6 +90,49 @@ def normalize_by_background(values: np.ndarray, background: np.ndarray) -> np.nd
     if np.any(~np.isfinite(background_array)) or np.any(background_array == 0.0):
         raise ValueError("background must be finite and non-zero")
     return value_array / background_array
+
+
+def normalize_rocking_curve(
+    x: np.ndarray,
+    values: np.ndarray,
+    mode: Literal["mean", "edge_polynomial"] = "mean",
+    offpeak_mask: np.ndarray | None = None,
+    edge_fraction: float = 0.10,
+    polynomial_order: int = 2,
+) -> tuple[np.ndarray, float | np.ndarray]:
+    """Normalize a raw rocking curve by a scalar mean or edge polynomial."""
+
+    x_array = np.asarray(x, dtype=float)
+    value_array = np.asarray(values, dtype=float)
+    if x_array.shape != value_array.shape or x_array.ndim != 1:
+        raise ValueError("x and values must be matching one-dimensional arrays")
+    if not np.all(np.isfinite(x_array)) or not np.all(np.isfinite(value_array)):
+        raise ValueError("x and values must be finite")
+    if mode == "edge_polynomial":
+        _validate_curve(x_array, value_array)
+        correction = subtract_edge_polynomial_background(
+            x_array,
+            value_array,
+            edge_fraction=edge_fraction,
+            order=polynomial_order,
+        )
+        return correction.normalized, correction.background
+    if mode != "mean":
+        raise ValueError("mode must be 'mean' or 'edge_polynomial'")
+
+    mask = (
+        np.ones(x_array.shape, dtype=bool)
+        if offpeak_mask is None
+        else np.asarray(offpeak_mask, dtype=bool)
+    )
+    if mask.shape != x_array.shape:
+        raise ValueError("offpeak_mask must match rocking-curve angles")
+    if not np.any(mask):
+        raise ValueError("offpeak_mask must select at least one angle")
+    normalization = float(np.mean(value_array[mask]))
+    if not np.isfinite(normalization) or normalization <= 0:
+        raise ValueError("normalization must be positive and finite")
+    return value_array / normalization, normalization
 
 
 def _normalize_edge_fraction(edge_fraction: float) -> float:

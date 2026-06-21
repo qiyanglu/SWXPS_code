@@ -1,0 +1,46 @@
+initial_residual_objective: 0.008329872519904899
+initial_jax_objective: 0.008329872491744396
+initial_numpy_objective: 0.008329872491744463
+optimizer_objective: 0.008325018077652617
+best_jax_objective: 0.00832501804940867
+best_numpy_objective: 0.008325018049408764
+success: True
+status: 3
+message: `xtol` termination condition is satisfied.
+nfev: 24
+njev: 8
+optimality: 0.0007985706635114931
+wall_seconds: 19.35120969999116
+reflectivity_weight: 0.061052445252516116
+carbon_roughness: 2.4171509858321096
+lno1_roughness: 0.0
+lno2_roughness: 0.0017588839418606294
+top_lno_layer2_thickness: 46.979695148900646
+carbon_thickness: 2.640561206701323
+carbon_roughness_fraction: 0.8638208559628053
+top_lno_total_thickness: 48.53073373171467
+top_lno_layer1_thickness: 1.5510385828140256
+lno2_roughness_fraction: 0.0011340039901970157
+sto_thickness_start: 13.700335318060766
+lno_thickness_start: 18.397478395214012
+sto_thickness_delta: 0.0002898373079930785
+lno_thickness_delta: 0.0002876850165692729
+thickness_transition_repeat: 18.44719901153789
+thickness_transition_width: 11.739523595946588
+sto_roughness_first: 4.999706038988492
+sto_roughness_last: 2.6237145527010606
+lno_roughness_first: 4.999705697198561
+lno_roughness_last: 2.709229546894364
+substrate_roughness: 3.963578042387084
+reflectivity_angle_offset: 0.29943605841551263
+rc_angle_offset: 0.2974345512593783
+reflectivity_raw: 0.06815405600013728
+reflectivity_weighted: 0.004160971772685299
+C 1s_raw: 0.002660064207800501
+C 1s_weighted: 0.0013300321039002505
+Ni 3p_raw: 0.0007802882427340394
+Ni 3p_weighted: 0.002340864728202118
+La 4d_raw: 0.0001643831482070321
+La 4d_weighted: 0.0004931494446210964
+weight_diagnostic_reflectivity_raw: 0.0681979148255147
+weight_diagnostic_rc_weighted: 0.004163649461220493

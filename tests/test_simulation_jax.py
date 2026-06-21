@@ -102,3 +102,31 @@ def test_jax_simulate_rocking_curves_matches_numpy_transfer_matrix():
             rtol=1e-11,
             atol=1e-12,
         )
+
+
+def test_jax_edge_polynomial_rocking_curve_normalization_matches_numpy():
+    angles = np.linspace(1.0, 3.5, 21)
+    core = CoreLevelRequest(
+        name="A core",
+        binding_energy_ev=100.0,
+        concentration_by_material={"A": 1.0},
+        imfp_by_material={"vacuum": 20.0, "A": 20.0, "B": 30.0},
+    )
+    request = RockingCurveRequest(
+        angles=angles,
+        photon_energy_ev=3000.0,
+        stack=make_rough_stack(),
+        core_levels=(core,),
+        field_step=2.0,
+        roughness_step=1.0,
+        normalization_mode="edge_polynomial",
+        normalization_edge_fraction=0.10,
+        normalization_polynomial_order=2,
+    )
+
+    actual = simulation_jax.simulate_rocking_curves_jax(request).core_levels[0].curve
+    expected = simulate_rocking_curves(request).core_levels[0].curve
+
+    np.testing.assert_allclose(actual.raw_intensity, expected.raw_intensity, rtol=1e-11, atol=1e-12)
+    np.testing.assert_allclose(actual.normalization, expected.normalization, rtol=1e-11, atol=1e-12)
+    np.testing.assert_allclose(actual.intensity, expected.intensity, rtol=1e-11, atol=1e-12)

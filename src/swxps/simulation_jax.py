@@ -11,6 +11,7 @@ from __future__ import annotations
 import numpy as np
 
 from .fields import depth_grid, effective_layers_with_roughness
+from .preprocessing import normalize_rocking_curve
 from .reflectivity_jax import (
     jitted_normalized_rocking_curve_from_field,
     jitted_transfer_matrix_field_intensity,
@@ -164,11 +165,21 @@ def _simulate_core_from_jax_field(
                 offpeak_mask,
             )
         )
-        normalized = np.asarray(normalized_jax, dtype=float)
         raw_intensity = np.asarray(raw_jax, dtype=float)
-        normalization = float(normalization_jax)
+        if request.normalization_mode == "mean":
+            normalized = np.asarray(normalized_jax, dtype=float)
+            normalization = float(normalization_jax)
+        else:
+            normalized, normalization = normalize_rocking_curve(
+                np.asarray(request.angles, dtype=float),
+                raw_intensity,
+                mode=request.normalization_mode,
+                offpeak_mask=request.offpeak_mask,
+                edge_fraction=request.normalization_edge_fraction,
+                polynomial_order=request.normalization_polynomial_order,
+            )
 
-    if normalization <= 0:
+    if np.any(np.asarray(normalization) <= 0):
         raise ValueError("normalization must be positive")
 
     return CoreLevelResult(

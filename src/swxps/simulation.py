@@ -15,6 +15,7 @@ from .fields import (
     transfer_matrix_reflectivity_array,
 )
 from .layers import Layer
+from .preprocessing import normalize_rocking_curve
 from .xps import RockingCurve, graded_layer_property_at_depth, integrate_xps_intensity
 
 
@@ -117,6 +118,9 @@ class RockingCurveRequest:
     erf_truncation_factor: float = 4.0
     linear_width_factor: float = sqrt(3.0)
     offpeak_mask: np.ndarray | None = None
+    normalization_mode: Literal["mean", "edge_polynomial"] = "mean"
+    normalization_edge_fraction: float = 0.10
+    normalization_polynomial_order: int = 2
 
 
 @dataclass(frozen=True)
@@ -181,6 +185,9 @@ def simulate_rocking_curve(
         erf_truncation_factor=request.erf_truncation_factor,
         linear_width_factor=request.linear_width_factor,
         offpeak_mask=request.offpeak_mask,
+        normalization_mode=request.normalization_mode,
+        normalization_edge_fraction=request.normalization_edge_fraction,
+        normalization_polynomial_order=request.normalization_polynomial_order,
     )
     return simulate_rocking_curves(one_core_request).core_levels[0]
 
@@ -284,22 +291,18 @@ def _simulate_core_from_profiles(
         count=len(profiles),
     )
 
-    if request.offpeak_mask is None:
-        offpeak_mask = np.ones(angles.shape, dtype=bool)
-    else:
-        offpeak_mask = np.asarray(request.offpeak_mask, dtype=bool)
-    if offpeak_mask.shape != angles.shape:
-        raise ValueError("offpeak_mask must match angles shape")
-    if not np.any(offpeak_mask):
-        raise ValueError("offpeak_mask must select at least one angle")
-
-    normalization = float(np.mean(raw_intensity[offpeak_mask]))
-    if normalization <= 0:
-        raise ValueError("normalization must be positive")
+    normalized, normalization = normalize_rocking_curve(
+        angles,
+        raw_intensity,
+        mode=request.normalization_mode,
+        offpeak_mask=request.offpeak_mask,
+        edge_fraction=request.normalization_edge_fraction,
+        polynomial_order=request.normalization_polynomial_order,
+    )
 
     curve = RockingCurve(
         angle=angles,
-        intensity=raw_intensity / normalization,
+        intensity=normalized,
         raw_intensity=raw_intensity,
         normalization=normalization,
     )

@@ -1,50 +1,58 @@
 # AGENTS.md
 
-This repository implements a transparent Python program for simulating x-ray reflectivity and, later, standing-wave XPS from multilayer thin films.
+This repository implements transparent Python tools for x-ray reflectivity and
+standing-wave XPS from multilayer thin films.
 
 ## Project goals
 
-1. Start with multilayer x-ray reflectivity using the Parratt recursion.
-2. Keep the code physically transparent and easy to verify.
-3. Prefer simple, tested code over feature completeness.
-4. Do not implement fitting, electric-field profiles, or XPS intensities until reflectivity is validated.
+1. Preserve the validated Parratt-reflectivity foundation and its transparency.
+2. Support tested transfer-matrix fields, rough interfaces, and SW-XPS curves.
+3. Support fitting backends while treating experimental fits as provisional.
+4. Prefer small, readable, tested changes over feature completeness.
 
 ## Physics conventions
 
 - Incidence angle is the grazing angle relative to the sample surface, in degrees.
 - Photon energy is in eV.
-- Wavelength is in Angstrom.
-- Layer thickness and roughness are in Angstrom.
-- Each layer has complex refractive index:
-
-  n = 1 - delta + i beta
-
-- The first layer is vacuum.
-- The last layer is a semi-infinite substrate.
-- The initial implementation should use s-polarization only.
-- p-polarization can be added later.
+- Wavelength, thickness, and roughness are in Angstrom.
+- Refractive index is `n = 1 - delta + i beta`.
+- The first layer is vacuum; the last is a semi-infinite substrate.
+- The validated implementation uses s-polarization.
 
 ## Coding rules
 
-- Use Python.
-- Use numpy for numerical calculations.
-- Use scipy only when needed.
-- Keep the core Parratt calculation independent of xraydb or other optical-constant databases.
-- Write small functions with clear names.
-- Add tests before adding major new features.
+- Use Python and NumPy for core numerical calculations.
+- Use SciPy only where optimization or numerical tooling requires it.
+- Keep the Parratt core independent of optical-constant databases.
+- Keep functions small and clearly named.
+- Do not change physical behavior during repository or documentation cleanup.
+- Add tests before major numerical or physical features.
 
 ## Testing rules
 
-Every implementation of reflectivity must pass:
+Reflectivity implementations must retain tests showing that:
 
-1. A two-layer stack vacuum/substrate reproduces the Fresnel reflectivity.
-2. A stack with identical refractive indices gives near-zero reflectivity.
-3. A periodic multilayer shows a Bragg peak near:
+1. A vacuum/substrate stack reproduces Fresnel reflectivity.
+2. Identical refractive indices give near-zero reflectivity.
+3. A periodic multilayer has a Bragg peak near `m lambda = 2 d sin(theta)`.
+4. Reflectivity does not exceed 1 beyond small numerical tolerance.
 
-   m lambda = 2 d sin(theta)
+New field, XPS, preprocessing, fitting, or backend behavior requires focused
+tests and must preserve the full regression suite.
 
-4. Reflectivity should not become unphysically larger than 1 except for small numerical tolerance.
+## Repository organization
+
+- `src/swxps`: maintained package code.
+- `tests`: regression tests.
+- `examples`: compact tutorial scripts only.
+- `case_studies`: experimental inputs, maintained runners, and canonical results.
+- `benchmarks`: synthetic fitting and performance benchmarks.
+- `runs`: generated local outputs; ignored by Git except its README.
+- `archive`: superseded local experiments; ignored by Git except its README.
+- `docs`: architecture, roadmap, plans, and historical records.
 
 ## Planning rule
 
-For any substantial change, first create or update an execution plan following PLANS.md.
+For any substantial change, first create or update an execution plan following
+`PLANS.md`. Keep active plans concise and move completed long-form logs to
+`docs/history`.

@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "swxps"
 version = "0.1.0"
-description = "Transparent x-ray reflectivity calculations for multilayer thin films."
+description = "Transparent x-ray reflectivity and standing-wave XPS tools for multilayer thin films."
 requires-python = ">=3.9"
 dependencies = ["numpy"]
 
@@ -14,6 +14,7 @@ plot = ["matplotlib"]
 fit = ["scikit-optimize"]
 jax = ["jax"]
 gradient = ["jax", "scipy"]
+least-squares = ["jax", "scipy"]
 
 [tool.setuptools.packages.find]
 where = ["src"]

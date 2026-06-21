@@ -20,7 +20,7 @@ class RockingCurve:
     angle: np.ndarray
     intensity: np.ndarray
     raw_intensity: np.ndarray
-    normalization: float
+    normalization: float | np.ndarray
 
 
 def attenuation_factor(
@@ -198,6 +198,9 @@ def graded_layer_property_at_depth(
             erf_truncation_factor if profile == "erf" else linear_width_factor
         )
         mask = np.abs(depth - boundary) <= active_width_factor * sigma
+        mask &= (nominal_index == interface_index) | (
+            nominal_index == interface_index + 1
+        )
         if not np.any(mask):
             continue
         fraction = _roughness_fraction(

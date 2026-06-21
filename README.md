@@ -1,104 +1,54 @@
 # SWXPS
 
-Transparent Python tools for simulating x-ray reflectivity and standing-wave
-XPS from multilayer thin films.
+SWXPS is a transparent Python package for multilayer x-ray reflectivity and
+standing-wave XPS simulation, with validated NumPy physics kernels and optional
+fitting and JAX backends.
 
-The current code focuses on readable, testable simulations for:
+## Capabilities
 
-- Parratt-recursion x-ray reflectivity for multilayers
-- Transfer-matrix reflectivity and electric-field profiles
-- Error-function interface roughness through graded effective slices
-- Optical constants loaded from Henke-style `.dat` files in `OPC`
-- IMFP values loaded from tabulated files in `IMFP`
-- Normalized standing-wave XPS rocking curves with constant cross sections
-- Optimizer-independent fitting objectives for reflectivity and SW-XPS RCs
-- Bayesian optimization through `scikit-optimize`
-- Optional local JAX-gradient optimization with SciPy L-BFGS-B
-- Declarative stack templates, including superlattices
-- Stack/concentration/schematic visualization utilities
+- Parratt-recursion s-polarized reflectivity.
+- Transfer-matrix reflectivity and depth-dependent electric fields.
+- Graded effective slices for rough interfaces.
+- Local optical-constant and IMFP table loading.
+- Concentration profiles and normalized SW-XPS rocking curves.
+- Bayesian optimization, JAX L-BFGS-B, and JAX/Jacobian TRF least squares.
 
-## Install
+Experimental fitting remains physically provisional: bounds, weights, optical
+constants, IMFPs, and fitted structures must be reviewed before results are
+treated as quantitative.
 
-From the repository root:
+## Install and test
 
 ```powershell
 python -m pip install -e .
-```
-
-For plotting examples:
-
-```powershell
 python -m pip install -e ".[plot]"
-```
-
-For the standalone JAX-gradient optimizer:
-
-```powershell
-python -m pip install -e ".[gradient]"
-```
-
-## Run Tests
-
-```powershell
 python -m pytest
 ```
 
-## Examples
+Optional fitting extras are `fit`, `gradient`, and `least-squares`.
 
-Example scripts live in topic-specific subfolders under `examples`.
+## Quick examples
 
 ```powershell
 python examples/reflectivity/plot_lno_sto_reflectivity.py
-python examples/roughness/compare_lno_sto_roughness.py
 python examples/fields/plot_lno_sto_field_profile.py
 python examples/xps/plot_lno_la4d_rocking_curve.py
-python examples/profiles/plot_lno_sto_stack_profile.py
-python examples/synthetic_c_lno_sto/generate_lno_sto_c_synthetic_data.py
-python examples/synthetic_c_lno_sto/fit_lno_sto_c_synthetic_bo.py
+python benchmarks/synthetic_c_lno_sto/fit_reflectivity_rc_bo.py --generate-only
 ```
 
-Generated `.png` figures and `.csv` example data are tracked so the GitHub repo
-shows representative outputs without requiring a local run first.
+## Repository layout
 
-## Key Files
+- `src/swxps/`: package implementation.
+- `tests/`: physics and fitting regression tests.
+- `examples/`: small reproducible tutorials.
+- `case_studies/`: Sample 12/13 experimental data, runners, and canonical results.
+- `benchmarks/`: synthetic fitting studies and performance benchmarks.
+- `runs/`: generated optimizer output, ignored by Git.
+- `archive/`: superseded local experiments, ignored by Git.
+- `docs/`: architecture, roadmap, plans, and historical documents.
+- `OPC/`, `IMFP/`: optical-constant and attenuation tables.
+- `Yeh_Lindau_1985_Xsection_CSV_Database/`: cross-section tables.
 
-Core simulation modules:
-
-- `src/swxps/reflectivity.py`: Parratt recursion, Fresnel amplitudes, and roughness correction.
-- `src/swxps/fields.py`: transfer-matrix reflectivity and electric-field profiles.
-- `src/swxps/xps.py`: depth integration and normalized SW-XPS rocking-curve helpers.
-- `src/swxps/simulation.py`: high-level request/result API for reflectivity and RC simulations.
-- `src/swxps/profiles.py`: concentration and material-profile sampling versus depth.
-
-Fitting and optimization modules:
-
-- `src/swxps/fitting.py`: fitting parameters, datasets, weighted objectives, and fit history.
-- `src/swxps/bo.py`: `scikit-optimize` Bayesian optimization and staged multi-start fitting.
-- `src/swxps/jax_gradient.py`: standalone JAX-gradient L-BFGS-B optimizer.
-- `src/swxps/fit_diagnostics.py`: history CSV export and fit/surrogate diagnostic plots.
-- `src/swxps/stack_builders.py`: declarative layer and superlattice stack construction.
-- `src/swxps/stack_visualization.py`: schematic stack drawings from fitted parameters.
-
-Example outputs:
-
-- `examples/synthetic_c_lno_sto/lno_sto_c_synthetic_data.csv`: deterministic synthetic reflectivity and RC data.
-- `examples/synthetic_c_lno_sto/lno_sto_c_synthetic_data.png`: simulated C/LNO/STO reflectivity and RCs.
-- `examples/synthetic_c_lno_sto/lno_sto_c_bo_best_fit.png`: normal BO best-fit comparison.
-- `examples/synthetic_c_lno_sto/lno_sto_c_bo_surrogate_slices.png`: 1D GP surrogate slices.
-- `examples/synthetic_c_lno_sto/lno_sto_c_bo_lno_sto_surrogate_2d_3d.png`: LNO/STO 2D/3D surrogate surface.
-- `examples/synthetic_c_lno_sto/lno_sto_c_bo_stack_schematic.png`: fitted-stack schematic visualization.
-
-## Current Scope
-
-The package is now a transparent simulation and early fitting backend. The BO
-workflow has been validated on synthetic C/LNO/STO data, but experimental-data
-fitting still needs careful parameter bounds, weighting choices, and physical
-cross-checks before results should be treated as quantitative.
-
-## JAX Gradient Optimizer
-
-The JAX-gradient optimizer is a local L-BFGS-B optimizer, separate from the BO
-workflow. It requires JAX and SciPy, and it works best from a physically
-reasonable initial structure. Because it is a local optimizer, it can get
-trapped in local minima; use it for refinement or controlled synthetic tests,
-not as a replacement for global Bayesian optimization.
+Generated attempts never belong in `examples`, `case_studies`, or `benchmarks`.
+Only raw inputs, maintained scripts, deterministic fixtures, and selected
+canonical results should be versioned there.

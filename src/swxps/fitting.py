@@ -188,6 +188,9 @@ class FittingProblem:
     roughness_step: float | Sequence[float] = 1.0
     roughness_profile: Literal["erf", "linear"] = "erf"
     offpeak_mask: np.ndarray | None = None
+    rocking_curve_normalization: Literal["mean", "edge_polynomial"] = "mean"
+    normalization_edge_fraction: float = 0.10
+    normalization_polynomial_order: int = 2
     validate_roughness: bool = True
     simulation_backend: Literal["numpy", "jax"] = "numpy"
     fixed_values: dict[str, float] = field(default_factory=dict)
@@ -206,6 +209,10 @@ class FittingProblem:
                 raise ValueError("offpeak_mask must match rocking-curve angles")
         if self.simulation_backend not in {"numpy", "jax"}:
             raise ValueError("simulation_backend must be 'numpy' or 'jax'")
+        if self.rocking_curve_normalization not in {"mean", "edge_polynomial"}:
+            raise ValueError(
+                "rocking_curve_normalization must be 'mean' or 'edge_polynomial'"
+            )
 
     def objective(self) -> JointObjective:
         """Return a scalar objective ready for an optimizer backend."""
@@ -266,6 +273,9 @@ class FittingProblem:
                     roughness_step=self.roughness_step,
                     roughness_profile=self.roughness_profile,
                     offpeak_mask=self.offpeak_mask,
+                    normalization_mode=self.rocking_curve_normalization,
+                    normalization_edge_fraction=self.normalization_edge_fraction,
+                    normalization_polynomial_order=self.normalization_polynomial_order,
                 )
             )
             rocking_curve_seconds = perf_counter() - rocking_curve_start
@@ -330,6 +340,9 @@ class FittingProblem:
                     roughness_step=self.roughness_step,
                     roughness_profile=self.roughness_profile,
                     offpeak_mask=self.offpeak_mask,
+                    normalization_mode=self.rocking_curve_normalization,
+                    normalization_edge_fraction=self.normalization_edge_fraction,
+                    normalization_polynomial_order=self.normalization_polynomial_order,
                 )
             )
         return FitSimulation(

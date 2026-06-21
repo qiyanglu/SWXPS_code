@@ -11,6 +11,12 @@ build/
 dist/
 *.egg-info/
 
+# Local generated runs and historical experiment artifacts
+runs/*
+!runs/README.md
+archive/*
+!archive/README.md
+
 # Editor and OS files
 .vscode/
 .idea/
