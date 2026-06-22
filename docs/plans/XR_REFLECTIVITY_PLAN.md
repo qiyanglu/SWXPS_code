@@ -49,6 +49,5 @@ cost, fixed JAX shapes, and NumPy/JAX parity are demonstrated.
 - 2026-06-21: Added a representative stage-by-stage performance benchmark and
   bounded caches for optical-constant and IMFP tables.
 - 2026-06-21: Full validated suite contains 91 passing tests.
-- 2026-06-22: Planned additive adaptive/fixed-shape slicing; no code changed.
-- Remaining: resolve slicing design decisions, implement the planner behind an
-  opt-in path, and physically review experimental RC normalization and fit robustness.
+- 2026-06-22: Implemented and validated optional adaptive/fixed-shape unified slicing. Full suite: 113 passed; fixed JAX thickness sweep compiled one shape.
+- Remaining: migrate one maintained case-study runner for comparison and physically review experimental RC normalization and fit robustness.

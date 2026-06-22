@@ -51,9 +51,9 @@ The validated legacy path uses separate step-based roughness and field grids.
 Both lengths depend on current thickness through `ceil`, so fitted thickness
 changes can change JAX shapes. Existing step APIs remain supported.
 
-## Planned unified-grid boundary
+## Optional unified-grid boundary
 
-The additive unified mode will separate planning from evaluation:
+The additive unified mode separates planning from evaluation:
 
 ```text
 LayerSlicingPolicy
@@ -74,8 +74,7 @@ RCs use cell widths as midpoint quadrature weights. During fitting, counts are
 fixed from upper-bound capacity thicknesses, while trial thickness changes only
 cell widths and values. This preserves JAX shapes without quantizing thickness.
 
-See `docs/plans/adaptive_fixed_shape_slicing_2026-06-22.md`. This mode is not
-implemented yet; the legacy path remains the only active behavior.
+See `docs/plans/adaptive_fixed_shape_slicing_2026-06-22.md`. This mode is implemented and selected explicitly with `slicing=`; omitting it retains the legacy path.
 
 ## Performance boundary
 

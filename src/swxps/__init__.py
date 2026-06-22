@@ -102,6 +102,14 @@ from .reflectivity import (
     parratt_amplitude,
     parratt_reflectivity,
 )
+from .slicing import (
+    FixedLayerGridPlan,
+    LayerGrid,
+    LayerSlicingPolicy,
+    adaptive_layer_grid,
+    fixed_layer_grid,
+    fixed_layer_grid_plan,
+)
 from .simulation import (
     CoreLevelRequest,
     CoreLevelResult,
@@ -160,7 +168,10 @@ __all__ = [
     "JaxLeastSquaresOptimizerSettings",
     "JaxLeastSquaresResidualSettings",
     "JaxResidualFunction",
+    "FixedLayerGridPlan",
     "Layer",
+    "LayerGrid",
+    "LayerSlicingPolicy",
     "LayerTemplate",
     "LayerUpdate",
     "OpticalConstantsTable",
@@ -186,6 +197,7 @@ __all__ = [
     "StageRunResult",
     "StagedFitResult",
     "apply_roughness",
+    "adaptive_layer_grid",
     "build_jax_residual_function",
     "constants_from_file",
     "depth_grid",
@@ -194,6 +206,8 @@ __all__ = [
     "energy_to_wavelength",
     "evaluation_from_contributions",
     "fresnel_r_s",
+    "fixed_layer_grid",
+    "fixed_layer_grid_plan",
     "graded_layer_property_at_depth",
     "attenuation_factor",
     "imfp_from_file",

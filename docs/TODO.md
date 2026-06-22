@@ -2,35 +2,28 @@
 
 Last updated: 2026-06-22
 
-## Confirmed slicing requirements
+## Completed unified-grid milestone
 
-- User-configurable `max_slice_thickness`; default 2 Angstrom.
-- Configurable `min_slices`; proposed default 10 per positive finite layer.
-- One cell-centered grid for roughness, fields, concentration/IMFP,
-  attenuation, and RC integration.
-- Fixed counts from upper-bound capacity thicknesses during JAX fitting.
-- Existing APIs and legacy step-based behavior remain intact.
+- Added user-configurable `LayerSlicingPolicy`; defaults are 10 minimum cells
+  and 2 Angstrom maximum cell thickness.
+- Added adaptive grids and fixed-capacity plans for JAX/fitting shape stability.
+- Shared one cell-centered grid across roughness optics, fields,
+  concentration/IMFP, attenuation, and midpoint RC integration.
+- Added optional `slicing=` propagation through requests and `FittingProblem`.
+- Preserved all legacy `field_step` and `roughness_step` behavior.
+- Added focused planner, physics, Fresnel, fitting, and NumPy/JAX parity tests.
+- Verified one JAX compilation across a 2-6 Angstrom thickness sweep.
+- Full regression result: 113 passed, 46 pre-existing warnings.
 
-## First implementation checkpoint
+## Next review and adoption steps
 
-- Follow `docs/plans/adaptive_fixed_shape_slicing_2026-06-22.md`.
-- Record legacy numerical outputs and array shapes.
-- Add `src/swxps/slicing.py` with policy and fixed-plan types.
-- Materialize cell edges, centers, widths, and nominal/effective mappings.
-- Test default and user-changed maximum thickness values.
-- Test 4, 16, and 160 Angstrom layers and exact thickness conservation.
-- Stop for review before changing any physics kernel.
-
-## Later integration checkpoints
-
-- Build graded effective optical cells from the shared grid.
-- Evaluate fields at the same centers with no second depth grid.
-- Add cell-centered concentration/IMFP, attenuation, and midpoint RC integration.
-- Propagate the optional grid through NumPy, JAX, and `FittingProblem`.
-- Verify fixed shapes across thickness sweeps larger than 1 Angstrom.
-- Verify NumPy/JAX parity and fine-grid convergence.
-- Benchmark compilation, repeated calls, memory, and a 160 Angstrom layer.
-- Migrate one maintained case-study runner only after package validation.
+- Review the implementation diff and small-case benchmark results.
+- Add a concise user example to an appropriate maintained tutorial if desired.
+- Migrate one maintained Sample 12 or Sample 13 runner to a fixed capacity plan.
+- Compare its legacy and unified-grid curves, objective, compile count, runtime,
+  and memory before migrating any other runner.
+- Consider per-layer maximum cell thickness only if that case study demonstrates
+  a concrete need; the current public value is global.
 
 ## Scientific validation priorities
 
@@ -47,6 +40,6 @@ Last updated: 2026-06-22
 ## Session handoff checklist
 
 - Update this file and `docs/PROJECT_STATE.md`.
-- Record tests, benchmarks, design decisions, branch/commit, and blockers.
+- Record tests, benchmarks, decisions, branch/commit, and blockers.
 - Commit handoff documentation with the work it describes.
 - Push required commits before switching computers.

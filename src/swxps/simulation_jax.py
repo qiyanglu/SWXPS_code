@@ -32,6 +32,11 @@ from .xps import RockingCurve, graded_layer_property_at_depth
 def simulate_reflectivity_jax(request: ReflectivityRequest) -> ReflectivityResult:
     """Simulate reflectivity with the optional JAX transfer-matrix backend."""
 
+    if request.slicing is not None:
+        from .simulation_unified import simulate_reflectivity_unified
+
+        return simulate_reflectivity_unified(request, backend="jax")
+
     angles = np.asarray(request.angles, dtype=float)
     calculation_angle = angles + request.angle_offset
     effective_layers = effective_layers_with_roughness(
@@ -61,6 +66,11 @@ def simulate_reflectivity_jax(request: ReflectivityRequest) -> ReflectivityResul
 
 def simulate_rocking_curves_jax(request: RockingCurveRequest) -> RockingCurveResult:
     """Simulate normalized SW-XPS RCs with the optional JAX backend."""
+
+    if request.slicing is not None:
+        from .simulation_unified import simulate_rocking_curves_unified
+
+        return simulate_rocking_curves_unified(request, backend="jax")
 
     angles = np.asarray(request.angles, dtype=float)
     calculation_angle = angles + request.angle_offset

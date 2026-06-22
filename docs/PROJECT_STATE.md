@@ -12,7 +12,8 @@ substantial coding session.
 - Latest implementation commit: `01f8d6f`
   (`Add workflow benchmark and cache scientific tables`).
 - Documentation handoff commit: `97e27b1`.
-- Slicing planning commit before the current refinement: `cdcf827`.
+- Slicing design commits: `cdcf827` and `c9a1d56`.
+- Unified-grid implementation is complete in the current worktree and pending its implementation commit.
 - Local `runs/` and `archive/` contents are ignored and do not travel through Git.
 
 ## Current capabilities
@@ -29,24 +30,24 @@ substantial coding session.
 Experimental fits remain provisional until bounds, weights, normalization,
 optical constants, IMFPs, chemistry, and optimizer sensitivity are reviewed.
 
-## Planned unified slicing milestone
+## Unified slicing implementation
 
-The current step-based roughness and field grids independently calculate their
-lengths from trial thickness. This can undersample thin layers and change JAX
-shapes during fitting.
+The optional unified grid is implemented. Users select it with `slicing=` on
+`ReflectivityRequest`, `RockingCurveRequest`, or `FittingProblem`.
 
-The confirmed design is documented in
-`docs/plans/adaptive_fixed_shape_slicing_2026-06-22.md`:
+- `LayerSlicingPolicy(min_slices=10, max_slice_thickness=2.0)` provides adaptive counts.
+- `max_slice_thickness` is user configurable in Angstrom.
+- `fixed_layer_grid_plan(capacity_layers, policy)` freezes counts from fitting upper bounds.
+- One cell-centered grid supplies graded optical cells, field locations,
+  concentration/IMFP samples, attenuation, and midpoint RC weights.
+- JAX trial thickness changes update widths and values without changing shapes.
+- Existing `field_step` and `roughness_step` paths remain unchanged when `slicing` is absent.
 
-- `max_slice_thickness` is user configurable and defaults to 2 Angstrom;
-- `min_slices` initially defaults to 10 per positive finite nominal layer;
-- roughness, field, concentration/IMFP, attenuation, and RC integration use one
-  shared cell-centered grid;
-- JAX fitting counts are fixed once from a capacity stack built at upper bounds;
-- trial thickness changes cell widths, not array shapes;
-- the new path is opt-in and existing APIs remain intact.
-
-No source code has been changed for this milestone yet.
+The small thin-surface case used 20 cells, retained one shape across a 2-6
+Angstrom thickness sweep, caused one new JAX compilation, stayed within
+`1.31e-5` maximum absolute reflectivity error of a 0.1 Angstrom reference, and
+produced finite normalized RCs.
+A 160 Angstrom film used 80 film cells (90 total), produced finite reflectivity, and evaluated in about 0.0032 seconds on the development machine.
 
 ## Recent completed work
 
@@ -67,8 +68,7 @@ Last full implementation verification:
 python -B -m pytest -q -p no:cacheprovider
 ```
 
-Result: 91 passed, 46 existing `np.trapz` deprecation warnings. The 2026-06-22
-slicing sessions have changed documentation only.
+Result: 113 passed, 46 existing `np.trapz` deprecation warnings. The focused unified-grid suite passed 22 tests, including Fresnel, analytic attenuation, thin-layer convergence, fixed-shape fitting, and NumPy/JAX parity.
 
 ## Repository map
 
@@ -85,7 +85,4 @@ slicing sessions have changed documentation only.
 
 ## Current direction
 
-Implement only the pure policy, fixed-plan, and grid materialization layer
-first. Review its tests before connecting it to roughness or fields. Preserve
-the complete legacy path until unified-grid convergence and NumPy/JAX parity
-are demonstrated.
+The unified-grid milestone is implemented and validated. The next safe step is to review the diff and benchmark evidence, then migrate one maintained case-study runner separately. Preserve the legacy path until case-study comparison is complete.

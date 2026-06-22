@@ -17,6 +17,30 @@ Experimental fitting remains physically provisional: bounds, weights, optical
 constants, IMFPs, and fitted structures must be reviewed before results are
 treated as quantitative.
 
+## Optional unified layer grid
+
+The existing step-based APIs remain the default. To use one cell-centered grid
+for roughness, fields, and SW-XPS, pass a slicing policy:
+
+```python
+from swxps import LayerSlicingPolicy, RockingCurveRequest
+
+policy = LayerSlicingPolicy(
+    min_slices=10,
+    max_slice_thickness=2.0,  # Angstrom; user configurable
+)
+request = RockingCurveRequest(..., slicing=policy)
+```
+
+For fitting with JAX, build a fixed plan from a stack evaluated at thickness
+upper bounds and reuse it in every request or `FittingProblem`:
+
+```python
+from swxps import fixed_layer_grid_plan
+
+plan = fixed_layer_grid_plan(capacity_stack.optical_layers, policy)
+```
+
 ## Install and test
 
 ```powershell

@@ -16,6 +16,7 @@ from .fields import (
 )
 from .layers import Layer
 from .preprocessing import normalize_rocking_curve
+from .slicing import FixedLayerGridPlan, LayerSlicingPolicy
 from .xps import RockingCurve, graded_layer_property_at_depth, integrate_xps_intensity
 
 
@@ -75,6 +76,7 @@ class ReflectivityRequest:
     roughness_profile: Literal["erf", "linear"] = "erf"
     erf_truncation_factor: float = 4.0
     linear_width_factor: float = sqrt(3.0)
+    slicing: LayerSlicingPolicy | FixedLayerGridPlan | None = None
 
 
 @dataclass(frozen=True)
@@ -121,6 +123,7 @@ class RockingCurveRequest:
     normalization_mode: Literal["mean", "edge_polynomial"] = "mean"
     normalization_edge_fraction: float = 0.10
     normalization_polynomial_order: int = 2
+    slicing: LayerSlicingPolicy | FixedLayerGridPlan | None = None
 
 
 @dataclass(frozen=True)
@@ -144,6 +147,11 @@ class RockingCurveResult:
 
 def simulate_reflectivity(request: ReflectivityRequest) -> ReflectivityResult:
     """Simulate reflectivity with explicit angle-offset handling."""
+
+    if request.slicing is not None:
+        from .simulation_unified import simulate_reflectivity_unified
+
+        return simulate_reflectivity_unified(request, backend="numpy")
 
     angles = np.asarray(request.angles, dtype=float)
     calculation_angle = angles + request.angle_offset
@@ -188,6 +196,7 @@ def simulate_rocking_curve(
         normalization_mode=request.normalization_mode,
         normalization_edge_fraction=request.normalization_edge_fraction,
         normalization_polynomial_order=request.normalization_polynomial_order,
+        slicing=request.slicing,
     )
     return simulate_rocking_curves(one_core_request).core_levels[0]
 
@@ -198,6 +207,11 @@ def simulate_rocking_curves(request: RockingCurveRequest) -> RockingCurveResult:
     Electric-field profiles are computed once per angle and reused for every
     requested core level. This is the preferred entry point for fitting.
     """
+
+    if request.slicing is not None:
+        from .simulation_unified import simulate_rocking_curves_unified
+
+        return simulate_rocking_curves_unified(request, backend="numpy")
 
     angles = np.asarray(request.angles, dtype=float)
     calculation_angle = angles + request.angle_offset

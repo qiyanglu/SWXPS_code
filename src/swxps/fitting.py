@@ -9,6 +9,7 @@ from typing import Literal
 
 import numpy as np
 
+from .slicing import FixedLayerGridPlan, LayerSlicingPolicy
 from .simulation import (
     CoreLevelRequest,
     ReflectivityRequest,
@@ -187,6 +188,7 @@ class FittingProblem:
     field_step: float = 1.0
     roughness_step: float | Sequence[float] = 1.0
     roughness_profile: Literal["erf", "linear"] = "erf"
+    slicing: LayerSlicingPolicy | FixedLayerGridPlan | None = None
     offpeak_mask: np.ndarray | None = None
     rocking_curve_normalization: Literal["mean", "edge_polynomial"] = "mean"
     normalization_edge_fraction: float = 0.10
@@ -245,6 +247,7 @@ class FittingProblem:
                     angle_offset=angle_offset,
                     roughness_step=self.roughness_step,
                     roughness_profile=self.roughness_profile,
+                    slicing=self.slicing,
                 )
             )
             reflectivity_seconds = perf_counter() - reflectivity_start
@@ -272,6 +275,7 @@ class FittingProblem:
                     field_step=self.field_step,
                     roughness_step=self.roughness_step,
                     roughness_profile=self.roughness_profile,
+                    slicing=self.slicing,
                     offpeak_mask=self.offpeak_mask,
                     normalization_mode=self.rocking_curve_normalization,
                     normalization_edge_fraction=self.normalization_edge_fraction,
@@ -325,6 +329,7 @@ class FittingProblem:
                     angle_offset=angle_offset,
                     roughness_step=self.roughness_step,
                     roughness_profile=self.roughness_profile,
+                    slicing=self.slicing,
                 )
             )
         rocking_curve_result = None
@@ -339,6 +344,7 @@ class FittingProblem:
                     field_step=self.field_step,
                     roughness_step=self.roughness_step,
                     roughness_profile=self.roughness_profile,
+                    slicing=self.slicing,
                     offpeak_mask=self.offpeak_mask,
                     normalization_mode=self.rocking_curve_normalization,
                     normalization_edge_fraction=self.normalization_edge_fraction,

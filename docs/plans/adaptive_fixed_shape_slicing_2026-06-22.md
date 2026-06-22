@@ -2,7 +2,7 @@
 
 ## Status
 
-Design only. No package code or public API behavior has been changed.
+Implemented and validated on 2026-06-22. The legacy step-based path remains unchanged; the unified grid is selected explicitly with `slicing=`.
 
 ## Goal
 
@@ -246,15 +246,12 @@ Implementation is accepted only if:
 8. accuracy, runtime, memory, and compilation behavior are reported for thin
    and 160 Angstrom cases.
 
-## Remaining implementation choices
+## Implementation decisions
 
-- Final public keyword name: `slicing`, `grid`, or `grid_plan`.
-- Whether the first release accepts only one global `max_slice_thickness` or
-  also a per-layer sequence. Start with the global user variable unless a
-  maintained case study demonstrates a need for per-layer values.
-- Whether `LayerGrid` itself should be public or remain an inspected internal result.
-
-These choices do not change the confirmed count rule or shared-grid architecture.
+- The high-level keyword is `slicing` on reflectivity/rocking-curve requests and `FittingProblem`.
+- The first release uses one global user-configurable `max_slice_thickness`.
+- `LayerGrid`, `LayerSlicingPolicy`, `FixedLayerGridPlan`, and their factories are public.
+- A per-layer maximum can be added later without changing the existing API if a maintained case study demonstrates the need.
 
 ## Progress log
 
@@ -264,4 +261,8 @@ These choices do not change the confirmed count rule or shared-grid architecture
   Angstrom default.
 - 2026-06-22: Confirmed one shared cell-centered grid for roughness, fields,
   concentration/IMFP, attenuation, and RC integration.
-- No source code changed.
+- Implemented policy, adaptive/fixed plans, shared grid, graded optical cells, cell-centered fields, attenuation, midpoint RC integration, NumPy/JAX dispatch, and fitting propagation.
+- Focused unified-grid suite: 22 passed.
+- Full regression suite: 113 passed with 46 pre-existing `np.trapz` warnings.
+- Thin-surface benchmark: one shape across a 2-6 Angstrom sweep, one new JAX compilation, maximum reflectivity absolute error `1.31e-5` versus a 0.1 Angstrom reference, and finite normalized RCs.
+- The 160 Angstrom film case used 80 film cells (90 total with the surface layer), returned finite reflectivity, and took about 0.0032 seconds on this machine.
