@@ -1,24 +1,30 @@
 # TODO
 
-Last updated: 2026-06-21
+Last updated: 2026-06-22
 
-## Start of the next session
+## Next decision: slicing semantics
 
-- Pull the latest `main` branch and confirm `git status` is clean.
-- Install the package and only the optional extras required for the task.
-- Run `python -B -m pytest -q -p no:cacheprovider`.
-- Run `python benchmarks/performance/profile_forward_workflow.py` and record
-  the new machine's baseline before comparing performance.
+- Confirm that 2 Angstrom is the maximum permitted slice thickness, not the minimum.
+- Confirm initial defaults of at least 10 slices per finite nominal layer and a
+  maximum 2 Angstrom slice thickness.
+- Confirm that the new strategy is opt-in for the first implementation while
+  legacy `field_step` and `roughness_step` behavior remains unchanged.
+- Use a capacity stack built at fit upper bounds to freeze JAX slice counts,
+  unless a better explicit mapping is demonstrated.
+- Prototype whether roughness and field/XPS sampling can share one planned grid
+  without changing the validated physical integration.
 
-## Next implementation milestone
+## Planned slicing implementation
 
-- Profile one maintained Sample 12 or Sample 13 fitting-objective evaluation.
-- Identify duplicated stack, dataset, core-level, and fitting configuration in
-  the maintained case-study runners.
-- Propose one small shared configuration/builder extraction; do not begin a
-  wholesale source rewrite or rewrite every example at once.
-- Add focused parity tests before changing the case-study runners.
-- Keep the existing public APIs and all core physical behavior unchanged.
+- Follow `docs/plans/adaptive_fixed_shape_slicing_2026-06-22.md`.
+- Record legacy outputs and shapes before editing numerical code.
+- Implement a pure, backend-independent slice-count planner with focused tests.
+- Add an opt-in fixed-count roughness grid while preserving the existing step path.
+- Add an opt-in fixed-shape field/XPS depth grid with correct nominal-material mapping.
+- Verify fixed shapes across thickness sweeps larger than 1 Angstrom.
+- Verify NumPy/JAX parity and convergence against a fine legacy reference.
+- Benchmark compilation, repeated calls, memory, and a 160 Angstrom layer.
+- Migrate only one maintained case-study runner after package-level validation.
 
 ## Scientific validation priorities
 

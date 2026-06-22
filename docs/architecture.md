@@ -56,6 +56,23 @@ reflectivity, fields, XPS integration, normalization, and scoring remain
 dynamic. They are deliberately not hidden behind caches because their inputs
 can change at every objective evaluation.
 
+## Current discretization boundary
+
+Roughness grading and field sampling currently use separate step-based grids.
+Both derive their lengths from the current layer thickness using `ceil`, which
+means a fitted thickness change can change the shapes passed to JAX. The
+existing scalar and per-layer step APIs are validated behavior and must remain
+available.
+
+The planned additive strategy separates **slice planning** from **slice
+evaluation**. A policy determines at least a minimum count and at most a target
+slice thickness. A fixed fitting plan determines counts once from capacity
+thicknesses, while each objective evaluation updates only slice widths and
+material values. This keeps JAX shapes static without quantizing fitted
+thickness. See
+`docs/plans/adaptive_fixed_shape_slicing_2026-06-22.md`; this strategy is not
+yet implemented.
+
 ## Performance boundary
 
 `benchmarks/performance/profile_forward_workflow.py` times the static-loading
