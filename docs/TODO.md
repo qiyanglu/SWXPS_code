@@ -2,50 +2,51 @@
 
 Last updated: 2026-06-22
 
-## Next decision: slicing semantics
+## Confirmed slicing requirements
 
-- Confirm that 2 Angstrom is the maximum permitted slice thickness, not the minimum.
-- Confirm initial defaults of at least 10 slices per finite nominal layer and a
-  maximum 2 Angstrom slice thickness.
-- Confirm that the new strategy is opt-in for the first implementation while
-  legacy `field_step` and `roughness_step` behavior remains unchanged.
-- Use a capacity stack built at fit upper bounds to freeze JAX slice counts,
-  unless a better explicit mapping is demonstrated.
-- Prototype whether roughness and field/XPS sampling can share one planned grid
-  without changing the validated physical integration.
+- User-configurable `max_slice_thickness`; default 2 Angstrom.
+- Configurable `min_slices`; proposed default 10 per positive finite layer.
+- One cell-centered grid for roughness, fields, concentration/IMFP,
+  attenuation, and RC integration.
+- Fixed counts from upper-bound capacity thicknesses during JAX fitting.
+- Existing APIs and legacy step-based behavior remain intact.
 
-## Planned slicing implementation
+## First implementation checkpoint
 
 - Follow `docs/plans/adaptive_fixed_shape_slicing_2026-06-22.md`.
-- Record legacy outputs and shapes before editing numerical code.
-- Implement a pure, backend-independent slice-count planner with focused tests.
-- Add an opt-in fixed-count roughness grid while preserving the existing step path.
-- Add an opt-in fixed-shape field/XPS depth grid with correct nominal-material mapping.
+- Record legacy numerical outputs and array shapes.
+- Add `src/swxps/slicing.py` with policy and fixed-plan types.
+- Materialize cell edges, centers, widths, and nominal/effective mappings.
+- Test default and user-changed maximum thickness values.
+- Test 4, 16, and 160 Angstrom layers and exact thickness conservation.
+- Stop for review before changing any physics kernel.
+
+## Later integration checkpoints
+
+- Build graded effective optical cells from the shared grid.
+- Evaluate fields at the same centers with no second depth grid.
+- Add cell-centered concentration/IMFP, attenuation, and midpoint RC integration.
+- Propagate the optional grid through NumPy, JAX, and `FittingProblem`.
 - Verify fixed shapes across thickness sweeps larger than 1 Angstrom.
-- Verify NumPy/JAX parity and convergence against a fine legacy reference.
+- Verify NumPy/JAX parity and fine-grid convergence.
 - Benchmark compilation, repeated calls, memory, and a 160 Angstrom layer.
-- Migrate only one maintained case-study runner after package-level validation.
+- Migrate one maintained case-study runner only after package validation.
 
 ## Scientific validation priorities
 
-- Audit experimental rocking-curve preprocessing and normalization against raw data.
+- Audit experimental RC preprocessing and normalization against raw data.
 - Quantify sensitivity to weights, bounds, initialization, and local minima.
-- Check fitted thickness, roughness, chemistry, and angular offsets against
-  independent physical expectations.
-- Keep experimental results labeled provisional until those checks are documented.
+- Check fitted structure and angular offsets against independent expectations.
+- Keep experimental results provisional until these checks are documented.
 
 ## Small maintenance items
 
-- Replace deprecated `np.trapz` usage with `np.trapezoid` in a separate,
-  parity-tested change.
-- Review completed plans under `docs/plans/` and move long-form completed logs
-  to `docs/history/` when they are no longer active references.
+- Replace deprecated `np.trapz` in a separate parity-tested change.
+- Move completed long-form plans to `docs/history/` when no longer active.
 
 ## Session handoff checklist
 
-- Update this file to distinguish completed, remaining, and newly discovered work.
-- Update `docs/PROJECT_STATE.md` with tests, benchmark results, important design
-  decisions, current branch/commit context, and any known blockers.
-- Commit the handoff documentation with the code it describes.
-- Ensure required commits are pushed before switching computers; ignored
-  `runs/` and `archive/` files must be transferred separately if needed.
+- Update this file and `docs/PROJECT_STATE.md`.
+- Record tests, benchmarks, design decisions, branch/commit, and blockers.
+- Commit handoff documentation with the work it describes.
+- Push required commits before switching computers.

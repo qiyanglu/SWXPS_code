@@ -14,7 +14,7 @@ The core uses grazing angles in degrees, energy in eV, lengths in Angstrom, and
 
 - `layers.py`, `stack_builders.py`: layer and stack construction.
 - `simulation.py`, `simulation_jax.py`: NumPy and fixed-shape JAX APIs.
-- `optical_constants.py`, `imfp.py`: local table loading.
+- `optical_constants.py`, `imfp.py`: cached local table loading.
 - `preprocessing.py`: experimental preparation and RC normalization.
 
 ## Fitting
@@ -28,13 +28,10 @@ The core uses grazing angles in degrees, energy in eV, lengths in Angstrom, and
 ## Repository data flow
 
 Tutorials in `examples/`, experimental runners in `case_studies/`, and synthetic
-drivers in `benchmarks/` call the same package APIs. Generated output is written
-to `runs/`. Reviewed case-study results may be promoted into a
-`best_results_so_far` directory. Superseded local material belongs in `archive/`.
+drivers in `benchmarks/` call the same package APIs. Generated output belongs in
+`runs/`; superseded local material belongs in `archive/`.
 
 ## Forward-model data flow
-
-The maintained path through the package is:
 
 ```text
 optical/IMFP tables --cached parse--> interpolated material values
@@ -45,37 +42,43 @@ fields + concentration + IMFP ------> normalized SW-XPS rocking curves
 simulated + experimental curves ----> fitting contributions and objective
 ```
 
-`optical_constants.py` and `imfp.py` cache parsed tables because those inputs
-are static during a fit. Cache entries are bounded and keyed by resolved path,
-file modification time, and file size; changing a table therefore causes a
-fresh parse. `clear_optical_constants_cache()` and `clear_imfp_cache()` are
-available for explicit process-level invalidation.
-
-Stack construction, fitted parameter resolution, roughness discretization,
-reflectivity, fields, XPS integration, normalization, and scoring remain
-dynamic. They are deliberately not hidden behind caches because their inputs
-can change at every objective evaluation.
+Parsed tables are static during a fit and cached. Stack construction,
+roughness, fields, XPS, normalization, and scoring remain dynamic.
 
 ## Current discretization boundary
 
-Roughness grading and field sampling currently use separate step-based grids.
-Both derive their lengths from the current layer thickness using `ceil`, which
-means a fitted thickness change can change the shapes passed to JAX. The
-existing scalar and per-layer step APIs are validated behavior and must remain
-available.
+The validated legacy path uses separate step-based roughness and field grids.
+Both lengths depend on current thickness through `ceil`, so fitted thickness
+changes can change JAX shapes. Existing step APIs remain supported.
 
-The planned additive strategy separates **slice planning** from **slice
-evaluation**. A policy determines at least a minimum count and at most a target
-slice thickness. A fixed fitting plan determines counts once from capacity
-thicknesses, while each objective evaluation updates only slice widths and
-material values. This keeps JAX shapes static without quantizing fitted
-thickness. See
-`docs/plans/adaptive_fixed_shape_slicing_2026-06-22.md`; this strategy is not
-yet implemented.
+## Planned unified-grid boundary
+
+The additive unified mode will separate planning from evaluation:
+
+```text
+LayerSlicingPolicy
+  min_slices = 10
+  max_slice_thickness = 2 Angstrom (user configurable)
+                 |
+capacity stack --+--> FixedLayerGridPlan (counts and topology)
+trial stack ----------> LayerGrid (edges, centers, widths, mappings)
+                              |
+                              +--> graded optical cells / reflectivity
+                              +--> electric fields at cell centers
+                              +--> concentration and IMFP at cell centers
+                              +--> attenuation and weighted RC integration
+```
+
+One effective optical cell and one field/XPS sample share each cell center.
+RCs use cell widths as midpoint quadrature weights. During fitting, counts are
+fixed from upper-bound capacity thicknesses, while trial thickness changes only
+cell widths and values. This preserves JAX shapes without quantizing thickness.
+
+See `docs/plans/adaptive_fixed_shape_slicing_2026-06-22.md`. This mode is not
+implemented yet; the legacy path remains the only active behavior.
 
 ## Performance boundary
 
-`benchmarks/performance/profile_forward_workflow.py` times the static-loading
-and dynamic-computation stages separately on a representative
-C/[LNO/STO]x8/STO stack. Run it before and after performance work so changes are
-judged against the same workload rather than against case-study wall time.
+`benchmarks/performance/profile_forward_workflow.py` reports static loading and
+dynamic stages separately. The slicing milestone will add a thickness-sweep
+benchmark covering compilation, repeated calls, accuracy, and memory.
