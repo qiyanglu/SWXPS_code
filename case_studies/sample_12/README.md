@@ -7,3 +7,6 @@
 
 Generated runs are stored under `runs/sample_12`; older preserved
 experiments are under `archive/sample_12`.
+## Diagnostics sanity check
+
+The maintained bounded TRF runner imports `swanx` and saves normalized parameter uncertainty, validated parameter correlation, and correlation CSV outputs. The 2026-06-23 sanity run is under `runs/sample_12/jax_least_squares/diagnostics_sanity_check/`; promotion was disabled, so `best_results_so_far/` was not changed.

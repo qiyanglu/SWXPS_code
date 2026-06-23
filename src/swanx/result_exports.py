@@ -6,7 +6,7 @@ import csv
 from pathlib import Path
 from typing import Sequence
 
-from .fitting import FitSimulation, ReflectivityData, RockingCurveData
+from ._fitting import FitSimulation, ReflectivityData, RockingCurveData
 from .simulation import SimulationStack
 
 

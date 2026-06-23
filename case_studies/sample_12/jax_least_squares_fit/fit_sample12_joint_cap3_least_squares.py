@@ -26,14 +26,22 @@ for path in (SRC_DIR, GRADIENT_DIR, SAMPLE13_LS_DIR, CASE_DIR):
     if str(path) not in sys.path:
         sys.path.insert(0, str(path))
 
-from swxps import (  # noqa: E402
+from swanx import (  # noqa: E402
     JaxLeastSquaresOptimizerSettings,
     JaxResidualFunction,
     optimize_with_jax_least_squares,
     plot_stack_schematic,
     plot_vertical_concentration_profiles,
 )
-from swxps.result_exports import save_fit_curve_data_csv, save_optimized_stack_csv  # noqa: E402
+from swanx.diagnostics import (  # noqa: E402
+    diagnostics_from_least_squares_result,
+    plot_correlation_matrix,
+    plot_parameter_estimates,
+)
+from swanx.diagnostics.reports import (  # noqa: E402
+    save_fit_curve_data_csv,
+    save_optimized_stack_csv,
+)
 
 import collect_best_results_so_far as collector  # noqa: E402
 import fit_sample12_joint_cap3_jax_gradient as fit12  # noqa: E402
@@ -168,6 +176,7 @@ def save_outputs(output_dir, problem, simulation, result, initial_residual_objec
     ls_utils.save_contributions(output_dir / "numpy_validation_contributions.csv", best_numpy)
     ls_utils.save_covariance(output_dir / "covariance.csv", result)
     ls_utils.save_uncertainties(output_dir / "parameter_uncertainties.csv", result)
+    save_parameter_diagnostics(output_dir, result)
     save_summary(
         output_dir / "summary.csv", output_dir / "summary.txt", result,
         initial_residual_objective, initial_jax, initial_numpy, best_jax, best_numpy,
@@ -190,6 +199,35 @@ def save_outputs(output_dir, problem, simulation, result, initial_residual_objec
     save_optimized_stack_csv(output_dir / "optimized_stack_layers.csv", simulation.stack)
 
 
+def save_parameter_diagnostics(output_dir: Path, result) -> None:
+    """Save corrected public-API uncertainty and correlation diagnostics."""
+
+    import matplotlib.pyplot as plt
+
+    diagnostics = diagnostics_from_least_squares_result(result, PARAMETERS)
+    uncertainty_figure, _ = plot_parameter_estimates(diagnostics)
+    uncertainty_figure.savefig(
+        output_dir / "parameter_uncertainty.png",
+        dpi=180,
+        bbox_inches="tight",
+    )
+    plt.close(uncertainty_figure)
+
+    correlation_figure, _ = plot_correlation_matrix(diagnostics)
+    correlation_figure.savefig(
+        output_dir / "parameter_correlation.png",
+        dpi=180,
+        bbox_inches="tight",
+    )
+    plt.close(correlation_figure)
+
+    with (output_dir / "parameter_correlation.csv").open(
+        "w", encoding="utf-8", newline=""
+    ) as handle:
+        writer = csv.writer(handle)
+        writer.writerow(("parameter", *diagnostics.names))
+        for name, row in zip(diagnostics.names, diagnostics.correlation):
+            writer.writerow((name, *row))
 def save_summary(csv_path, text_path, result, initial_residual_objective,
                  initial_jax, initial_numpy, best_jax, best_numpy, weight,
                  rc_normalization) -> None:
@@ -250,6 +288,9 @@ def compare_and_promote(reference, weight, candidate, simulation, output_dir: Pa
         "history.csv": "sample12_trf_least_squares_history.csv",
         "covariance.csv": "sample12_trf_least_squares_covariance.csv",
         "parameter_uncertainties.csv": "sample12_trf_least_squares_parameter_uncertainties.csv",
+        "parameter_uncertainty.png": "sample12_trf_least_squares_parameter_uncertainty.png",
+        "parameter_correlation.png": "sample12_trf_least_squares_parameter_correlation.png",
+        "parameter_correlation.csv": "sample12_trf_least_squares_parameter_correlation.csv",
         "best_fit_experiment_and_simulation.csv": "best_fit_experiment_and_simulation.csv",
         "optimized_stack_layers.csv": "optimized_stack_layers.csv",
     }

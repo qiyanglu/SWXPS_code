@@ -1,5 +1,7 @@
 # Repository cleanup plan
 
+> Namespace note (2026-06-23): This completed cleanup plan predates the `swanx` rename. Maintained code now lives under `src/swanx`; `src/swxps` is a compatibility shim.
+
 ## Goal
 
 Separate maintained source, reproducible examples, experimental inputs, canonical

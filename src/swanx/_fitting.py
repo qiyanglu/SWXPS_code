@@ -9,7 +9,7 @@ from typing import Literal
 
 import numpy as np
 
-from .slicing import FixedLayerGridPlan, LayerSlicingPolicy
+from .stack.slicing import FixedLayerGridPlan, LayerSlicingPolicy
 from .simulation import (
     CoreLevelRequest,
     ReflectivityRequest,

@@ -23,7 +23,7 @@ from .unified_grid import (
     materialize_layer_grid,
     reflectivity_on_grid,
 )
-from .xps import RockingCurve, graded_layer_property_at_depth
+from ._xps import RockingCurve, graded_layer_property_at_depth
 
 
 def simulate_reflectivity_unified(
@@ -204,5 +204,3 @@ def _simulate_core_on_grid(request, core_level, grid, field_intensity):
             normalization=normalization,
         ),
     )
-
-

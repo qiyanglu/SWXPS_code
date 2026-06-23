@@ -120,7 +120,11 @@ def test_diagnostics_from_least_squares_result_uses_declared_parameters():
     assert diagnostics.names == ("a", "b")
     assert diagnostics.bounds == ((0.0, 2.0), (-1.0, 1.0))
     np.testing.assert_allclose(diagnostics.values, [1.25, -0.25])
-    np.testing.assert_allclose(diagnostics.covariance, np.eye(2))
+    expected_covariance = float(residuals @ residuals) * np.linalg.pinv(
+        jacobian.T @ jacobian
+    )
+    np.testing.assert_allclose(diagnostics.covariance, expected_covariance)
+    assert not np.allclose(diagnostics.covariance, result.covariance)
 
 
 def test_diagnostics_requires_residuals_and_jacobian_without_covariance():

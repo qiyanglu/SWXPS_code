@@ -104,6 +104,8 @@ def test_jax_least_squares_reduces_cost_and_respects_bounds():
     assert result.njev is not None
     assert result.history
     assert result.covariance is not None
+    np.testing.assert_allclose(result.covariance, result.covariance.T)
+    assert np.linalg.eigvalsh(result.covariance)[0] >= -1.0e-12
     for parameter in parameters:
         value = result.best_parameters[parameter.name]
         assert parameter.lower <= value <= parameter.upper

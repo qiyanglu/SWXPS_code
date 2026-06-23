@@ -10,8 +10,8 @@ from typing import Literal
 
 import numpy as np
 
-from .simulation import SimulationStack
-from .xps import graded_layer_property_at_depth
+from ..simulation import SimulationStack
+from .._xps import graded_layer_property_at_depth
 
 
 @dataclass(frozen=True)
@@ -495,3 +495,12 @@ def _load_pyplot():
     except ImportError as error:
         raise ImportError("matplotlib is required for concentration profile plots") from error
     return plt
+
+__all__ = [
+    "StackProfiles",
+    "plot_vertical_concentration_profiles",
+    "sample_concentration_profiles",
+    "sample_layer_concentration_profiles",
+    "sample_stack_property",
+    "stack_depth_grid",
+]

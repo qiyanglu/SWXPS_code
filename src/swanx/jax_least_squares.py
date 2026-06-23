@@ -9,7 +9,7 @@ from typing import Literal
 
 import numpy as np
 
-from .fitting import (
+from ._fitting import (
     FitParameter,
     ReflectivityData,
     RockingCurveData,
@@ -405,17 +405,22 @@ def _validate_initial(
 def _estimate_covariance(
     jacobian: np.ndarray,
     residuals: np.ndarray,
+    rcond: float = 1.0e-12,
 ) -> np.ndarray | None:
     residual_count, parameter_count = jacobian.shape
     degrees_of_freedom = residual_count - parameter_count
     if degrees_of_freedom <= 0:
         return None
     try:
-        normal_inverse = np.linalg.pinv(jacobian.T @ jacobian)
+        normal_inverse = np.linalg.pinv(
+            jacobian.T @ jacobian,
+            rcond=rcond,
+        )
     except np.linalg.LinAlgError:
         return None
     residual_variance = float(np.dot(residuals, residuals)) / degrees_of_freedom
-    return residual_variance * normal_inverse
+    covariance = residual_variance * normal_inverse
+    return 0.5 * (covariance + covariance.T)
 
 
 def _load_jax():

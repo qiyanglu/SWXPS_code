@@ -1,5 +1,11 @@
 # Parameter uncertainty and identifiability diagnostics plan
 
+> Stage 2 namespace status (2026-06-23): Numerical diagnostics now live in `swanx.diagnostics.covariance`, plotting in `swanx.diagnostics.plots`, and existing report exports are exposed through `swanx.diagnostics.reports`.
+
+> Covariance validation update (2026-06-23): Least-squares diagnostics now recompute covariance from final residuals/Jacobian; all covariance inputs are symmetrized and quality-checked, and invalid correlations cannot silently reach plotting.
+
+> Current status (2026-06-23): Implemented and exported through `swanx.diagnostics`; old `swxps` imports remain compatible.
+
 ## Goal
 
 Add reusable local least-squares parameter uncertainty, correlation, and

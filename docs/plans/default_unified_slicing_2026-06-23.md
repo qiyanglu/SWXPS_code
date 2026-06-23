@@ -1,5 +1,7 @@
 # Default unified high-level slicing plan
 
+> Current status (2026-06-23): Implemented and tested under the primary `swanx` namespace. `swxps` paths below are historical compatibility references.
+
 ## Goal
 
 Make unified layer slicing the default for high-level reflectivity and

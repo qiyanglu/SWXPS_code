@@ -1,5 +1,7 @@
 # Performance baseline and scientific-table cache plan
 
+> Namespace note (2026-06-23): This completed plan predates the `swanx` rename. Its `swxps` paths are historical and remain valid through compatibility aliases.
+
 ## Goal
 
 Measure the major stages of one representative SWXPS forward/fitting workflow

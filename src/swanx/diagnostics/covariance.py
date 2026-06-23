@@ -5,13 +5,14 @@ from __future__ import annotations
 from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
+import warnings
 
 import numpy as np
 
-from .fitting import FitParameter
+from .._fitting import FitParameter
 
 if TYPE_CHECKING:
-    from .jax_least_squares import JaxLeastSquaresOptimizationResult
+    from ..jax_least_squares import JaxLeastSquaresOptimizationResult
 
 
 @dataclass(frozen=True)
@@ -68,7 +69,11 @@ def compute_parameter_diagnostics(
             raise ValueError(
                 "residuals and jacobian are required when covariance is not provided"
             )
-        dof = max(1, residual_array.size - parameter_count)
+        dof = residual_array.size - parameter_count
+        if dof <= 0:
+            raise ValueError(
+                "Jacobian-derived covariance requires N > P residual degrees of freedom"
+            )
         residual_variance = float(np.dot(residual_array, residual_array) / dof)
         normal_matrix = jacobian_array.T @ jacobian_array
         covariance_array = residual_variance * np.linalg.pinv(
@@ -83,11 +88,19 @@ def compute_parameter_diagnostics(
             dof = 0
             residual_variance = float("nan")
         else:
-            dof = max(1, residual_array.size - parameter_count)
-            residual_variance = float(np.dot(residual_array, residual_array) / dof)
+            dof = residual_array.size - parameter_count
+            residual_variance = (
+                float(np.dot(residual_array, residual_array) / dof)
+                if dof > 0
+                else float("nan")
+            )
 
+    covariance_array = _validate_and_symmetrize_covariance(
+        covariance_array,
+        parameter_count,
+    )
     diagonal = np.diag(covariance_array)
-    stderr = np.sqrt(np.maximum(diagonal, 0.0))
+    stderr = np.sqrt(diagonal)
     correlation = _correlation_from_covariance(covariance_array, stderr)
     singular_values = (
         np.array([], dtype=float)
@@ -145,154 +158,10 @@ def diagnostics_from_least_squares_result(
         ),
         residuals=result.final_residuals,
         jacobian=result.final_jacobian,
-        covariance=result.covariance,
+        covariance=None,
         rcond=rcond,
     )
 
-
-def plot_parameter_estimates(
-    diagnostics: ParameterDiagnostics,
-    ci: float | None = 0.95,
-    ax=None,
-    show_bounds: bool = True,
-):
-    """Plot parameter estimates, normal-approximation intervals, and bounds."""
-
-    plt = _load_pyplot()
-    if ax is None:
-        fig, ax = plt.subplots(
-            figsize=(8.0, max(3.0, 0.48 * len(diagnostics.names) + 1.4))
-        )
-    else:
-        fig = ax.figure
-    multiplier = _ci_multiplier(ci)
-    y = np.arange(len(diagnostics.names))
-
-    if show_bounds and diagnostics.bounds is not None:
-        for index, (lower, upper) in enumerate(diagnostics.bounds):
-            if lower is not None and upper is not None:
-                ax.hlines(
-                    index,
-                    lower,
-                    upper,
-                    color="tab:blue",
-                    alpha=0.22,
-                    linewidth=6.0,
-                    zorder=1,
-                )
-            else:
-                for bound in (lower, upper):
-                    if bound is not None:
-                        ax.plot(
-                            bound,
-                            index,
-                            marker="|",
-                            color="tab:blue",
-                            markersize=12,
-                            zorder=1,
-                        )
-
-    if multiplier is None:
-        ax.plot(
-            diagnostics.values,
-            y,
-            "o",
-            color="black",
-            label="best fit",
-            zorder=3,
-        )
-    else:
-        errors = multiplier * diagnostics.stderr
-        errors = np.where(np.isfinite(errors), errors, 0.0)
-        ax.errorbar(
-            diagnostics.values,
-            y,
-            xerr=errors,
-            fmt="o",
-            color="black",
-            ecolor="tab:orange",
-            capsize=3,
-            label=f"{int(round(100 * ci))}% CI",
-            zorder=3,
-        )
-    ax.set_yticks(y, labels=diagnostics.names)
-    ax.invert_yaxis()
-    ax.set_xlabel("Parameter value")
-    ax.grid(True, axis="x", alpha=0.25)
-    ax.legend(frameon=False)
-    fig.tight_layout()
-    return fig, ax
-
-
-def plot_correlation_matrix(
-    diagnostics: ParameterDiagnostics,
-    ax=None,
-    vmin: float = -1.0,
-    vmax: float = 1.0,
-    annotate: bool = True,
-):
-    """Plot the parameter correlation matrix without a seaborn dependency."""
-
-    plt = _load_pyplot()
-    if ax is None:
-        size = max(4.0, 0.55 * len(diagnostics.names) + 2.0)
-        fig, ax = plt.subplots(figsize=(size, size))
-    else:
-        fig = ax.figure
-    image = ax.imshow(
-        diagnostics.correlation,
-        cmap="coolwarm",
-        vmin=vmin,
-        vmax=vmax,
-    )
-    indices = np.arange(len(diagnostics.names))
-    ax.set_xticks(indices, labels=diagnostics.names, rotation=45, ha="right")
-    ax.set_yticks(indices, labels=diagnostics.names)
-    if annotate:
-        midpoint = 0.5 * (vmin + vmax)
-        for row in indices:
-            for column in indices:
-                value = diagnostics.correlation[row, column]
-                if np.isfinite(value):
-                    color = (
-                        "white"
-                        if abs(value - midpoint) > 0.25 * (vmax - vmin)
-                        else "black"
-                    )
-                    ax.text(
-                        column,
-                        row,
-                        f"{value:.2f}",
-                        ha="center",
-                        va="center",
-                        color=color,
-                        fontsize=8,
-                    )
-    ax.set_title("Parameter correlation")
-    fig.colorbar(image, ax=ax, label="Correlation")
-    fig.tight_layout()
-    return fig, ax
-
-
-def plot_singular_values(diagnostics: ParameterDiagnostics, ax=None):
-    """Plot available Jacobian singular values on a logarithmic scale."""
-
-    if diagnostics.singular_values.size == 0:
-        raise ValueError("Jacobian singular values are not available")
-    plt = _load_pyplot()
-    if ax is None:
-        fig, ax = plt.subplots(figsize=(6.5, 4.0))
-    else:
-        fig = ax.figure
-    indices = np.arange(1, diagnostics.singular_values.size + 1)
-    plotted_values = np.where(diagnostics.singular_values > 0, diagnostics.singular_values, np.nan)
-    ax.plot(indices, plotted_values, "o-", color="tab:blue")
-    ax.set_yscale("log")
-    ax.set_xlabel("Singular-value index")
-    ax.set_ylabel("Singular value")
-    ax.grid(True, which="both", alpha=0.25)
-    fig.tight_layout()
-    return fig, ax
 
 
 def _normalize_names(names, parameter_count: int) -> tuple[str, ...]:
@@ -343,16 +212,98 @@ def _normalize_jacobian(jacobian, parameter_count: int):
     return result
 
 
+def _validate_and_symmetrize_covariance(
+    covariance: np.ndarray,
+    parameter_count: int,
+) -> np.ndarray:
+    """Validate covariance quality and return a symmetric PSD matrix."""
+
+    result = np.asarray(covariance, dtype=float)
+    if result.shape != (parameter_count, parameter_count):
+        raise ValueError("covariance shape must be (P, P)")
+    if not np.all(np.isfinite(result)):
+        raise ValueError("covariance must contain only finite values")
+
+    scale = max(1.0, float(np.max(np.abs(result))))
+    symmetry_tolerance = 1.0e-10 * scale
+    asymmetry = float(np.max(np.abs(result - result.T)))
+    if asymmetry > symmetry_tolerance:
+        warnings.warn(
+            "covariance is not approximately symmetric; symmetrizing it before "
+            "computing uncertainties and correlations",
+            RuntimeWarning,
+            stacklevel=3,
+        )
+    result = 0.5 * (result + result.T)
+
+    diagonal = np.diag(result)
+    diagonal_tolerance = 1.0e-12 * scale
+    if np.any(diagonal < -diagonal_tolerance):
+        raise ValueError("covariance contains materially negative variances")
+    if np.any(diagonal < 0.0):
+        warnings.warn(
+            "covariance contains tiny negative variances; clipping them to zero",
+            RuntimeWarning,
+            stacklevel=3,
+        )
+        result = result.copy()
+        indices = np.diag_indices_from(result)
+        result[indices] = np.maximum(diagonal, 0.0)
+
+    eigenvalues, eigenvectors = np.linalg.eigh(result)
+    eigenvalue_tolerance = 1.0e-10 * scale * max(1, parameter_count)
+    if eigenvalues[0] < -eigenvalue_tolerance:
+        raise ValueError(
+            "covariance is not positive semidefinite; refusing to compute "
+            "misleading correlations"
+        )
+    if eigenvalues[0] < 0.0:
+        warnings.warn(
+            "covariance has tiny negative eigenvalues; projecting them to zero",
+            RuntimeWarning,
+            stacklevel=3,
+        )
+        result = (eigenvectors * np.maximum(eigenvalues, 0.0)) @ eigenvectors.T
+        result = 0.5 * (result + result.T)
+
+    return result
+
+
 def _correlation_from_covariance(covariance: np.ndarray, stderr: np.ndarray):
     denominator = np.outer(stderr, stderr)
     correlation = np.full(covariance.shape, np.nan, dtype=float)
-    valid = np.isfinite(covariance) & np.isfinite(denominator) & (denominator > 0)
+    variances = np.diag(covariance)
+    valid_variance = np.isfinite(variances) & (variances >= 0.0)
+    valid = (
+        np.isfinite(covariance)
+        & np.isfinite(denominator)
+        & (denominator > 0.0)
+        & valid_variance[:, None]
+        & valid_variance[None, :]
+    )
     np.divide(covariance, denominator, out=correlation, where=valid)
-    finite_diagonal = np.isfinite(np.diag(covariance)) & (np.diag(covariance) >= 0)
-    diagonal_indices = np.arange(len(stderr))
-    correlation[diagonal_indices[finite_diagonal], diagonal_indices[finite_diagonal]] = 1.0
-    return correlation
 
+    finite = np.isfinite(correlation)
+    large_excursion = finite & (np.abs(correlation) > 1.0 + 1.0e-10)
+    if np.any(large_excursion):
+        raise ValueError(
+            "covariance produced correlations materially outside [-1, 1]"
+        )
+    tiny_excursion = finite & (np.abs(correlation) > 1.0)
+    correlation[tiny_excursion] = np.clip(
+        correlation[tiny_excursion],
+        -1.0,
+        1.0,
+    )
+
+    diagonal_indices = np.arange(len(stderr))
+    correlation[
+        diagonal_indices[valid_variance],
+        diagonal_indices[valid_variance],
+    ] = 1.0
+    if not np.allclose(correlation, correlation.T, equal_nan=True):
+        raise ValueError("covariance produced a non-symmetric correlation matrix")
+    return correlation
 
 def _condition_number(
     singular_values: np.ndarray,
@@ -372,15 +323,6 @@ def _condition_number(
     return largest / float(singular_values[-1])
 
 
-def _ci_multiplier(ci: float | None) -> float | None:
-    if ci is None:
-        return None
-    if np.isclose(ci, 0.68):
-        return 1.0
-    if np.isclose(ci, 0.95):
-        return 1.96
-    raise ValueError("ci must be None, 0.68, or 0.95")
-
 
 def _readonly(values: np.ndarray) -> np.ndarray:
     result = np.array(values, dtype=float, copy=True)
@@ -388,9 +330,8 @@ def _readonly(values: np.ndarray) -> np.ndarray:
     return result
 
 
-def _load_pyplot():
-    try:
-        import matplotlib.pyplot as plt
-    except ImportError as error:
-        raise ImportError("matplotlib is required for parameter diagnostic plots") from error
-    return plt
+__all__ = [
+    "ParameterDiagnostics",
+    "compute_parameter_diagnostics",
+    "diagnostics_from_least_squares_result",
+]

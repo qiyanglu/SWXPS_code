@@ -16,14 +16,14 @@ from .fields import (
 )
 from .layers import Layer
 from .reflectivity import energy_to_wavelength, kz_in_layers
-from .slicing import (
+from .stack.slicing import (
     FixedLayerGridPlan,
     LayerGrid,
     LayerSlicingPolicy,
     adaptive_layer_grid,
     fixed_layer_grid,
 )
-from .xps import graded_layer_property_at_depth
+from ._xps import graded_layer_property_at_depth
 
 SlicingSpecification = LayerSlicingPolicy | FixedLayerGridPlan
 

@@ -3,9 +3,9 @@ requires = ["setuptools>=61"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "swxps"
+name = "swanx"
 version = "0.1.0"
-description = "Transparent x-ray reflectivity and standing-wave XPS tools for multilayer thin films."
+description = "Standing-wave analysis for X-ray spectroscopy: multilayer reflectivity, SW-XPS, fitting, and diagnostics."
 requires-python = ">=3.9"
 dependencies = ["numpy"]
 

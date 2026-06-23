@@ -2,6 +2,16 @@
 
 Last updated: 2026-06-23
 
+## Completed first-stage `swanx` namespace migration
+
+- Renamed the distribution and primary implementation namespace to `swanx`.
+- Preserved `swxps` and all former `swxps.*` imports as compatibility aliases.
+- Added stack, optics, XPS, fitting, diagnostics, I/O, and workflow discovery facades.
+- Updated the GitHub README, architecture, roadmap, and plan status notes.
+- Added namespace identity/import tests and verified editable installation.
+- Full namespace-migration regression result: 137 passed and 1 expected failure.
+- Diagnostics-plot regression result: 142 passed and 1 expected failure.
+
 ## Completed unified-grid milestone
 
 - Added user-configurable `LayerSlicingPolicy`; defaults are 10 minimum cells
@@ -42,6 +52,21 @@ Last updated: 2026-06-23
 - Consider per-layer maximum cell thickness only if that case study demonstrates
   a concrete need; the current public value is global.
 
+## Namespace follow-up
+
+- Keep new code and documentation on `swanx`; migrate maintained examples gradually.
+- Add deprecation warnings and a removal release only through a separate breaking-change plan.
+- Do not move or refactor physics kernels merely to deepen the new subpackage layout.
+
+## Completed Sample 12 diagnostics sanity check
+
+- Migrated the maintained Sample 12 TRF runner to `swanx` imports.
+- Added normalized uncertainty, validated correlation, and correlation CSV outputs.
+- Ran in an isolated folder with canonical promotion disabled.
+- Verified exact correlation symmetry/unit diagonal and `|rho| <= 1`.
+- Recorded near-degenerate roughness and angular-offset parameter pairs.
+- Full regression result: 153 passed and 1 expected failure.
+
 ## Scientific validation priorities
 
 - Audit experimental RC preprocessing and normalization against raw data.
@@ -56,6 +81,33 @@ Last updated: 2026-06-23
   opposite bounds under both ranges (`5 -> 2`, then `6 -> 1 Angstrom`).
 - Review dataset weighting: expanded bounds improve weighted reflectivity and
   C 1s but worsen Ni 3p and La 4d.
+
+## Completed diagnostics namespace sanity check
+
+- Migrated the synthetic fixed-grid JAX/TRF runner imports to `swanx`.
+- Generated uncertainty and correlation plots through `swanx.diagnostics`.
+- Normalized uncertainty plots by each finite parameter range and added raw bound endpoint labels; retained `normalization=None` for raw values.
+- Moved the CI legend above the axes and increased plot font, marker, and bound-bar sizes.
+- Reproduced the canonical optimum and one-time JAX compilation counts.
+- Confirmed a rank-6/7 Jacobian; treat substrate-roughness uncertainty as unidentifiable rather than precise.
+
+## Completed Stage 2 subpackage migration
+
+- Moved slicing and profile implementation bodies into `swanx.stack`.
+- Split diagnostics into covariance, plotting, and report namespaces.
+- Preserved flat `swanx.*`, legacy `swxps.*`, and top-level beginner exports.
+- Added canonical-location and object-identity tests.
+- Deferred optics, XPS, simulation, and fitting implementation moves.
+- Full regression result: 153 passed and 1 expected failure.
+
+## Completed covariance/correlation hardening
+
+- Recompute least-squares diagnostics covariance from final residuals/Jacobian by default.
+- Validate and symmetrize computed and externally supplied covariance matrices.
+- Reject non-finite, negative-variance, and materially indefinite inputs.
+- Enforce symmetric, bounded correlations and clip only tiny roundoff excursions.
+- Align stored optimizer covariance with `rcond=1e-12` and explicit symmetry.
+- Added failure-mode regression coverage; full result: 149 passed, 1 expected failure.
 
 ## Small maintenance items
 

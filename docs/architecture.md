@@ -1,135 +1,96 @@
 # Architecture
 
+The primary package is `swanx`: *standing-wave analysis for X-ray
+spectroscopy*. `swxps` is a temporary compatibility package that aliases the
+same modules and objects; new code should import `swanx`.
+
+## Public namespaces
+
+- `swanx.stack`: layers, stacks, templates, slicing, and profiles.
+- `swanx.optics`: Parratt, transfer-matrix, fields, and unified-grid optics.
+- `swanx.xps`: attenuation, XPS intensity, and rocking curves.
+- `swanx.fitting`: parameters, objectives, and maintained fitting backends.
+- `swanx.diagnostics`: covariance, correlation, plots, and result exports.
+- `swanx.io`: optical constants, IMFP tables, and preprocessing.
+- `swanx.workflows`: high-level simulation, fitting, and reporting entry points.
+
+These are first-stage facades over the existing implementation modules. The
+facades improve discovery without rewriting or duplicating numerical kernels.
+
+## Stage 2 implementation locations
+
+Diagnostics covariance/plot implementations and stack slicing/profile implementations now live in their public subpackages. `swanx.slicing`, `swanx.profiles`, and `swanx._diagnostics` are thin compatibility shims. Legacy `swxps.slicing`, `swxps.profiles`, and `swxps.diagnostics` resolve to the same canonical objects. Optics, XPS, simulation, and fitting implementations remain flat for later, separately tested stages.
+
 ## Core physics
 
 - `reflectivity.py`: Parratt amplitudes and reflectivity.
 - `fields.py`: transfer-matrix fields and rough-interface effective layers.
-- `xps.py`: attenuation and normalized rocking-curve integration.
-- `profiles.py`: material and concentration profiles versus depth.
+- `_xps.py`: attenuation and normalized rocking-curve integration.
+- `stack/profiles.py`: material and concentration profiles versus depth.
+- `stack/slicing.py`: adaptive and fixed-plan unified layer grids.
 
 The core uses grazing angles in degrees, energy in eV, lengths in Angstrom, and
 `n = 1 - delta + i beta`. Vacuum is first and the semi-infinite substrate last.
 
-## High-level simulation
+## High-level simulation and fitting
 
-- `layers.py`, `stack_builders.py`: layer and stack construction.
-- `simulation.py`, `simulation_jax.py`: NumPy and fixed-shape JAX APIs.
-- `optical_constants.py`, `imfp.py`: cached local table loading.
-- `preprocessing.py`: experimental preparation and RC normalization.
+- `simulation.py`, `simulation_jax.py`, `simulation_unified.py`: request/result
+  APIs and maintained NumPy/JAX forward paths.
+- `_fitting.py`, `bo.py`, `jax_gradient.py`, `jax_least_squares.py`: datasets,
+  parameters, objectives, and optimizers.
+- `_diagnostics.py`, `fit_diagnostics.py`, `result_exports.py`: local parameter
+  diagnostics, plots, and exports.
+- `optical_constants.py`, `imfp.py`, `preprocessing.py`: cached tables and
+  experimental preparation.
 
-## Fitting
-
-- `fitting.py`: datasets, parameters, residuals, weights, and histories.
-- `bo.py`: Bayesian optimization.
-- `jax_gradient.py`: bounded L-BFGS-B optimization.
-- `jax_least_squares.py`: bounded TRF least squares.
-- `fit_diagnostics.py`, `result_exports.py`, `stack_visualization.py`: outputs.
-- `diagnostics.py`: local covariance, parameter correlation, and Jacobian
-  identifiability summaries and plots.
-
-### Parameter uncertainty and identifiability
-
-For residual vector `r`, Jacobian `J`, `N` residuals, and `P` parameters, the
-reusable diagnostics API uses the local least-squares approximation
+Fitting diagnostics are implemented. For residual vector `r`, Jacobian `J`,
+`N` residuals, and `P` parameters, the local least-squares approximation is
 
 ```text
 Cov = s^2 (J^T J)^+
 s^2 = ||r||^2 / max(1, N - P)
-rho_ij = Cov_ij / sqrt(Cov_ii Cov_jj)
 ```
 
-`compute_parameter_diagnostics(...)` accepts raw values, names, optional
-bounds, residuals, and a Jacobian. A supplied covariance may be used directly.
-`diagnostics_from_least_squares_result(...)` adapts the maintained JAX/TRF
-result and `FitParameter` declarations. Matplotlib-only helpers plot parameter
-intervals and bounds, the correlation matrix, and Jacobian singular values.
+`plot_parameter_estimates(...)` normalizes each estimate and confidence interval by its declared finite parameter range by default, so heterogeneous quantities share a 0-1 axis. Raw lower and upper bounds are labeled at the endpoints. Use `normalization=None` for the legacy raw-value view.
 
-Large confidence intervals indicate weak constraints, correlations near `-1`
-or `+1` indicate coupled parameters, and small singular values indicate nearly
-unidentifiable parameter combinations. These uncertainties are local
-approximations: they assume a locally linear residual model and meaningful
-residual weighting. They do not replace profile likelihood or Bayesian
-posterior sampling for strongly nonlinear fits.
+Least-squares result adapters recompute covariance from `final_residuals` and `final_jacobian` instead of trusting a cached optimizer matrix. Both computed and explicitly supplied covariance matrices are checked for finiteness, symmetry, non-negative variances, and positive-semidefinite eigenstructure, then symmetrized before correlation. Materially malformed matrices raise rather than producing a plot; tiny roundoff asymmetry/eigenvalue excursions warn and are corrected. Correlations are required to be symmetric and bounded in `[-1, 1]` apart from tiny clipped roundoff.
+
+The resulting uncertainty and correlation estimates remain local
+approximations, not substitutes for nonlinear profile likelihoods or Bayesian
+posterior sampling.
+
+## Unified slicing boundary
+
+High-level reflectivity and rocking-curve requests use unified slicing by
+default. `slicing=None` explicitly selects the validated legacy fixed-step
+path. The default policy is
+
+```text
+N_i = max(min_slices, ceil(t_i / max_slice_thickness))
+min_slices = 10
+max_slice_thickness = 2 Angstrom (user configurable)
+```
+
+One cell-centered grid supplies roughness grading, effective optical cells,
+field locations, concentration and IMFP samples, attenuation, and midpoint
+rocking-curve weights. During fitting, counts can be planned from capacity
+thicknesses so trial thickness changes values and widths without changing JAX
+shapes.
+
+Generic grid materialization uses Python floats and NumPy arrays and is not
+JAX-traceable. End-to-end differentiable workflows use the JAX-native
+fixed-plan model with topology prepared outside the trace.
 
 ## Repository data flow
-
-Tutorials in `examples/`, experimental runners in `case_studies/`, and synthetic
-drivers in `benchmarks/` call the same package APIs. Generated output belongs in
-`runs/`; superseded local material belongs in `archive/`.
-
-## Forward-model data flow
 
 ```text
 optical/IMFP tables --cached parse--> interpolated material values
 fit parameters ---------------------> StackTemplate -> SimulationStack
-SimulationStack --roughness grading-> effective optical layers
-angles + effective layers ----------> reflectivity and electric fields
+SimulationStack --unified slicing---> effective optical cells and field grid
 fields + concentration + IMFP ------> normalized SW-XPS rocking curves
-simulated + experimental curves ----> fitting contributions and objective
+simulated + experimental curves ----> objective -> fit -> diagnostics/report
 ```
 
-Parsed tables are static during a fit and cached. Stack construction,
-roughness, fields, XPS, normalization, and scoring remain dynamic.
-
-## Legacy discretization boundary
-
-The validated legacy path uses separate step-based roughness and field grids.
-Both lengths depend on current thickness through `ceil`, so fitted thickness
-changes can change JAX shapes. Existing step APIs remain supported.
-
-Set `slicing=None` on a high-level request to select this path explicitly.
-Non-default `field_step` or `roughness_step` values are rejected while unified
-slicing is active, because those arguments do not affect the unified grid.
-
-## Default unified-grid boundary
-
-High-level reflectivity and rocking-curve requests use unified slicing by
-default. The unified mode separates planning from evaluation:
-
-```text
-LayerSlicingPolicy
-  min_slices = 10
-  max_slice_thickness = 2 Angstrom (user configurable)
-                 |
-capacity stack --+--> FixedLayerGridPlan (counts and topology)
-trial stack ----------> LayerGrid (edges, centers, widths, mappings)
-                              |
-                              +--> graded optical cells / reflectivity
-                              +--> electric fields at cell centers
-                              +--> concentration and IMFP at cell centers
-                              +--> attenuation and weighted RC integration
-```
-
-One effective optical cell and one field/XPS sample share each cell center.
-RCs use cell widths as midpoint quadrature weights. During fitting, counts are
-fixed from upper-bound capacity thicknesses, while trial thickness changes only
-cell widths and values. This preserves JAX shapes without quantizing thickness.
-
-For finite layer thickness `t_i`, adaptive counts follow
-
-```text
-N_i = max(min_slices, ceil(t_i / max_slice_thickness))
-```
-
-with `min_slices=10` and `max_slice_thickness=2 Angstrom` by default.
-
-### JAX differentiation boundary
-
-Unified high-level forward calls support a JAX-backed reflectivity/field
-calculation after materialization. Full end-to-end JAX differentiation through
-generic grid materialization is not currently supported: `LayerGrid` and
-effective layers are constructed through Python floats and NumPy arrays.
-Differentiable optimizers must use a JAX-native fixed-shape forward model whose
-fixed-plan topology and nominal-to-cell mappings are prepared outside the
-traced objective. Values and gradients through that array-native path are
-covered under eager execution and JIT.
-
-See `docs/plans/adaptive_fixed_shape_slicing_2026-06-22.md` and
-`docs/plans/default_unified_slicing_2026-06-23.md`. Set `slicing=None` when a
-regression or compatibility workflow requires the legacy path.
-
-## Performance boundary
-
-`benchmarks/performance/profile_forward_workflow.py` reports static loading and
-dynamic stages separately. The slicing milestone will add a thickness-sweep
-benchmark covering compilation, repeated calls, accuracy, and memory.
+Tutorials in `examples/`, experimental runners in `case_studies/`, and
+synthetic drivers in `benchmarks/` call the same APIs. Generated output belongs
+in `runs/`; superseded local material belongs in `archive/`.

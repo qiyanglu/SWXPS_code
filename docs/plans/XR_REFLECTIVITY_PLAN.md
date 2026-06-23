@@ -1,4 +1,6 @@
-# SWXPS active milestone plan
+# swanx active milestone plan
+
+> Current status (2026-06-23): `swanx` is the primary namespace, unified slicing is the default high-level path, fitting diagnostics are implemented, and near-term work focuses on workflows, examples, and validation rather than additional core physics.
 
 ## Goal
 

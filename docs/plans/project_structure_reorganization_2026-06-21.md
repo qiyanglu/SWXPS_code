@@ -1,5 +1,7 @@
 # Project structure reorganization plan
 
+> Namespace note (2026-06-23): This completed repository plan predates the `swanx` rename. Maintained code now lives under `src/swanx`; `src/swxps` is a compatibility shim.
+
 ## Goal
 
 Complete the repository cleanup by separating tutorial examples, experimental

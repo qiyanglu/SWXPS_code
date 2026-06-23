@@ -1,5 +1,9 @@
 # Adaptive unified-grid and fixed-shape slicing plan
 
+> Stage 2 namespace status (2026-06-23): The maintained slicing implementation now lives in `swanx.stack.slicing`; flat `swanx.slicing` and `swxps.slicing` imports are compatibility shims.
+
+> Current status (2026-06-23): Implemented. Unified slicing is now the default high-level path; `slicing=None` selects the legacy fixed-step path. The primary namespace is `swanx`, with `swxps` retained as a compatibility alias.
+
 ## Status
 
 Implemented and validated on 2026-06-22. The legacy step-based path remains unchanged; the unified grid is selected explicitly with `slicing=`.

@@ -1,5 +1,7 @@
 # Sample 13 fixed-grid JAX least-squares plan
 
+> Namespace note (2026-06-23): The implementation is now available under `swanx`; `swxps` references below are retained as historical compatibility paths.
+
 ## Goal
 
 Fit Sample 13 reflectivity and the C 1s, Ni 3p, and La 4d rocking curves with

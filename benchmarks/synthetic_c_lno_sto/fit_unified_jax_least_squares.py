@@ -19,7 +19,7 @@ for path in (SRC_DIR, CASE_DIR):
         sys.path.insert(0, str(path))
 
 import fit_reflectivity_rc_bo as case  # noqa: E402
-from swxps import (  # noqa: E402
+from swanx import (  # noqa: E402
     JaxLeastSquaresOptimizerSettings,
     JaxLeastSquaresResidualSettings,
     LayerSlicingPolicy,
@@ -28,7 +28,12 @@ from swxps import (  # noqa: E402
     fixed_layer_grid_plan,
     optimize_with_jax_least_squares,
 )
-from swxps.reflectivity_jax import (  # noqa: E402
+from swanx.diagnostics import (  # noqa: E402
+    diagnostics_from_least_squares_result,
+    plot_correlation_matrix,
+    plot_parameter_estimates,
+)
+from swanx.reflectivity_jax import (  # noqa: E402
     transfer_matrix_field_intensity_jax,
     transfer_matrix_reflectivity_jax,
 )
@@ -436,6 +441,30 @@ def save_outputs(output_dir: Path, output: dict[str, object]) -> None:
     _save_curves(output_dir / "best_fit_curves.csv", output)
     _plot_fit(output_dir / "best_fit.png", output)
     _plot_convergence(output_dir / "convergence.png", output)
+    _plot_parameter_diagnostics(output_dir, result)
+
+
+def _plot_parameter_diagnostics(output_dir: Path, result) -> None:
+    """Save public-API uncertainty and correlation diagnostics for the fit."""
+
+    import matplotlib.pyplot as plt
+
+    diagnostics = diagnostics_from_least_squares_result(result, case.PARAMETERS)
+    uncertainty_figure, _ = plot_parameter_estimates(diagnostics)
+    uncertainty_figure.savefig(
+        output_dir / "parameter_uncertainty.png",
+        dpi=180,
+        bbox_inches="tight",
+    )
+    plt.close(uncertainty_figure)
+
+    correlation_figure, _ = plot_correlation_matrix(diagnostics)
+    correlation_figure.savefig(
+        output_dir / "parameter_correlation.png",
+        dpi=180,
+        bbox_inches="tight",
+    )
+    plt.close(correlation_figure)
 
 
 def summary_values(output: dict[str, object]) -> dict[str, object]:

@@ -2,15 +2,25 @@
 
 Last updated: 2026-06-23
 
-This is the machine-independent handoff for the SWXPS repository. Read this
+This is the machine-independent handoff for the `swanx` repository. Read this
 file, `docs/TODO.md`, `AGENTS.md`, and the root `README.md` before continuing a
 substantial coding session.
+
+## Namespace migration
+
+- `swanx` means *standing-wave analysis for X-ray spectroscopy* and is now the primary distribution and import namespace.
+- Maintained implementation modules live under `src/swanx/`.
+- `src/swxps/` is a temporary compatibility shim; existing `swxps.*` imports resolve to the same implementation objects.
+- First-stage discovery facades are available at `swanx.stack`, `optics`, `xps`, `fitting`, `diagnostics`, `io`, and `workflows`.
+- High-level unified slicing remains the default; `slicing=None` remains the legacy fixed-step selector.
+- The README now uses `swanx_logo.png`, explains the name, and starts with the high-level API.
+- No physics algorithms were changed.
 
 ## Git state at handoff
 
 - Branch: `main`.
-- Published base commit entering this handoff: `44de960`
-  (`Add unified JAX least-squares benchmark`).
+- Published base commit entering this handoff: `9069fdd`
+  (`Adopt unified slicing and add fit diagnostics`).
 - Documentation handoff commit: `97e27b1`.
 - Slicing design commits: `cdcf827` and `c9a1d56`.
 - Unified-grid implementation and synthetic comparison commits: `3c58e6a` and
@@ -119,6 +129,29 @@ The C/[LNO/STO]x8/STO benchmark is
 its 61-angle run measured an 8.28x cached table-load speedup and a
 0.023589-second complete fitting objective. These are local baselines only.
 
+## `swanx` diagnostics sanity check
+
+The maintained synthetic C/[LNO/STO]x20/STO fixed-grid JAX/TRF runner now imports `swanx` and uses `swanx.diagnostics` to save parameter uncertainty and correlation plots. A repeat run reproduced the prior optimum (`final_cost=4.422695921494358e-08`, 34 function evaluations) with one residual and one Jacobian compilation. The final Jacobian has rank 6 for 7 parameters and condition number `4.27e18`; substrate roughness is effectively unidentifiable, so its tiny pseudoinverse standard error is not evidence of precise constraint. Generated plots are under `runs/synthetic_c_lno_sto/unified_jax_least_squares/`. The uncertainty plot now uses each parameter's finite bound range as a 0-1 coordinate, scales confidence intervals by the same range, and labels raw lower/upper endpoints; pass `normalization=None` for raw coordinates. The legend is placed above the axes, with larger endpoint text, axis text, markers, and bound bars to avoid overlap and improve readability.
+
+## Stage 2 subpackage migration
+
+- Canonical slicing implementation: `swanx.stack.slicing`.
+- Canonical profile implementation: `swanx.stack.profiles`.
+- Canonical diagnostics: `swanx.diagnostics.covariance`, `.plots`, and `.reports`.
+- Flat `swanx.slicing`, `swanx.profiles`, and `swanx._diagnostics` remain thin shims.
+- Legacy `swxps.slicing`, `swxps.profiles`, and `swxps.diagnostics` expose the same canonical objects.
+- `swanx.stack` uses lazy exports for simulation/profile/template conveniences to avoid package-initialization cycles.
+- Optics, XPS, simulation, and fitting implementation modules were not moved.
+- Full verification: 153 passed and 1 expected failure.
+
+## Covariance/correlation validation fix
+
+Least-squares diagnostics now recompute `s^2 (J^T J)^+` from final residuals and the final physical-space Jacobian rather than consuming `result.covariance`. All covariance inputs are validated and symmetrized; materially indefinite, non-finite, or negative-variance inputs raise. Correlation construction enforces symmetry and the `[-1, 1]` range, clipping only tiny floating-point excursions. The optimizer's stored covariance now uses the same `rcond=1e-12` cutoff and is explicitly symmetrized. The synthetic fit reproduced the same optimum; its rank-deficient covariance emitted the expected warning while projecting a tiny negative eigenvalue to zero, and the corrected plot was regenerated.
+
+## Sample 12 diagnostics sanity check
+
+The maintained Sample 12 bounded JAX/TRF runner now imports `swanx` and saves `parameter_uncertainty.png`, `parameter_correlation.png`, and `parameter_correlation.csv` through `swanx.diagnostics`. An isolated run with promotion disabled converged in 22 function evaluations (23.6 optimizer seconds) at NumPy/JAX objective `0.00332310482394`. This is worse than the preserved canonical TRF objective (`0.00321527039509`), so it remains a diagnostics-only run under `runs/sample_12/jax_least_squares/diagnostics_sanity_check/`. The 18x18 correlation matrix has zero asymmetry, exact unit diagonal, and maximum absolute entry one. Strong couplings include terminal STO/LNO roughness (`-0.9992`) and the reflectivity/RC angular offsets (`+0.9982`).
+
 ## Verification status
 
 Last full implementation verification:
@@ -127,7 +160,7 @@ Last full implementation verification:
 python -m pytest -q
 ```
 
-Result: 133 passed and 1 expected failure. Coverage includes Fresnel, analytic attenuation,
+Result: 153 passed and 1 expected failure after the Stage 2 subpackage implementation migration. Coverage includes Fresnel, analytic attenuation,
 thin-layer convergence, fixed-shape fitting, NumPy/JAX parity, exact legacy
 optical grading on an identical grid, default/legacy request semantics, the
 JAX differentiation boundary, and the Sample 13 capacity/parity path. The
@@ -136,7 +169,8 @@ thickness during generic high-level grid materialization.
 
 ## Repository map
 
-- `src/swxps/`: maintained implementation.
+- `src/swanx/`: maintained implementation and public facades.
+- `src/swxps/`: temporary compatibility shim for old imports.
 - `tests/`: regression and parity tests.
 - `examples/`: compact tutorials.
 - `case_studies/`: maintained experimental runners and canonical results.

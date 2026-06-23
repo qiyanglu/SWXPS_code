@@ -1,6 +1,6 @@
 # AGENTS.md
 
-This repository implements transparent Python tools for x-ray reflectivity and
+This repository implements `swanx` (standing-wave analysis for X-ray spectroscopy): transparent Python tools for X-ray reflectivity and
 standing-wave XPS from multilayer thin films.
 
 ## Project goals
@@ -42,7 +42,8 @@ tests and must preserve the full regression suite.
 
 ## Repository organization
 
-- `src/swxps`: maintained package code.
+- `src/swanx`: maintained package code and primary namespace.
+- `src/swxps`: temporary compatibility aliases for old imports.
 - `tests`: regression tests.
 - `examples`: compact tutorial scripts only.
 - `case_studies`: experimental inputs, maintained runners, and canonical results.

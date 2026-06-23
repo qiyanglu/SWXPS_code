@@ -1,5 +1,7 @@
 # Synthetic unified-grid JAX least-squares plan
 
+> Namespace note (2026-06-23): The implementation is now available under `swanx`; `swxps` references below are retained as historical compatibility paths.
+
 ## Goal
 
 Fit the maintained synthetic C/[LNO/STO]x20/STO reflectivity and four RCs with

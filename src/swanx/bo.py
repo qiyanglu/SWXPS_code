@@ -8,7 +8,7 @@ from typing import Literal
 
 import numpy as np
 
-from .fitting import (
+from ._fitting import (
     FitEvaluation,
     FitHistory,
     FitParameter,
