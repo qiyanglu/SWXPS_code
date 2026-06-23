@@ -13,7 +13,8 @@ substantial coding session.
   (`Add workflow benchmark and cache scientific tables`).
 - Documentation handoff commit: `97e27b1`.
 - Slicing design commits: `cdcf827` and `c9a1d56`.
-- Unified-grid implementation is complete in the current worktree and pending its implementation commit.
+- Unified-grid implementation commit: `3c58e6a`.
+- The synthetic comparison and optical-grading compatibility fix are complete in the current worktree and pending commit.
 - Local `runs/` and `archive/` contents are ignored and do not travel through Git.
 
 ## Current capabilities
@@ -49,6 +50,23 @@ Angstrom thickness sweep, caused one new JAX compilation, stayed within
 produced finite normalized RCs.
 A 160 Angstrom film used 80 film cells (90 total), produced finite reflectivity, and evaluated in about 0.0032 seconds on the development machine.
 
+## Synthetic legacy-versus-unified comparison
+
+The maintained C/[LNO/STO]x20/STO synthetic case was run with identical true
+stack, 161 angles, core levels, IMFPs, and off-peak mask. Legacy 1 Angstrom
+slicing used 810 effective cells; the fixed unified plan used 450 cells.
+
+- runtime: 0.118 seconds legacy, 0.054 seconds unified;
+- reflectivity maximum absolute difference: `6.51e-5`;
+- reflectivity maximum relative difference: `0.488%`;
+- reflectivity RMS log10 difference: `0.00134` decades;
+- largest RC difference: `4.01e-4` (C 1s).
+
+The comparison found and fixed an optical-grading mismatch for overlapping
+roughness regions. Unified optical cells now use the exact validated legacy
+nearest-interface rule. An identical-1-A-grid regression test protects parity.
+Artifacts are under `runs/synthetic_c_lno_sto/slicing_comparison/`.
+
 ## Recent completed work
 
 The repository was reorganized into maintained package, tutorials, case
@@ -68,7 +86,7 @@ Last full implementation verification:
 python -B -m pytest -q -p no:cacheprovider
 ```
 
-Result: 113 passed, 46 existing `np.trapz` deprecation warnings. The focused unified-grid suite passed 22 tests, including Fresnel, analytic attenuation, thin-layer convergence, fixed-shape fitting, and NumPy/JAX parity.
+Result: 114 passed, 46 existing `np.trapz` deprecation warnings. Coverage includes Fresnel, analytic attenuation, thin-layer convergence, fixed-shape fitting, NumPy/JAX parity, and exact legacy optical grading on an identical grid.
 
 ## Repository map
 
@@ -85,4 +103,4 @@ Result: 113 passed, 46 existing `np.trapz` deprecation warnings. The focused uni
 
 ## Current direction
 
-The unified-grid milestone is implemented and validated. The next safe step is to review the diff and benchmark evidence, then migrate one maintained case-study runner separately. Preserve the legacy path until case-study comparison is complete.
+The synthetic validation is complete and shows small differences with lower cell count and runtime. The next safe step is to review these results, then migrate one maintained experimental case-study runner separately. Preserve the legacy path for direct comparison.

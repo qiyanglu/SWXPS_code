@@ -15,9 +15,17 @@ Last updated: 2026-06-22
 - Verified one JAX compilation across a 2-6 Angstrom thickness sweep.
 - Full regression result: 113 passed, 46 pre-existing warnings.
 
+## Completed synthetic comparison
+
+- Added a reproducible legacy-versus-unified comparison runner.
+- Saved old/new/difference plot, pointwise CSV, and numerical summary under `runs/`.
+- Fixed the overlapping-roughness optical grading mismatch revealed by comparison.
+- Added exact identical-grid optical parity coverage.
+- Full regression result: 114 passed.
+
 ## Next review and adoption steps
 
-- Review the implementation diff and small-case benchmark results.
+- Review the synthetic comparison figure and numerical summary.
 - Add a concise user example to an appropriate maintained tutorial if desired.
 - Migrate one maintained Sample 12 or Sample 13 runner to a fixed capacity plan.
 - Compare its legacy and unified-grid curves, objective, compile count, runtime,

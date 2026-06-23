@@ -9,6 +9,8 @@ from typing import Literal
 import numpy as np
 
 from .fields import (
+    _graded_delta_beta_at_depth,
+    _nominal_boundaries,
     _transfer_matrix_field_amplitudes_sharp_batched,
     FieldProfile,
 )
@@ -48,22 +50,20 @@ def effective_layers_from_grid(
 ) -> list[Layer]:
     """Return one graded sharp optical layer per grid cell."""
 
-    deltas = graded_layer_property_at_depth(
-        nominal_layers,
-        [layer.delta for layer in nominal_layers],
-        grid.centers,
-        profile=profile,
-        erf_truncation_factor=erf_truncation_factor,
-        linear_width_factor=linear_width_factor,
-    )
-    betas = graded_layer_property_at_depth(
-        nominal_layers,
-        [layer.beta for layer in nominal_layers],
-        grid.centers,
-        profile=profile,
-        erf_truncation_factor=erf_truncation_factor,
-        linear_width_factor=linear_width_factor,
-    )
+    boundaries = _nominal_boundaries(nominal_layers)
+    graded_constants = [
+        _graded_delta_beta_at_depth(
+            float(center),
+            nominal_layers,
+            boundaries,
+            profile,
+            erf_truncation_factor,
+            linear_width_factor,
+        )
+        for center in grid.centers
+    ]
+    deltas = np.asarray([values[0] for values in graded_constants], dtype=float)
+    betas = np.asarray([values[1] for values in graded_constants], dtype=float)
     cells = [
         Layer(float(width), float(delta), float(beta), roughness=0.0)
         for width, delta, beta in zip(grid.widths, deltas, betas)
