@@ -13,6 +13,14 @@ from .bo import (
     run_staged_multistart_bayesian_fit,
 )
 from .constants import HC_EV_ANGSTROM
+from .diagnostics import (
+    ParameterDiagnostics,
+    compute_parameter_diagnostics,
+    diagnostics_from_least_squares_result,
+    plot_correlation_matrix,
+    plot_parameter_estimates,
+    plot_singular_values,
+)
 from .fields import (
     FieldProfile,
     depth_grid,
@@ -178,8 +186,12 @@ __all__ = [
     "LayerUpdate",
     "OpticalConstantsTable",
     "OptimizationTiming",
+    "ParameterDiagnostics",
     "plot_best_fit",
+    "plot_correlation_matrix",
     "plot_fit_convergence",
+    "plot_parameter_estimates",
+    "plot_singular_values",
     "plot_stack_schematic",
     "plot_surrogate_slices",
     "plot_vertical_concentration_profiles",
@@ -202,7 +214,9 @@ __all__ = [
     "adaptive_layer_grid",
     "build_jax_residual_function",
     "constants_from_file",
+    "compute_parameter_diagnostics",
     "depth_grid",
+    "diagnostics_from_least_squares_result",
     "effective_layers_with_roughness",
     "electric_field_profile",
     "energy_to_wavelength",

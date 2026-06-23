@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from math import sqrt
 from typing import Literal
 
@@ -18,6 +18,13 @@ from .layers import Layer
 from .preprocessing import normalize_rocking_curve
 from .slicing import FixedLayerGridPlan, LayerSlicingPolicy
 from .xps import RockingCurve, graded_layer_property_at_depth, integrate_xps_intensity
+
+
+def _is_default_legacy_step(value: float | Sequence[float]) -> bool:
+    """Return whether a legacy step argument was left at its scalar default."""
+
+    values = np.asarray(value)
+    return values.ndim == 0 and float(values) == 1.0
 
 
 @dataclass(frozen=True)
@@ -76,7 +83,18 @@ class ReflectivityRequest:
     roughness_profile: Literal["erf", "linear"] = "erf"
     erf_truncation_factor: float = 4.0
     linear_width_factor: float = sqrt(3.0)
-    slicing: LayerSlicingPolicy | FixedLayerGridPlan | None = None
+    slicing: LayerSlicingPolicy | FixedLayerGridPlan | None = field(
+        default_factory=LayerSlicingPolicy
+    )
+
+    def __post_init__(self) -> None:
+        if self.slicing is not None and not _is_default_legacy_step(
+            self.roughness_step
+        ):
+            raise ValueError(
+                "roughness_step is only used by the legacy path; "
+                "set slicing=None or remove roughness_step"
+            )
 
 
 @dataclass(frozen=True)
@@ -123,7 +141,23 @@ class RockingCurveRequest:
     normalization_mode: Literal["mean", "edge_polynomial"] = "mean"
     normalization_edge_fraction: float = 0.10
     normalization_polynomial_order: int = 2
-    slicing: LayerSlicingPolicy | FixedLayerGridPlan | None = None
+    slicing: LayerSlicingPolicy | FixedLayerGridPlan | None = field(
+        default_factory=LayerSlicingPolicy
+    )
+
+    def __post_init__(self) -> None:
+        if self.slicing is None:
+            return
+        if not _is_default_legacy_step(self.field_step):
+            raise ValueError(
+                "field_step is only used by the legacy path; "
+                "set slicing=None or remove field_step"
+            )
+        if not _is_default_legacy_step(self.roughness_step):
+            raise ValueError(
+                "roughness_step is only used by the legacy path; "
+                "set slicing=None or remove roughness_step"
+            )
 
 
 @dataclass(frozen=True)

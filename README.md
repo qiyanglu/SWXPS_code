@@ -17,10 +17,18 @@ Experimental fitting remains physically provisional: bounds, weights, optical
 constants, IMFPs, and fitted structures must be reviewed before results are
 treated as quantitative.
 
-## Optional unified layer grid
+## Default unified layer grid
 
-The existing step-based APIs remain the default. To use one cell-centered grid
-for roughness, fields, and SW-XPS, pass a slicing policy:
+High-level `ReflectivityRequest` and `RockingCurveRequest` simulations use one
+cell-centered grid for roughness, fields, and SW-XPS by default. For each finite
+layer,
+
+```text
+N_i = max(min_slices, ceil(t_i / max_slice_thickness))
+```
+
+with `min_slices=10` and `max_slice_thickness=2.0` Angstrom by default. Pass a
+policy to customize those values:
 
 ```python
 from swxps import LayerSlicingPolicy, RockingCurveRequest
@@ -32,6 +40,19 @@ policy = LayerSlicingPolicy(
 request = RockingCurveRequest(..., slicing=policy)
 ```
 
+Set `slicing=None` to select the legacy step-based path explicitly. In legacy
+mode, `field_step` and `roughness_step` retain their historical behavior for
+regression and compatibility:
+
+```python
+request = RockingCurveRequest(
+    ...,
+    slicing=None,
+    field_step=1.0,
+    roughness_step=1.0,
+)
+```
+
 For fitting with JAX, build a fixed plan from a stack evaluated at thickness
 upper bounds and reuse it in every request or `FittingProblem`:
 
@@ -40,6 +61,11 @@ from swxps import fixed_layer_grid_plan
 
 plan = fixed_layer_grid_plan(capacity_stack.optical_layers, policy)
 ```
+
+Generic high-level unified forward calls can use the JAX backend, but Python/
+NumPy grid materialization is not itself JAX-traceable. End-to-end gradients
+currently require a JAX-native fixed-shape forward model with grid topology
+prepared outside the traced objective.
 
 ## Install and test
 

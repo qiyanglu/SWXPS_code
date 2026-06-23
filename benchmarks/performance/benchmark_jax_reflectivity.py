@@ -231,6 +231,7 @@ def main() -> None:
         angles=angles,
         energy_ev=energy_ev,
         stack=stack,
+        slicing=None,
     )
     core_levels = (
         CoreLevelRequest(
@@ -262,6 +263,7 @@ def main() -> None:
         stack=stack,
         core_levels=core_levels,
         field_step=2.0,
+        slicing=None,
     )
     numpy_high_level_reflectivity_seconds = _time_once(
         lambda: simulate_reflectivity(reflectivity_request)

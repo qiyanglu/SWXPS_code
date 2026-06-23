@@ -35,6 +35,7 @@ def test_jax_simulate_reflectivity_matches_numpy_transfer_matrix():
         stack=make_rough_stack(),
         angle_offset=0.05,
         roughness_step=1.0,
+        slicing=None,
     )
 
     actual = simulation_jax.simulate_reflectivity_jax(request)
@@ -73,6 +74,7 @@ def test_jax_simulate_rocking_curves_matches_numpy_transfer_matrix():
         angle_offset=-0.03,
         field_step=2.0,
         roughness_step=1.0,
+        slicing=None,
     )
 
     actual = simulation_jax.simulate_rocking_curves_jax(request)
@@ -122,6 +124,7 @@ def test_jax_edge_polynomial_rocking_curve_normalization_matches_numpy():
         normalization_mode="edge_polynomial",
         normalization_edge_fraction=0.10,
         normalization_polynomial_order=2,
+        slicing=None,
     )
 
     actual = simulation_jax.simulate_rocking_curves_jax(request).core_levels[0].curve

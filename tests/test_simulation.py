@@ -29,6 +29,7 @@ def test_simulate_reflectivity_returns_angle_offset():
         energy_ev=3000.0,
         stack=make_test_stack(),
         angle_offset=0.1,
+        slicing=None,
     )
 
     result = simulate_reflectivity(request)
@@ -60,6 +61,7 @@ def test_simulate_multiple_rocking_curves_returns_named_results():
         core_levels=(core_a, core_b),
         angle_offset=-0.05,
         field_step=2.0,
+        slicing=None,
     )
 
     result = simulate_rocking_curves(request)
@@ -85,6 +87,7 @@ def test_simulate_rocking_curve_requires_imfp_for_materials():
         photon_energy_ev=3000.0,
         stack=make_test_stack(),
         core_levels=(core,),
+        slicing=None,
     )
 
     try:
@@ -124,6 +127,7 @@ def test_core_level_request_can_select_emitting_layers():
         stack=stack,
         core_levels=(all_a, top_a),
         field_step=2.0,
+        slicing=None,
     )
 
     result = simulate_rocking_curves(request)
@@ -147,6 +151,7 @@ def test_core_level_request_rejects_invalid_emitting_layer_index():
         stack=make_test_stack(),
         core_levels=(core,),
         field_step=2.0,
+        slicing=None,
     )
 
     with np.testing.assert_raises(ValueError):

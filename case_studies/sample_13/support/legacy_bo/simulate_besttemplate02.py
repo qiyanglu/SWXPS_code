@@ -187,6 +187,7 @@ def simulate_and_plot(
             stack=stack,
             angle_offset=reflectivity_angle_offset,
             roughness_step=2.0,
+            slicing=None,
         )
     )
     rocking_curves = simulate_rocking_curves(
@@ -200,6 +201,7 @@ def simulate_and_plot(
             roughness_step=2.0,
             roughness_profile=rc_roughness_profile,
             offpeak_mask=np.ones_like(data.rc_angle, dtype=bool),
+            slicing=None,
         )
     )
 

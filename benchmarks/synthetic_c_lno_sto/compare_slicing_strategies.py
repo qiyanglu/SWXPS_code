@@ -66,6 +66,7 @@ def simulate_comparison(
             energy_ev=case.PHOTON_ENERGY_EV,
             stack=stack,
             roughness_step=1.0,
+            slicing=None,
         )
     ).reflectivity
     legacy_rc_result = simulate_rocking_curves(
@@ -77,6 +78,7 @@ def simulate_comparison(
             field_step=1.0,
             roughness_step=1.0,
             offpeak_mask=offpeak_mask,
+            slicing=None,
         )
     )
     legacy_seconds = perf_counter() - legacy_start

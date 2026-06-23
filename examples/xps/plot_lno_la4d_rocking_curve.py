@@ -91,6 +91,7 @@ def main() -> None:
             stack=stack,
             angle_offset=0.0,
             roughness_step=1.0,
+            slicing=None,
         )
     )
     reflectivity = reflectivity_result.reflectivity
@@ -139,6 +140,7 @@ def main() -> None:
             field_step=1.0,
             roughness_step=1.0,
             offpeak_mask=offpeak_mask,
+            slicing=None,
         )
     )
     la4d_curve = rc_result.core_levels[0].curve

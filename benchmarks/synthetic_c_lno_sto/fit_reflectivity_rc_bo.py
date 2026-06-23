@@ -245,6 +245,7 @@ def generate_synthetic_data(
             energy_ev=PHOTON_ENERGY_EV,
             stack=stack,
             roughness_step=1.0,
+            slicing=None,
         )
     ).reflectivity
     peak_angle = angles[np.argmax(reflectivity)]
@@ -258,6 +259,7 @@ def generate_synthetic_data(
             field_step=1.0,
             roughness_step=1.0,
             offpeak_mask=offpeak_mask,
+            slicing=None,
         )
     )
     curves = {core.name: core.curve.intensity for core in rc_result.core_levels}

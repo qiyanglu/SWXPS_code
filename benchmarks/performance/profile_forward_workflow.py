@@ -106,6 +106,7 @@ def run_benchmark(repeats: int = 5, angle_count: int = 61) -> dict[str, float]:
         core_levels=core_levels,
         field_step=1.0,
         roughness_step=1.0,
+        slicing=None,
     )
     fields_and_swxps_seconds = _best_time(
         lambda: simulate_rocking_curves(rocking_request),
@@ -191,6 +192,7 @@ def _fitting_problem(
             energy_ev=ENERGY_EV,
             stack=stack,
             roughness_step=1.0,
+            slicing=None,
         )
     )
     rocking_target = simulate_rocking_curves(
@@ -201,6 +203,7 @@ def _fitting_problem(
             core_levels=core_levels,
             field_step=1.0,
             roughness_step=1.0,
+            slicing=None,
         )
     )
     return FittingProblem(

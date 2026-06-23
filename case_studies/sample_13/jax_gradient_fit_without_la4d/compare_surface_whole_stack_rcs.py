@@ -115,6 +115,7 @@ def simulate_model(angles, stack, values, indices_by_name):
             field_step=5.0,
             roughness_step=2.0,
             offpeak_mask=np.ones_like(angles, dtype=bool),
+            slicing=None,
         )
     )
 
