@@ -63,6 +63,7 @@ from .jax_gradient import (
     scaled_to_physical,
 )
 from .jax_least_squares import (
+    JaxCompilationCounter,
     JaxLeastSquaresHistoryRecord,
     JaxLeastSquaresOptimizationResult,
     JaxLeastSquaresOptimizerSettings,
@@ -160,6 +161,7 @@ __all__ = [
     "FittingProblem",
     "IMFPTable",
     "JointObjective",
+    "JaxCompilationCounter",
     "JaxGradientHistoryRecord",
     "JaxGradientOptimizationResult",
     "JaxGradientOptimizerSettings",

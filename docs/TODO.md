@@ -1,6 +1,6 @@
 # TODO
 
-Last updated: 2026-06-22
+Last updated: 2026-06-23
 
 ## Completed unified-grid milestone
 
@@ -48,6 +48,6 @@ Last updated: 2026-06-22
 ## Session handoff checklist
 
 - Update this file and `docs/PROJECT_STATE.md`.
-- Record tests, benchmarks, decisions, branch/commit, and blockers.
-- Commit handoff documentation with the work it describes.
-- Push required commits before switching computers.
+- Record tests, benchmarks, decisions, current Git status, and blockers.
+- Leave revisions uncommitted unless the user explicitly requests a commit.
+- If the user requests a commit or push, verify the exact scope and Git status first.

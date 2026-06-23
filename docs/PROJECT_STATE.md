@@ -14,8 +14,16 @@ substantial coding session.
 - Documentation handoff commit: `97e27b1`.
 - Slicing design commits: `cdcf827` and `c9a1d56`.
 - Unified-grid implementation commit: `3c58e6a`.
-- The synthetic comparison and optical-grading compatibility fix are complete in the current worktree and pending commit.
+- Synthetic comparison and optical-grading compatibility commit: `5db3a1f`.
+- Unified-grid implementation and synthetic comparison commits: `3c58e6a` and
+  `5db3a1f`.
 - Local `runs/` and `archive/` contents are ignored and do not travel through Git.
+
+## Collaboration and Git preference
+
+Update this file and `docs/TODO.md` after substantial work, but do not stage,
+commit, amend, or push unless the user explicitly requests that Git action.
+Uncommitted revisions are intentional review state, not an incomplete handoff.
 
 ## Current capabilities
 

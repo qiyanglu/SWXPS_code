@@ -57,6 +57,13 @@ For any substantial change, first create or update an execution plan following
 `PLANS.md`. Keep active plans concise and move completed long-form logs to
 `docs/history`.
 
+## Git rule
+
+Do not stage, commit, amend, or push changes unless the user explicitly asks for
+that Git action in the current request. Updating handoff documentation does not
+imply permission to commit it. Leave completed revisions in the working tree
+for user review when no explicit Git instruction is given.
+
 ## Session continuity rule
 
 At the end of any substantial coding session, update `docs/PROJECT_STATE.md`

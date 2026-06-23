@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from time import perf_counter
 from typing import Literal
 
@@ -47,6 +47,20 @@ class JaxLeastSquaresResidualSettings:
                 raise ValueError("rocking_curve_scales must be finite and positive")
 
 
+@dataclass
+class JaxCompilationCounter:
+    """Count fixed-shape residual and Jacobian traces performed by JAX."""
+
+    residual_compilations: int = 0
+    jacobian_compilations: int = 0
+
+    @property
+    def total_compilations(self) -> int:
+        """Return the total number of residual and Jacobian compilations."""
+
+        return self.residual_compilations + self.jacobian_compilations
+
+
 @dataclass(frozen=True)
 class JaxResidualFunction:
     """JIT-compiled physical-space residual and Jacobian functions."""
@@ -54,6 +68,9 @@ class JaxResidualFunction:
     residuals_jax: Callable[[object], object]
     jacobian_jax: Callable[[object], object]
     residual_count: int
+    compilation_counter: JaxCompilationCounter = field(
+        default_factory=JaxCompilationCounter
+    )
 
     def __call__(self, physical_vector: Sequence[float]) -> np.ndarray:
         """Return the residual vector as a NumPy array for SciPy."""
@@ -213,8 +230,20 @@ def build_jax_residual_function(
             blocks += (block,)
         return jnp.concatenate(blocks)
 
-    residuals_jax = jax.jit(residuals)
-    jacobian_jax = jax.jit(jax.jacfwd(residuals))
+    compilation_counter = JaxCompilationCounter()
+
+    def counted_residuals(physical_vector):
+        compilation_counter.residual_compilations += 1
+        return residuals(physical_vector)
+
+    jacobian_core = jax.jacfwd(residuals)
+
+    def counted_jacobian(physical_vector):
+        compilation_counter.jacobian_compilations += 1
+        return jacobian_core(physical_vector)
+
+    residuals_jax = jax.jit(counted_residuals)
+    jacobian_jax = jax.jit(counted_jacobian)
     residual_count = (
         (0 if reflectivity is None else reflectivity.reflectivity.size)
         + sum(data.intensity.size for data in rocking_curve_tuple)
@@ -223,6 +252,7 @@ def build_jax_residual_function(
         residuals_jax=residuals_jax,
         jacobian_jax=jacobian_jax,
         residual_count=residual_count,
+        compilation_counter=compilation_counter,
     )
 
 
