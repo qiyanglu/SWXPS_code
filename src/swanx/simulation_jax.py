@@ -26,7 +26,8 @@ from .simulation import (
     RockingCurveRequest,
     RockingCurveResult,
 )
-from ._xps import RockingCurve, graded_layer_property_at_depth
+from .xps.intensity import graded_layer_property_at_depth
+from .xps.rocking_curve import RockingCurve
 
 
 def simulate_reflectivity_jax(request: ReflectivityRequest) -> ReflectivityResult:

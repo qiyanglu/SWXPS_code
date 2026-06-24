@@ -14,8 +14,9 @@ same modules and objects; new code should import `swanx`.
 - `swanx.io`: optical constants, IMFP tables, and preprocessing.
 - `swanx.workflows`: high-level simulation, fitting, and reporting entry points.
 
-These are first-stage facades over the existing implementation modules. The
-facades improve discovery without rewriting or duplicating numerical kernels.
+These public namespaces now contain the implementations migrated through
+Stages 2-4. Compatibility facades preserve older import paths without
+rewriting or duplicating numerical kernels.
 
 ## Stage 2 implementation locations
 
@@ -23,13 +24,27 @@ Diagnostics covariance/plot implementations and stack slicing/profile implementa
 
 ## Stage 3 optics implementation locations
 
-Parratt reflectivity, transfer-matrix/electric-field, and unified-grid optics implementations now live in `swanx.optics.parratt`, `swanx.optics.fields`, and `swanx.optics.unified_grid`. Flat `swanx.reflectivity`, `swanx.fields`, and `swanx.unified_grid` modules are thin compatibility shims; legacy `swxps.*` paths expose the same objects. Existing `simulate_reflectivity_unified` and `simulate_rocking_curves_unified` remain implemented in `simulation_unified.py` and are lazily re-exported from `swanx.optics.unified_grid` to avoid cycles. XPS, simulation, fitting, and workflow implementations were not moved.
+Parratt reflectivity, transfer-matrix/electric-field, and unified-grid optics implementations now live in `swanx.optics.parratt`, `swanx.optics.fields`, and `swanx.optics.unified_grid`. Flat `swanx.reflectivity`, `swanx.fields`, and `swanx.unified_grid` modules are thin compatibility shims; legacy `swxps.*` paths expose the same objects. Existing `simulate_reflectivity_unified` and `simulate_rocking_curves_unified` remain implemented in `simulation_unified.py` and are lazily re-exported from `swanx.optics.unified_grid` to avoid cycles.
+
+## Stage 4 XPS implementation locations
+
+XPS attenuation, continuous intensity/property sampling, normalized rocking
+curves, and cell-centered grid integration now live in
+`swanx.xps.attenuation`, `swanx.xps.intensity`,
+`swanx.xps.rocking_curve`, and `swanx.xps.grid`. The flat `swanx._xps`
+module, the former XPS exports from `swanx.optics.unified_grid`, and legacy
+`swxps.*` paths remain identity-preserving compatibility shims. High-level
+simulation exports from `swanx.xps` are lazy to avoid initialization cycles.
+Simulation, fitting, and workflow implementations were not moved.
 
 ## Core physics
 
 - `optics/parratt.py`: Parratt amplitudes and reflectivity.
 - `optics/fields.py`: transfer-matrix fields and rough-interface effective layers.
-- `_xps.py`: attenuation and normalized rocking-curve integration.
+- `xps/attenuation.py`: electron attenuation through depth-dependent IMFPs.
+- `xps/intensity.py`: continuous XPS integration and graded property sampling.
+- `xps/rocking_curve.py`: normalized rocking-curve construction.
+- `xps/grid.py`: cell-centered attenuation and midpoint XPS integration.
 - `stack/profiles.py`: material and concentration profiles versus depth.
 - `stack/slicing.py`: adaptive and fixed-plan unified layer grids.
 

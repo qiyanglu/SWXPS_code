@@ -1,6 +1,6 @@
 # TODO
 
-Last updated: 2026-06-23
+Last updated: 2026-06-24
 
 ## Completed first-stage `swanx` namespace migration
 
@@ -106,6 +106,19 @@ Last updated: 2026-06-23
 - Added canonical-location and object-identity tests.
 - Deferred XPS, simulation, fitting, and workflow implementation moves.
 - Full regression result: 158 passed and 1 expected failure.
+
+## Completed Stage 4 XPS migration
+
+- Split attenuation, intensity/property sampling, rocking-curve, and grid XPS
+  implementations into focused `swanx.xps` modules.
+- Preserved flat `swanx._xps`, former optics-grid, and legacy `swxps.*`
+  imports as identity-preserving compatibility paths.
+- Updated simulation and stack-profile internals to import canonical XPS
+  modules directly.
+- Added canonical-location, compatibility identity, and lazy high-level export
+  tests without changing numerical algorithms.
+- Deferred simulation, fitting, and workflow implementation moves.
+- Full regression result: 163 passed and 1 expected failure.
 
 ## Completed Stage 2 subpackage migration
 

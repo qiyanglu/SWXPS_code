@@ -11,7 +11,7 @@ from typing import Literal
 import numpy as np
 
 from ..simulation import SimulationStack
-from .._xps import graded_layer_property_at_depth
+from ..xps.intensity import graded_layer_property_at_depth
 
 
 @dataclass(frozen=True)

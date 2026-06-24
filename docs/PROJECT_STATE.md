@@ -1,6 +1,6 @@
 # Project state
 
-Last updated: 2026-06-23
+Last updated: 2026-06-24
 
 This is the machine-independent handoff for the `swanx` repository. Read this
 file, `docs/TODO.md`, `AGENTS.md`, and the root `README.md` before continuing a
@@ -19,15 +19,14 @@ substantial coding session.
 ## Git state at handoff
 
 - Branch: `main`.
-- Published base commit entering this handoff: `289e45a`
-  (`Establish swanx namespace baseline`).
-- Documentation handoff commit: `97e27b1`.
-- Slicing design commits: `cdcf827` and `c9a1d56`.
-- Unified-grid implementation and synthetic comparison commits: `3c58e6a` and
-  `5db3a1f`.
-- This handoff adds the Sample 13 fixed-grid runner and expanded-bound study,
-  unified-by-default request semantics, explicit legacy-mode coverage, the JAX
-  materialization boundary test, and reusable parameter diagnostics.
+- Published base commit entering this handoff: `4507e77`
+  (`Complete Stage 3 optics migration`).
+- This handoff completes Stage 4 by moving XPS attenuation, intensity/property
+  sampling, rocking-curve, and grid-integration implementations into focused
+  `swanx.xps` modules.
+- Flat `swanx`, former optics-grid, and legacy `swxps` imports remain
+  identity-preserving compatibility paths.
+- The full Stage 4 regression result is 163 passed and 1 expected failure.
 - Local `runs/` and `archive/` contents are ignored and do not travel through Git.
 
 ## Collaboration and Git preference
@@ -151,6 +150,21 @@ The maintained synthetic C/[LNO/STO]x20/STO fixed-grid JAX/TRF runner now import
 - XPS, simulation, fitting, and workflow implementation modules were not moved.
 - Full verification: 158 passed and 1 expected failure.
 
+## Stage 4 XPS migration
+
+- Canonical attenuation implementation: `swanx.xps.attenuation`.
+- Canonical continuous intensity/property implementation: `swanx.xps.intensity`.
+- Canonical rocking-curve implementation: `swanx.xps.rocking_curve`.
+- Canonical cell-centered grid XPS implementation: `swanx.xps.grid`.
+- `swanx._xps`, the former optics unified-grid XPS exports, flat unified-grid
+  imports, and legacy `swxps.*` paths expose the same canonical objects.
+- `swanx.xps` lazily exposes existing high-level simulation request/result
+  APIs so internal canonical imports do not create package cycles.
+- Electron attenuation, rough-interface grading, integration, and
+  normalization algorithms were moved verbatim; no physics behavior changed.
+- Simulation, fitting, and workflow implementations were not moved.
+- Full verification: 163 passed and 1 expected failure.
+
 ## Stage 2 subpackage migration
 
 - Canonical slicing implementation: `swanx.stack.slicing`.
@@ -178,7 +192,7 @@ Last full implementation verification:
 python -m pytest -q
 ```
 
-Result: 158 passed and 1 expected failure after the Stage 3 optics implementation migration. Coverage includes Fresnel, analytic attenuation,
+Result: 163 passed and 1 expected failure after the Stage 4 XPS implementation migration. Coverage includes canonical XPS location/identity, Fresnel, analytic attenuation,
 thin-layer convergence, fixed-shape fitting, NumPy/JAX parity, exact legacy
 optical grading on an identical grid, default/legacy request semantics, the
 JAX differentiation boundary, and the Sample 13 capacity/parity path. The

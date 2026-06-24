@@ -17,7 +17,8 @@ from .optics.fields import (
 from .layers import Layer
 from .preprocessing import normalize_rocking_curve
 from .stack.slicing import FixedLayerGridPlan, LayerSlicingPolicy
-from ._xps import RockingCurve, graded_layer_property_at_depth, integrate_xps_intensity
+from .xps.intensity import graded_layer_property_at_depth, integrate_xps_intensity
+from .xps.rocking_curve import RockingCurve
 
 
 def _is_default_legacy_step(value: float | Sequence[float]) -> bool:

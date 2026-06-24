@@ -19,11 +19,12 @@ from .simulation import (
 from .optics.unified_grid import (
     effective_layers_from_grid,
     field_profiles_on_grid,
-    integrate_xps_on_grid,
     materialize_layer_grid,
     reflectivity_on_grid,
 )
-from ._xps import RockingCurve, graded_layer_property_at_depth
+from .xps.grid import integrate_xps_on_grid
+from .xps.intensity import graded_layer_property_at_depth
+from .xps.rocking_curve import RockingCurve
 
 
 def simulate_reflectivity_unified(

@@ -42,11 +42,13 @@ def test_requested_field_exports_are_available_from_optics():
 
 
 def test_unified_grid_implementation_and_compatibility_paths_share_objects():
-    from swanx.optics.unified_grid import integrate_xps_on_grid as canonical
+    from swanx.optics.unified_grid import integrate_xps_on_grid as optics_compat
     from swanx.unified_grid import integrate_xps_on_grid as flat_swanx
+    from swanx.xps.grid import integrate_xps_on_grid as canonical
     from swxps.unified_grid import integrate_xps_on_grid as legacy
 
-    assert canonical.__module__ == "swanx.optics.unified_grid"
+    assert canonical.__module__ == "swanx.xps.grid"
+    assert optics_compat is canonical
     assert flat_swanx is canonical
     assert legacy is canonical
 

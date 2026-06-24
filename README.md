@@ -49,6 +49,18 @@ from swanx.optics.unified_grid import simulate_reflectivity_unified
 Flat optics imports such as `swanx.fields`, `swanx.reflectivity`, and
 `swanx.unified_grid` remain compatibility shims for existing code.
 
+Preferred XPS imports are:
+
+```python
+from swanx.xps import attenuation_factor, integrate_xps_intensity
+from swanx.xps import normalized_rocking_curve
+from swanx.xps.grid import integrate_xps_on_grid
+```
+
+The flat `swanx._xps`, former optics-grid XPS exports, and old `swxps.*`
+paths remain compatibility shims and resolve to the same implementation
+objects.
+
 ## Capabilities
 
 - Parratt-recursion s-polarized reflectivity.
