@@ -15,7 +15,7 @@ same modules and objects; new code should import `swanx`.
 - `swanx.workflows`: high-level simulation, fitting, and reporting entry points.
 
 These public namespaces now contain the implementations migrated through
-Stages 2-4. Compatibility facades preserve older import paths without
+Stages 2-5. Compatibility facades preserve older import paths without
 rewriting or duplicating numerical kernels.
 
 ## Stage 2 implementation locations
@@ -37,6 +37,26 @@ module, the former XPS exports from `swanx.optics.unified_grid`, and legacy
 simulation exports from `swanx.xps` are lazy to avoid initialization cycles.
 Simulation, fitting, and workflow implementations were not moved.
 
+## Stage 5 stack-model and simulation-workflow locations
+
+Material-labeled stack data models now live in `swanx.stack.model`, and
+high-level simulation request/result classes and forward entry points now live
+in `swanx.workflows.simulate`. `swanx.simulation` is a thin compatibility shim;
+legacy `swxps.simulation`, preferred subpackage imports, and top-level beginner
+exports resolve to the same canonical objects. The `swanx.workflows` facade
+loads fitting and diagnostics conveniences lazily to avoid initialization
+cycles. Numerical algorithms were not changed.
+
+## Stage 6 slim simulation compatibility layer
+
+`swanx.simulation` now contains compatibility imports only: no classes,
+functions, physics helpers, or stack-construction logic are defined there.
+Material lookup and emitting-layer filtering utilities live in
+`swanx.xps.utils` and are shared by the NumPy, JAX, and unified workflow paths.
+Canonical execution remains in `swanx.workflows.simulate`; old
+`swanx.simulation` and `swxps.simulation` callers receive the same objects and
+numerically identical results.
+
 ## Core physics
 
 - `optics/parratt.py`: Parratt amplitudes and reflectivity.
@@ -45,16 +65,19 @@ Simulation, fitting, and workflow implementations were not moved.
 - `xps/intensity.py`: continuous XPS integration and graded property sampling.
 - `xps/rocking_curve.py`: normalized rocking-curve construction.
 - `xps/grid.py`: cell-centered attenuation and midpoint XPS integration.
+- `xps/utils.py`: internal material lookup and emitting-layer filtering.
 - `stack/profiles.py`: material and concentration profiles versus depth.
 - `stack/slicing.py`: adaptive and fixed-plan unified layer grids.
+- `stack/model.py`: material-labeled stack and layer data models.
 
 The core uses grazing angles in degrees, energy in eV, lengths in Angstrom, and
 `n = 1 - delta + i beta`. Vacuum is first and the semi-infinite substrate last.
 
 ## High-level simulation and fitting
 
-- `simulation.py`, `simulation_jax.py`, `simulation_unified.py`: request/result
-  APIs and maintained NumPy/JAX forward paths.
+- `workflows/simulate.py`: high-level request/result APIs and NumPy workflow.
+- `simulation_jax.py`, `simulation_unified.py`: maintained JAX and unified-grid
+  forward paths; `simulation.py` preserves former imports as a thin shim.
 - `_fitting.py`, `bo.py`, `jax_gradient.py`, `jax_least_squares.py`: datasets,
   parameters, objectives, and optimizers.
 - `_diagnostics.py`, `fit_diagnostics.py`, `result_exports.py`: local parameter

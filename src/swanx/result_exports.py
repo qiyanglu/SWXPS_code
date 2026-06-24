@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Sequence
 
 from ._fitting import FitSimulation, ReflectivityData, RockingCurveData
-from .simulation import SimulationStack
+from .stack.model import SimulationStack
 
 
 def save_fit_curve_data_csv(

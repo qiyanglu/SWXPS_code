@@ -66,6 +66,13 @@ Last updated: 2026-06-24
 - Verified exact correlation symmetry/unit diagonal and `|rho| <= 1`.
 - Recorded near-degenerate roughness and angular-offset parameter pairs.
 - Full regression result: 153 passed and 1 expected failure.
+- Repeated the maintained least-squares workflow after Stage 4 through the
+  `swanx` namespace with promotion disabled and all outputs under `runs/`.
+- The repeat converged in 23 evaluations at JAX/NumPy objective
+  `0.00338515813538`; uncertainty and correlation PNGs plus the 18x18
+  correlation CSV were generated and validated.
+- Continue treating Sample 12 roughness and angular offsets as strongly
+  correlated and the fit as diagnostics-only rather than canonical.
 
 ## Scientific validation priorities
 
@@ -119,6 +126,33 @@ Last updated: 2026-06-24
   tests without changing numerical algorithms.
 - Deferred simulation, fitting, and workflow implementation moves.
 - Full regression result: 163 passed and 1 expected failure.
+
+## Completed Stage 5 simulation-layer migration
+
+- Moved `StackLayer`, `SimulationStack`, and `stack_from_layers` into
+  `swanx.stack.model`.
+- Moved high-level request/result classes, simulation entry points, and their
+  current private helpers into `swanx.workflows.simulate`.
+- Converted `swanx.simulation` to a thin compatibility shim while preserving
+  `swxps.simulation`, preferred subpackage, and top-level object identities.
+- Updated maintained internal imports to canonical model/workflow locations.
+- Made fitting and diagnostics conveniences from `swanx.workflows` lazy to
+  prevent circular imports.
+- Added canonical-location, compatibility-identity, lazy-facade, and minimal
+  unified-reflectivity smoke tests.
+- Full regression result: 167 passed and 1 expected failure.
+
+## Completed Stage 6 slim simulation layer
+
+- Moved material lookup and emitting-layer filtering helpers to
+  `swanx.xps.utils`.
+- Removed all private helper imports from the `swanx.simulation` compatibility
+  layer; it now defines no classes or functions.
+- Updated NumPy, JAX, and unified workflow internals to share the canonical
+  utility objects.
+- Added structural enforcement plus exact reflectivity and SW-XPS parity
+  tests across canonical, `swanx.simulation`, and `swxps.simulation` paths.
+- Full regression result: 171 passed and 1 expected failure.
 
 ## Completed Stage 2 subpackage migration
 

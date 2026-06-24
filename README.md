@@ -28,6 +28,16 @@ High-level simulations use unified layer slicing by default. Set
 `slicing=None` only for the legacy fixed-step path. The old `swxps` namespace
 is kept temporarily as a compatibility alias; new code should use `swanx`.
 
+For explicit stack and workflow imports, prefer:
+
+```python
+from swanx.stack import SimulationStack, StackLayer
+from swanx.workflows import ReflectivityRequest, simulate_reflectivity
+```
+
+The old `swanx.simulation` and `swxps.simulation` imports remain
+identity-preserving compatibility paths.
+
 Preferred public imports for the migrated Stage 2 utilities are:
 
 ```python

@@ -7,14 +7,12 @@ from typing import Literal
 import numpy as np
 
 from .preprocessing import normalize_rocking_curve
-from .simulation import (
+from .workflows.simulate import (
     CoreLevelResult,
     ReflectivityRequest,
     ReflectivityResult,
     RockingCurveRequest,
     RockingCurveResult,
-    _apply_emitting_layer_filter,
-    _values_by_material,
 )
 from .optics.unified_grid import (
     effective_layers_from_grid,
@@ -25,6 +23,7 @@ from .optics.unified_grid import (
 from .xps.grid import integrate_xps_on_grid
 from .xps.intensity import graded_layer_property_at_depth
 from .xps.rocking_curve import RockingCurve
+from .xps.utils import _apply_emitting_layer_filter, _values_by_material
 
 
 def simulate_reflectivity_unified(

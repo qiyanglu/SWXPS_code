@@ -2,6 +2,7 @@
 
 from importlib import import_module
 
+from .model import SimulationStack, StackLayer, stack_from_layers
 from .slicing import (
     FixedLayerGridPlan,
     LayerGrid,
@@ -13,9 +14,6 @@ from .slicing import (
 from ..layers import Layer, refractive_index, vacuum
 
 _LAZY_EXPORTS = {
-    "SimulationStack": ("swanx.simulation", "SimulationStack"),
-    "StackLayer": ("swanx.simulation", "StackLayer"),
-    "stack_from_layers": ("swanx.simulation", "stack_from_layers"),
     "StackProfiles": ("swanx.stack.profiles", "StackProfiles"),
     "plot_vertical_concentration_profiles": (
         "swanx.stack.profiles",

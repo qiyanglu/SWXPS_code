@@ -8,7 +8,7 @@ from pathlib import Path
 import numpy as np
 
 from .optical_constants import layer_from_file
-from .simulation import SimulationStack, StackLayer
+from .stack.model import SimulationStack, StackLayer
 
 ScalarOrParameter = float | str
 

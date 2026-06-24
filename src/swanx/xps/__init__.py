@@ -22,7 +22,7 @@ _SIMULATION_EXPORTS = {
 def __getattr__(name: str):
     if name not in _SIMULATION_EXPORTS:
         raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
-    from .. import simulation
+    from ..workflows import simulate as simulation
 
     value = getattr(simulation, name)
     globals()[name] = value

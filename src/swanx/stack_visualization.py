@@ -8,7 +8,7 @@ from typing import Sequence
 
 import numpy as np
 
-from .simulation import SimulationStack, StackLayer
+from .stack.model import SimulationStack, StackLayer
 
 
 @dataclass(frozen=True)

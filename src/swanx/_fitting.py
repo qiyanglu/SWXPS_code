@@ -9,15 +9,14 @@ from typing import Literal
 
 import numpy as np
 
+from .stack.model import SimulationStack, StackLayer
 from .stack.slicing import FixedLayerGridPlan, LayerSlicingPolicy
-from .simulation import (
+from .workflows.simulate import (
     CoreLevelRequest,
     ReflectivityRequest,
     ReflectivityResult,
     RockingCurveRequest,
     RockingCurveResult,
-    SimulationStack,
-    StackLayer,
     simulate_reflectivity,
     simulate_rocking_curves,
 )

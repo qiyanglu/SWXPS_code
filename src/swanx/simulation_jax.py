@@ -18,7 +18,7 @@ from .reflectivity_jax import (
     jitted_transfer_matrix_reflectivity,
     layer_arrays_from_layers,
 )
-from .simulation import (
+from .workflows.simulate import (
     CoreLevelRequest,
     CoreLevelResult,
     ReflectivityRequest,
@@ -28,6 +28,7 @@ from .simulation import (
 )
 from .xps.intensity import graded_layer_property_at_depth
 from .xps.rocking_curve import RockingCurve
+from .xps.utils import _apply_emitting_layer_filter, _values_by_material
 
 
 def simulate_reflectivity_jax(request: ReflectivityRequest) -> ReflectivityResult:
@@ -204,40 +205,6 @@ def _simulate_core_from_jax_field(
             normalization=normalization,
         ),
     )
-
-
-def _values_by_material(
-    materials: list[str],
-    values: dict[str, float],
-    default: float | None,
-) -> list[float]:
-    output = []
-    for material in materials:
-        if material in values:
-            output.append(float(values[material]))
-        elif default is None:
-            raise ValueError(f"missing value for material {material!r}")
-        else:
-            output.append(float(default))
-    return output
-
-
-def _apply_emitting_layer_filter(
-    concentration_by_layer: list[float],
-    emitting_layer_indices: tuple[int, ...],
-) -> list[float]:
-    if not emitting_layer_indices:
-        raise ValueError("emitting_layer_indices must not be empty")
-    layer_count = len(concentration_by_layer)
-    selected = set()
-    for index in emitting_layer_indices:
-        if index < 0 or index >= layer_count:
-            raise ValueError("emitting_layer_indices contains an index outside the stack")
-        selected.add(int(index))
-    return [
-        concentration if index in selected else 0.0
-        for index, concentration in enumerate(concentration_by_layer)
-    ]
 
 
 def _offpeak_mask(request: RockingCurveRequest) -> np.ndarray:

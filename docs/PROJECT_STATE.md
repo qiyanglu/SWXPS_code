@@ -19,14 +19,13 @@ substantial coding session.
 ## Git state at handoff
 
 - Branch: `main`.
-- Published base commit entering this handoff: `4507e77`
-  (`Complete Stage 3 optics migration`).
-- This handoff completes Stage 4 by moving XPS attenuation, intensity/property
-  sampling, rocking-curve, and grid-integration implementations into focused
-  `swanx.xps` modules.
-- Flat `swanx`, former optics-grid, and legacy `swxps` imports remain
-  identity-preserving compatibility paths.
-- The full Stage 4 regression result is 163 passed and 1 expected failure.
+- Published base commit entering this handoff: `1476a10`
+  (`Complete Stage 4 XPS migration`).
+- This handoff adds the post-Stage-4 Sample 12 `swanx` diagnostics rerun and
+  completes the Stage 5 and Stage 6 simulation-layer migrations.
+- Stages 5-6 keep flat `swanx.simulation`, legacy `swxps.simulation`, preferred
+  subpackage imports, and top-level beginner exports identity-compatible.
+- The full Stage 6 regression result is 171 passed and 1 expected failure.
 - Local `runs/` and `archive/` contents are ignored and do not travel through Git.
 
 ## Collaboration and Git preference
@@ -165,6 +164,35 @@ The maintained synthetic C/[LNO/STO]x20/STO fixed-grid JAX/TRF runner now import
 - Simulation, fitting, and workflow implementations were not moved.
 - Full verification: 163 passed and 1 expected failure.
 
+## Stage 5 stack-model and simulation-workflow migration
+
+- Canonical stack models: `swanx.stack.model`.
+- Canonical high-level request/result classes and forward entry points:
+  `swanx.workflows.simulate`.
+- `swanx.simulation` is a thin identity-preserving compatibility shim;
+  `swxps.simulation` continues to alias it.
+- Preferred `swanx.stack`, `swanx.workflows`, and top-level `swanx` exports all
+  resolve to the canonical classes and functions.
+- Internal fitting, unified/JAX simulation, profile, builder, visualization,
+  and result-export imports now use the canonical model/workflow locations.
+- Fitting and diagnostics conveniences in `swanx.workflows` are lazy, avoiding
+  the package-initialization cycle exposed by the new canonical imports.
+- The implementation bodies were moved without changing numerical algorithms.
+- Full verification: 167 passed and 1 expected failure.
+
+## Stage 6 slim simulation compatibility layer
+
+- `swanx.simulation` defines no classes or functions; it only re-exports the
+  canonical stack-model and workflow APIs required for compatibility.
+- `_values_by_material` and `_apply_emitting_layer_filter` now live in
+  `swanx.xps.utils` and are imported by the NumPy, JAX, and unified workflows.
+- Private workflow helpers are no longer exposed through `swanx.simulation`.
+- Structural tests enforce the thin shim, and exact array-equality tests cover
+  reflectivity and SW-XPS results through canonical, `swanx.simulation`, and
+  `swxps.simulation` paths.
+- Helper and workflow bodies were not numerically changed.
+- Full verification: 171 passed and 1 expected failure.
+
 ## Stage 2 subpackage migration
 
 - Canonical slicing implementation: `swanx.stack.slicing`.
@@ -184,6 +212,17 @@ Least-squares diagnostics now recompute `s^2 (J^T J)^+` from final residuals and
 
 The maintained Sample 12 bounded JAX/TRF runner now imports `swanx` and saves `parameter_uncertainty.png`, `parameter_correlation.png`, and `parameter_correlation.csv` through `swanx.diagnostics`. An isolated run with promotion disabled converged in 22 function evaluations (23.6 optimizer seconds) at NumPy/JAX objective `0.00332310482394`. This is worse than the preserved canonical TRF objective (`0.00321527039509`), so it remains a diagnostics-only run under `runs/sample_12/jax_least_squares/diagnostics_sanity_check/`. The 18x18 correlation matrix has zero asymmetry, exact unit diagonal, and maximum absolute entry one. Strong couplings include terminal STO/LNO roughness (`-0.9992`) and the reflectivity/RC angular offsets (`+0.9982`).
 
+A post-Stage-4 `swanx` sanity rerun is under
+`runs/sample_12/jax_least_squares/stage4_swanx_sanity_20260624/`. Promotion
+was disabled. It converged by `xtol` in 23 function evaluations (17.54
+optimizer seconds), with matching JAX/NumPy objective `0.00338515813538`.
+The generated 18x18 correlation matrix is finite, exactly symmetric, has an
+exact unit diagonal, and satisfies `max(abs(correlation)) = 1`. The strongest
+off-diagonal couplings are the two angle offsets (`+0.9981`) and terminal
+STO/LNO roughness (`-0.9957`). Several roughness confidence intervals remain
+much wider than their bounds, so this run confirms the diagnostics pipeline
+but not parameter identifiability or an improved physical fit.
+
 ## Verification status
 
 Last full implementation verification:
@@ -192,7 +231,7 @@ Last full implementation verification:
 python -m pytest -q
 ```
 
-Result: 163 passed and 1 expected failure after the Stage 4 XPS implementation migration. Coverage includes canonical XPS location/identity, Fresnel, analytic attenuation,
+Result: 171 passed and 1 expected failure after the Stage 6 slim-simulation migration. Coverage includes thin-shim structure, exact canonical/compatibility reflectivity and SW-XPS parity, canonical stack/workflow location and compatibility identity, workflow reflectivity smoke coverage, canonical XPS location/identity, Fresnel, analytic attenuation,
 thin-layer convergence, fixed-shape fitting, NumPy/JAX parity, exact legacy
 optical grading on an identical grid, default/legacy request semantics, the
 JAX differentiation boundary, and the Sample 13 capacity/parity path. The

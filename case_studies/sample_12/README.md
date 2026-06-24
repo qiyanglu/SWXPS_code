@@ -10,3 +10,8 @@ experiments are under `archive/sample_12`.
 ## Diagnostics sanity check
 
 The maintained bounded TRF runner imports `swanx` and saves normalized parameter uncertainty, validated parameter correlation, and correlation CSV outputs. The 2026-06-23 sanity run is under `runs/sample_12/jax_least_squares/diagnostics_sanity_check/`; promotion was disabled, so `best_results_so_far/` was not changed.
+
+The post-Stage-4 namespace sanity run is under
+`runs/sample_12/jax_least_squares/stage4_swanx_sanity_20260624/`. It also used
+`--skip-promotion`, converged in 23 function evaluations, and generated the
+uncertainty and correlation diagnostics without changing canonical results.

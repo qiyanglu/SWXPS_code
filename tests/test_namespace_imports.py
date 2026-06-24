@@ -20,7 +20,7 @@ def test_first_stage_subpackage_imports():
 
     assert callable(transfer_matrix_reflectivity_array)
     assert callable(compute_parameter_diagnostics)
-    assert RockingCurveRequest.__module__ == "swanx.simulation"
+    assert RockingCurveRequest.__module__ == "swanx.workflows.simulate"
 
 
 def test_old_submodules_alias_canonical_modules():
