@@ -12,10 +12,13 @@ dist/
 *.egg-info/
 
 # Local generated runs and historical experiment artifacts
-runs/*
-!runs/README.md
-archive/*
-!archive/README.md
+/runs/
+/archive/
+/archives/
+
+# Local Codex contributor instructions and planning template
+/AGENTS.md
+/PLANS.md
 
 # Editor and OS files
 .vscode/

@@ -3,7 +3,7 @@
 Last updated: 2026-06-24
 
 This is the machine-independent handoff for the `swanx` repository. Read this
-file, `docs/TODO.md`, `AGENTS.md`, and the root `README.md` before continuing a
+file, `docs/TODO.md`, and the root `README.md` before continuing a
 substantial coding session.
 
 ## Namespace migration
@@ -19,13 +19,12 @@ substantial coding session.
 ## Git state at handoff
 
 - Branch: `main`.
-- Published base commit entering this handoff: `1476a10`
-  (`Complete Stage 4 XPS migration`).
-- This handoff adds the post-Stage-4 Sample 12 `swanx` diagnostics rerun and
-  completes the Stage 5 and Stage 6 simulation-layer migrations.
-- Stages 5-6 keep flat `swanx.simulation`, legacy `swxps.simulation`, preferred
-  subpackage imports, and top-level beginner exports identity-compatible.
-- The full Stage 6 regression result is 171 passed and 1 expected failure.
+- Published base commit entering this handoff: `2fc0929`
+  (`Complete Stage 5 and 6 simulation migration`).
+- This cleanup removes `runs/`, `archive/`, `AGENTS.md`, and `PLANS.md` from
+  Git tracking while retaining local copies through `.gitignore`.
+- The last full implementation verification remains 171 passed and 1 expected
+  failure; this follow-up changes repository tracking and documentation only.
 - Local `runs/` and `archive/` contents are ignored and do not travel through Git.
 
 ## Collaboration and Git preference
@@ -134,7 +133,9 @@ The maintained synthetic C/[LNO/STO]x20/STO fixed-grid JAX/TRF runner now import
 ## Public repository cleanup decision
 
 - `case_studies/` remains tracked as explicitly requested; no history rewrite was performed.
-- Generated `runs/` and `archive/` contents remain ignored except their guidance READMEs.
+- `runs/` and `archive/` are local-only and fully ignored; no placeholder files
+  keep those directories present on GitHub.
+- Root `AGENTS.md` and `PLANS.md` are local-only and ignored.
 - The former top-level `scripts/` demonstrations moved to `examples/fitting/` and now import `swanx`.
 - Both examples recover the synthetic 24 Angstrom film thickness from 35 Angstrom starts.
 

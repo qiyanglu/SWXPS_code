@@ -148,8 +148,8 @@ effect. New examples and user code should import `swanx`.
 - `examples/`: small reproducible tutorials.
 - `case_studies/`: experimental inputs, maintained runners, and canonical results.
 - `benchmarks/`: synthetic fitting studies and performance benchmarks.
-- `runs/`: generated optimizer output, ignored by Git except contributor guidance.
-- `archive/`: superseded local experiments, ignored by Git except contributor guidance.
+- `runs/`: local generated optimizer output, fully ignored by Git.
+- `archive/`: local superseded experiments, fully ignored by Git.
 - `docs/`: architecture, roadmap, plans, handoff, and historical documents.
 - `OPC/`, `IMFP/`: optical-constant and attenuation tables.
 
