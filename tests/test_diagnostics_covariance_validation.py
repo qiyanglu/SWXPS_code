@@ -1,11 +1,12 @@
 import numpy as np
 import pytest
 
-from swanx import FitParameter, JaxLeastSquaresOptimizationResult
 from swanx.diagnostics import (
     compute_parameter_diagnostics,
     diagnostics_from_least_squares_result,
 )
+from swanx.fitting import FitParameter
+from swanx.jax_least_squares import JaxLeastSquaresOptimizationResult
 
 
 def test_valid_covariance_produces_symmetric_bounded_correlation():

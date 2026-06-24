@@ -1,17 +1,16 @@
-"""Compatibility alias for :mod:`swanx`.
+"""Temporary broad compatibility facade for the former :mod:`swxps` API.
 
-New code should import :mod:`swanx`. This namespace remains temporarily so
-existing scripts continue to run unchanged.
+New code should use the frozen top-level :mod:`swanx` API. This namespace
+continues to expose historical names so existing scripts remain functional.
 """
 
 from importlib import import_module
 import sys
 
-import swanx as _swanx
+from swanx import _legacy_api
 
-for _name in dir(_swanx):
-    if not _name.startswith("_"):
-        globals()[_name] = getattr(_swanx, _name)
+for _name in _legacy_api.__all__:
+    globals()[_name] = getattr(_legacy_api, _name)
 
 _MODULE_ALIASES = {
     "fitting": "swanx._fitting",
@@ -34,4 +33,4 @@ for _module_name in _MODULES:
     sys.modules[f"{__name__}.{_module_name}"] = _module
     globals()[_module_name] = _module
 
-__all__ = list(_swanx.__all__)
+__all__ = list(_legacy_api.__all__)

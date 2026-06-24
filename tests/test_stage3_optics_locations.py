@@ -2,7 +2,6 @@
 
 
 def test_parratt_implementation_and_compatibility_paths_share_objects():
-    import swanx as sx
     from swanx.optics import parratt_reflectivity
     from swanx.optics.parratt import parratt_reflectivity as canonical
     from swanx.reflectivity import parratt_reflectivity as flat_swanx
@@ -12,7 +11,6 @@ def test_parratt_implementation_and_compatibility_paths_share_objects():
     assert parratt_reflectivity is canonical
     assert flat_swanx is canonical
     assert legacy is canonical
-    assert sx.parratt_reflectivity is canonical
 
 
 def test_fields_implementation_and_compatibility_paths_share_objects():

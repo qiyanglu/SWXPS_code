@@ -10,66 +10,36 @@ It provides Python tools for multilayer X-ray reflectivity, standing-wave XPS
 simulation, fitting, and diagnostics. The package emphasizes transparent,
 validated NumPy physics kernels with optional fitting and JAX backends.
 
-## Start here
+## Getting Started
 
 ```python
+import numpy as np
 import swanx as sx
 
-result = sx.simulate_reflectivity(
-    sx.ReflectivityRequest(
-        angles=angles,
-        energy_ev=energy_ev,
-        stack=stack,
+stack = sx.SimulationStack(
+    (
+        sx.StackLayer("vacuum", 0.0),
+        sx.StackLayer("film", 24.0, delta=5.0e-6, beta=1.0e-7),
+        sx.StackLayer("substrate", 0.0, delta=1.0e-5, beta=2.0e-7),
     )
 )
+request = sx.ReflectivityRequest(
+    angles=np.linspace(0.5, 4.0, 200),
+    energy_ev=3000.0,
+    stack=stack,
+)
+result = sx.simulate_reflectivity(request)
 ```
 
-High-level simulations use unified layer slicing by default. Set
-`slicing=None` only for the legacy fixed-step path. The old `swxps` namespace
-is kept temporarily as a compatibility alias; new code should use `swanx`.
+SWANX is a physics simulation and differentiable fitting engine. JAX automatic
+differentiation is the primary optimization backend and the recommended
+default for new fitting work.
 
-For explicit stack and workflow imports, prefer:
-
-```python
-from swanx.stack import SimulationStack, StackLayer
-from swanx.workflows import ReflectivityRequest, simulate_reflectivity
-```
-
-The old `swanx.simulation` and `swxps.simulation` imports remain
-identity-preserving compatibility paths.
-
-Preferred public imports for the migrated Stage 2 utilities are:
-
-```python
-from swanx.stack import LayerSlicingPolicy
-from swanx.diagnostics import compute_parameter_diagnostics
-```
-
-Flat imports such as `from swanx.slicing import LayerSlicingPolicy` and all
-old `swxps.*` paths remain compatibility shims, but are no longer preferred.
-
-Preferred advanced optics imports are:
-
-```python
-from swanx.optics import transfer_matrix_reflectivity_array
-from swanx.optics import transfer_matrix_electric_field_profiles
-from swanx.optics.unified_grid import simulate_reflectivity_unified
-```
-
-Flat optics imports such as `swanx.fields`, `swanx.reflectivity`, and
-`swanx.unified_grid` remain compatibility shims for existing code.
-
-Preferred XPS imports are:
-
-```python
-from swanx.xps import attenuation_factor, integrate_xps_intensity
-from swanx.xps import normalized_rocking_curve
-from swanx.xps.grid import integrate_xps_on_grid
-```
-
-The flat `swanx._xps`, former optics-grid XPS exports, and old `swxps.*`
-paths remain compatibility shims and resolve to the same implementation
-objects.
+The official user entry pattern is always `import swanx as sx`, followed by a
+stack, a request, and a `simulate_*` call. Subpackages such as `swanx.stack`,
+`swanx.optics`, `swanx.xps`, and `swanx.workflows` are implementation
+namespaces, not competing user APIs. The old `swanx.simulation` and `swxps`
+paths remain compatibility-only.
 
 ## Capabilities
 
@@ -85,6 +55,25 @@ Experimental fitting remains physically provisional: bounds, weights, optical
 constants, IMFPs, and fitted structures must be reviewed before results are
 treated as quantitative.
 
+## Optimization in SWANX
+
+SWANX supports two optimization strategies.
+
+### 1. Bayesian Optimization (baseline)
+
+- Global black-box optimization.
+- Robust, but slow.
+- Retained primarily as a baseline and comparison method.
+
+### 2. JAX-based automatic differentiation (primary method)
+
+- Exact gradients through automatic differentiation.
+- Significantly faster convergence.
+- Scales to high-dimensional parameter spaces.
+- Compatible with JIT compilation and GPU execution.
+
+**JAX-based optimization is the recommended default approach.**
+
 ## Unified layer slicing
 
 For each finite layer, the default high-level grid uses
@@ -93,24 +82,9 @@ For each finite layer, the default high-level grid uses
 N_i = max(min_slices, ceil(t_i / max_slice_thickness))
 ```
 
-with `min_slices=10` and `max_slice_thickness=2.0` Angstrom by default:
-
-```python
-import swanx as sx
-
-policy = sx.LayerSlicingPolicy(
-    min_slices=10,
-    max_slice_thickness=2.0,
-)
-request = sx.RockingCurveRequest(..., slicing=policy)
-```
-
-For fixed-shape JAX fitting, build a plan from a stack evaluated at thickness
-upper bounds and reuse it for every evaluation:
-
-```python
-plan = sx.fixed_layer_grid_plan(capacity_stack.optical_layers, policy)
-```
+with `min_slices=10` and `max_slice_thickness=2.0` Angstrom by default.
+High-level requests use this unified slicing automatically. `slicing=None`
+exists only for regression and compatibility with the legacy fixed-step path.
 
 Generic unified forward calls can use the JAX backend, but Python/NumPy grid
 materialization is not itself JAX-traceable. End-to-end gradients require the
@@ -137,8 +111,8 @@ python examples/fitting/jax_least_squares_reflectivity_fit.py
 python benchmarks/synthetic_c_lno_sto/fit_reflectivity_rc_bo.py --generate-only
 ```
 
-Existing examples may still use `swxps` while the compatibility period is in
-effect. New examples and user code should import `swanx`.
+New user code should follow the single `import swanx as sx` pattern shown in
+Getting Started. Older scripts may retain compatibility imports temporarily.
 
 ## Repository layout
 

@@ -11,7 +11,9 @@ substantial coding session.
 - `swanx` means *standing-wave analysis for X-ray spectroscopy* and is now the primary distribution and import namespace.
 - Maintained implementation modules live under `src/swanx/`.
 - `src/swxps/` is a temporary compatibility shim; existing `swxps.*` imports resolve to the same implementation objects.
-- First-stage discovery facades are available at `swanx.stack`, `optics`, `xps`, `fitting`, `diagnostics`, `io`, and `workflows`.
+- Stack, optics, XPS, fitting, diagnostics, I/O, and workflow subpackages are
+  internal implementation namespaces, not competing user entry points.
+- The frozen user entry pattern is `import swanx as sx`.
 - High-level unified slicing remains the default; `slicing=None` remains the legacy fixed-step selector.
 - The README now uses `swanx_logo.png`, explains the name, and starts with the high-level API.
 - No physics algorithms were changed.
@@ -19,12 +21,13 @@ substantial coding session.
 ## Git state at handoff
 
 - Branch: `main`.
-- Published base commit entering this handoff: `2fc0929`
-  (`Complete Stage 5 and 6 simulation migration`).
-- This cleanup removes `runs/`, `archive/`, `AGENTS.md`, and `PLANS.md` from
-  Git tracking while retaining local copies through `.gitignore`.
-- The last full implementation verification remains 171 passed and 1 expected
-  failure; this follow-up changes repository tracking and documentation only.
+- Published base commit entering this handoff: `68c26a1`
+  (`Remove local-only files from repository`).
+- This handoff freezes the ten-name top-level `swanx` API and consolidates
+  README usage around one `import swanx as sx` workflow.
+- JAX automatic differentiation is documented as the primary optimizer;
+  Bayesian optimization is explicitly a baseline comparison.
+- Full API-freeze verification: 173 passed and 1 expected failure.
 - Local `runs/` and `archive/` contents are ignored and do not travel through Git.
 
 ## Collaboration and Git preference
@@ -194,6 +197,21 @@ The maintained synthetic C/[LNO/STO]x20/STO fixed-grid JAX/TRF runner now import
 - Helper and workflow bodies were not numerically changed.
 - Full verification: 171 passed and 1 expected failure.
 
+## Final API freeze and user experience
+
+- `swanx.__all__` contains exactly the ten approved stack, request,
+  simulation, and diagnostics names.
+- README presents only `import swanx as sx` as the official entry pattern and
+  no longer recommends stack, optics, XPS, workflow, or simulation submodules.
+- JAX autodiff is the recommended primary optimization method; Bayesian
+  optimization is retained as a slower global baseline.
+- The previous broad surface remains available only through the temporary
+  `swxps` compatibility package, backed by `swanx._legacy_api`.
+- Maintained advanced fitting scripts now import non-public implementation
+  types/functions from their canonical modules.
+- No physics or numerical implementation changed.
+- Full verification: 173 passed and 1 expected failure.
+
 ## Stage 2 subpackage migration
 
 - Canonical slicing implementation: `swanx.stack.slicing`.
@@ -232,7 +250,7 @@ Last full implementation verification:
 python -m pytest -q
 ```
 
-Result: 171 passed and 1 expected failure after the Stage 6 slim-simulation migration. Coverage includes thin-shim structure, exact canonical/compatibility reflectivity and SW-XPS parity, canonical stack/workflow location and compatibility identity, workflow reflectivity smoke coverage, canonical XPS location/identity, Fresnel, analytic attenuation,
+Result: 173 passed and 1 expected failure after the final API freeze. Coverage includes exact frozen-surface enforcement, the official `import swanx as sx` smoke workflow, thin-shim structure, exact canonical/compatibility reflectivity and SW-XPS parity, canonical stack/workflow location and compatibility identity, workflow reflectivity smoke coverage, canonical XPS location/identity, Fresnel, analytic attenuation,
 thin-layer convergence, fixed-shape fitting, NumPy/JAX parity, exact legacy
 optical grading on an identical grid, default/legacy request semantics, the
 JAX differentiation boundary, and the Sample 13 capacity/parity path. The

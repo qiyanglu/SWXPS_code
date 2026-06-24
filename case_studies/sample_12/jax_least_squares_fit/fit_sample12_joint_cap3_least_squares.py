@@ -26,13 +26,13 @@ for path in (SRC_DIR, GRADIENT_DIR, SAMPLE13_LS_DIR, CASE_DIR):
     if str(path) not in sys.path:
         sys.path.insert(0, str(path))
 
-from swanx import (  # noqa: E402
+from swanx.jax_least_squares import (  # noqa: E402
     JaxLeastSquaresOptimizerSettings,
     JaxResidualFunction,
     optimize_with_jax_least_squares,
-    plot_stack_schematic,
-    plot_vertical_concentration_profiles,
 )
+from swanx.stack.profiles import plot_vertical_concentration_profiles  # noqa: E402
+from swanx.stack_visualization import plot_stack_schematic  # noqa: E402
 from swanx.diagnostics import (  # noqa: E402
     diagnostics_from_least_squares_result,
     plot_correlation_matrix,

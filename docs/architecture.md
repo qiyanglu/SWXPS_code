@@ -4,7 +4,15 @@ The primary package is `swanx`: *standing-wave analysis for X-ray
 spectroscopy*. `swxps` is a temporary compatibility package that aliases the
 same modules and objects; new code should import `swanx`.
 
-## Public namespaces
+## Frozen user API
+
+The only recommended user entry point is `import swanx as sx`. The frozen
+top-level surface contains stack/layer models, reflectivity and rocking-curve
+requests, high-level simulation calls, and three parameter-diagnostics helpers.
+JAX automatic differentiation is the primary optimization approach; Bayesian
+optimization remains a baseline comparison.
+
+## Internal implementation namespaces
 
 - `swanx.stack`: layers, stacks, templates, slicing, and profiles.
 - `swanx.optics`: Parratt, transfer-matrix, fields, and unified-grid optics.
@@ -14,8 +22,8 @@ same modules and objects; new code should import `swanx`.
 - `swanx.io`: optical constants, IMFP tables, and preprocessing.
 - `swanx.workflows`: high-level simulation, fitting, and reporting entry points.
 
-These public namespaces now contain the implementations migrated through
-Stages 2-5. Compatibility facades preserve older import paths without
+These namespaces contain the implementations migrated through Stages 2-6; they
+are not competing user entry points. Compatibility facades preserve older paths without
 rewriting or duplicating numerical kernels.
 
 ## Stage 2 implementation locations
@@ -42,7 +50,7 @@ Simulation, fitting, and workflow implementations were not moved.
 Material-labeled stack data models now live in `swanx.stack.model`, and
 high-level simulation request/result classes and forward entry points now live
 in `swanx.workflows.simulate`. `swanx.simulation` is a thin compatibility shim;
-legacy `swxps.simulation`, preferred subpackage imports, and top-level beginner
+legacy `swxps.simulation`, internal subpackage imports, and top-level beginner
 exports resolve to the same canonical objects. The `swanx.workflows` facade
 loads fitting and diagnostics conveniences lazily to avoid initialization
 cycles. Numerical algorithms were not changed.
@@ -56,6 +64,15 @@ Material lookup and emitting-layer filtering utilities live in
 Canonical execution remains in `swanx.workflows.simulate`; old
 `swanx.simulation` and `swxps.simulation` callers receive the same objects and
 numerically identical results.
+
+## Final API freeze
+
+`swanx.__all__` contains exactly ten stable names: `SimulationStack`,
+`StackLayer`, three request classes, two simulation functions, and three
+diagnostics helpers. The former broad facade is retained internally only to
+support the temporary `swxps` compatibility namespace. Maintained advanced
+scripts import implementation modules explicitly; README user code follows
+only `import swanx as sx`.
 
 ## Core physics
 

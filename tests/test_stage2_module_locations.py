@@ -2,7 +2,6 @@
 
 
 def test_slicing_implementation_and_compatibility_paths_share_objects():
-    import swanx as sx
     from swanx.slicing import LayerSlicingPolicy as FlatSwanxPolicy
     from swanx.stack.slicing import LayerSlicingPolicy
     from swxps.slicing import LayerSlicingPolicy as LegacyPolicy
@@ -10,11 +9,9 @@ def test_slicing_implementation_and_compatibility_paths_share_objects():
     assert LayerSlicingPolicy.__module__ == "swanx.stack.slicing"
     assert FlatSwanxPolicy is LayerSlicingPolicy
     assert LegacyPolicy is LayerSlicingPolicy
-    assert sx.LayerSlicingPolicy is LayerSlicingPolicy
 
 
 def test_profile_implementation_and_compatibility_paths_share_objects():
-    import swanx as sx
     from swanx.profiles import StackProfiles as FlatSwanxProfiles
     from swanx.stack.profiles import StackProfiles
     from swxps.profiles import StackProfiles as LegacyProfiles
@@ -22,7 +19,6 @@ def test_profile_implementation_and_compatibility_paths_share_objects():
     assert StackProfiles.__module__ == "swanx.stack.profiles"
     assert FlatSwanxProfiles is StackProfiles
     assert LegacyProfiles is StackProfiles
-    assert sx.StackProfiles is StackProfiles
 
 
 def test_diagnostics_implementation_and_compatibility_paths_share_objects():

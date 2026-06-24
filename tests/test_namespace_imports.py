@@ -8,7 +8,7 @@ def test_primary_and_compatibility_namespaces_share_public_objects():
     from swanx.stack import LayerSlicingPolicy
     from swxps.slicing import LayerSlicingPolicy as OldLayerSlicingPolicy
 
-    assert sx.LayerSlicingPolicy is LayerSlicingPolicy
+    assert not hasattr(sx, "LayerSlicingPolicy")
     assert OldLayerSlicingPolicy is LayerSlicingPolicy
     assert swxps.LayerSlicingPolicy is LayerSlicingPolicy
 

@@ -24,7 +24,7 @@ def test_stack_model_and_compatibility_paths_share_objects():
     assert canonical_builder.__module__ == "swanx.stack.model"
     assert SimulationStack is old_stack is legacy_stack is sx.SimulationStack
     assert StackLayer is old_layer is legacy_layer is sx.StackLayer
-    assert stack_from_layers is old_builder is canonical_builder is sx.stack_from_layers
+    assert stack_from_layers is old_builder is canonical_builder
 
 
 def test_workflow_and_compatibility_paths_share_objects():

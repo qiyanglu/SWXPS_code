@@ -154,6 +154,20 @@ Last updated: 2026-06-24
   tests across canonical, `swanx.simulation`, and `swxps.simulation` paths.
 - Full regression result: 171 passed and 1 expected failure.
 
+## Completed final API freeze
+
+- Reduced `swanx.__all__` to the exact ten-name stable user surface.
+- Standardized README on the sole recommended `import swanx as sx` workflow.
+- Documented JAX automatic differentiation as primary and Bayesian
+  optimization as a secondary baseline.
+- Removed recommended subpackage import alternatives from README.
+- Preserved broad historical `swxps` compatibility through an internal legacy
+  facade without re-expanding the `swanx` public API.
+- Migrated maintained advanced scripts and tests away from removed top-level
+  names.
+- Added exact API-surface and official-workflow smoke tests.
+- Full regression result: 173 passed and 1 expected failure.
+
 ## Completed Stage 2 subpackage migration
 
 - Moved slicing and profile implementation bodies into `swanx.stack`.

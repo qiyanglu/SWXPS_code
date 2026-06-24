@@ -2,7 +2,6 @@
 
 
 def test_attenuation_implementation_and_compatibility_paths_share_objects():
-    import swanx as sx
     from swanx import _xps
     from swanx.xps import attenuation_factor
     from swanx.xps.attenuation import attenuation_factor as canonical
@@ -12,7 +11,6 @@ def test_attenuation_implementation_and_compatibility_paths_share_objects():
     assert attenuation_factor is canonical
     assert _xps.attenuation_factor is canonical
     assert legacy is canonical
-    assert sx.attenuation_factor is canonical
 
 
 def test_intensity_implementation_and_compatibility_paths_share_objects():
