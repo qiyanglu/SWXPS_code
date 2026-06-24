@@ -1,5 +1,7 @@
 # Default unified high-level slicing plan
 
+> Stage 3 namespace status (2026-06-23): Unified-grid optics now live in `swanx.optics.unified_grid`; existing high-level unified simulation functions are lazily re-exported there.
+
 > Current status (2026-06-23): Implemented and tested under the primary `swanx` namespace. `swxps` paths below are historical compatibility references.
 
 ## Goal

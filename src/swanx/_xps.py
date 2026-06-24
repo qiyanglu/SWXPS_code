@@ -9,7 +9,7 @@ from typing import Literal
 
 import numpy as np
 
-from .fields import FieldProfile, transfer_matrix_electric_field_profile
+from .optics.fields import FieldProfile, transfer_matrix_electric_field_profile
 from .layers import Layer
 
 

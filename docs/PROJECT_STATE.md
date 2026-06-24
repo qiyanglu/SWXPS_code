@@ -19,8 +19,8 @@ substantial coding session.
 ## Git state at handoff
 
 - Branch: `main`.
-- Published base commit entering this handoff: `9069fdd`
-  (`Adopt unified slicing and add fit diagnostics`).
+- Published base commit entering this handoff: `289e45a`
+  (`Establish swanx namespace baseline`).
 - Documentation handoff commit: `97e27b1`.
 - Slicing design commits: `cdcf827` and `c9a1d56`.
 - Unified-grid implementation and synthetic comparison commits: `3c58e6a` and
@@ -133,6 +133,24 @@ its 61-angle run measured an 8.28x cached table-load speedup and a
 
 The maintained synthetic C/[LNO/STO]x20/STO fixed-grid JAX/TRF runner now imports `swanx` and uses `swanx.diagnostics` to save parameter uncertainty and correlation plots. A repeat run reproduced the prior optimum (`final_cost=4.422695921494358e-08`, 34 function evaluations) with one residual and one Jacobian compilation. The final Jacobian has rank 6 for 7 parameters and condition number `4.27e18`; substrate roughness is effectively unidentifiable, so its tiny pseudoinverse standard error is not evidence of precise constraint. Generated plots are under `runs/synthetic_c_lno_sto/unified_jax_least_squares/`. The uncertainty plot now uses each parameter's finite bound range as a 0-1 coordinate, scales confidence intervals by the same range, and labels raw lower/upper endpoints; pass `normalization=None` for raw coordinates. The legend is placed above the axes, with larger endpoint text, axis text, markers, and bound bars to avoid overlap and improve readability.
 
+## Public repository cleanup decision
+
+- `case_studies/` remains tracked as explicitly requested; no history rewrite was performed.
+- Generated `runs/` and `archive/` contents remain ignored except their guidance READMEs.
+- The former top-level `scripts/` demonstrations moved to `examples/fitting/` and now import `swanx`.
+- Both examples recover the synthetic 24 Angstrom film thickness from 35 Angstrom starts.
+
+## Stage 3 optics migration
+
+- Canonical Parratt implementation: `swanx.optics.parratt`.
+- Canonical transfer-matrix/field implementation: `swanx.optics.fields`.
+- Canonical unified-grid optics implementation: `swanx.optics.unified_grid`.
+- Flat `swanx.reflectivity`, `swanx.fields`, and `swanx.unified_grid` remain thin shims.
+- Legacy `swxps.reflectivity`, `swxps.fields`, and `swxps.unified_grid` expose the same canonical objects.
+- Existing high-level unified simulation functions are lazily re-exported from the canonical unified-grid module.
+- XPS, simulation, fitting, and workflow implementation modules were not moved.
+- Full verification: 158 passed and 1 expected failure.
+
 ## Stage 2 subpackage migration
 
 - Canonical slicing implementation: `swanx.stack.slicing`.
@@ -160,7 +178,7 @@ Last full implementation verification:
 python -m pytest -q
 ```
 
-Result: 153 passed and 1 expected failure after the Stage 2 subpackage implementation migration. Coverage includes Fresnel, analytic attenuation,
+Result: 158 passed and 1 expected failure after the Stage 3 optics implementation migration. Coverage includes Fresnel, analytic attenuation,
 thin-layer convergence, fixed-shape fitting, NumPy/JAX parity, exact legacy
 optical grading on an identical grid, default/legacy request semantics, the
 JAX differentiation boundary, and the Sample 13 capacity/parity path. The

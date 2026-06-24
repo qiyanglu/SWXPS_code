@@ -11,17 +11,17 @@ from time import perf_counter
 
 import numpy as np
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 import sys
 
 sys.path.insert(0, str(ROOT / "src"))
 
-from swxps import (  # noqa: E402
+from swanx import (  # noqa: E402
     FitParameter,
     JaxGradientOptimizerSettings,
     optimize_with_jax_gradient,
 )
-from swxps.reflectivity_jax import (  # noqa: E402
+from swanx.reflectivity_jax import (  # noqa: E402
     jitted_parratt_reflectivity,
     jitted_value_and_grad_reflectivity_loss,
 )
@@ -57,7 +57,11 @@ def main() -> None:
             roughnesses,
             target,
         )
-        return float(loss), np.asarray([gradient[1]], dtype=float)
+        scale = 1.0e8
+        return (
+            scale * float(loss),
+            scale * np.asarray([gradient[1]], dtype=float),
+        )
 
     parameters = (FitParameter("film_thickness", 5.0, 50.0, "Angstrom", initial=35.0),)
     initial = np.array([parameters[0].initial], dtype=float)

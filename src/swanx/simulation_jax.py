@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import numpy as np
 
-from .fields import depth_grid, effective_layers_with_roughness
+from .optics.fields import depth_grid, effective_layers_with_roughness
 from .preprocessing import normalize_rocking_curve
 from .reflectivity_jax import (
     jitted_normalized_rocking_curve_from_field,

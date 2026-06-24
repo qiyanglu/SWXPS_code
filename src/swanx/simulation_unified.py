@@ -16,7 +16,7 @@ from .simulation import (
     _apply_emitting_layer_filter,
     _values_by_material,
 )
-from .unified_grid import (
+from .optics.unified_grid import (
     effective_layers_from_grid,
     field_profiles_on_grid,
     integrate_xps_on_grid,

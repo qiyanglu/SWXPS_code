@@ -21,7 +21,7 @@ from .diagnostics import (
     plot_parameter_estimates,
     plot_singular_values,
 )
-from .fields import (
+from .optics.fields import (
     FieldProfile,
     depth_grid,
     effective_layers_with_roughness,
@@ -103,7 +103,7 @@ from .stack.profiles import (
     sample_stack_property,
     stack_depth_grid,
 )
-from .reflectivity import (
+from .optics.parratt import (
     apply_roughness,
     energy_to_wavelength,
     fresnel_r_s,

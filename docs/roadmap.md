@@ -8,7 +8,7 @@ normalized SW-XPS, unified layer slicing, three fitting backends, and fitting
 diagnostics are implemented and tested. The former `swxps` namespace remains a
 temporary compatibility shim.
 
-Stage 2 has moved the diagnostics covariance/plot code and stack slicing/profile code into `swanx.diagnostics` and `swanx.stack`. Flat `swanx.*` and legacy `swxps.*` paths remain compatibility shims. Optics, XPS, simulation, and fitting implementation moves are intentionally deferred.
+Stage 2 moved diagnostics and stack slicing/profile code into their public subpackages. Stage 3 has now moved Parratt, transfer-matrix/field, and unified-grid optics implementations into `swanx.optics`. Flat `swanx.*` and legacy `swxps.*` paths remain compatibility shims. XPS, simulation, fitting, and workflow implementation moves are intentionally deferred.
 
 Unified slicing is the default high-level path; `slicing=None` selects the
 legacy fixed-step path.
@@ -26,8 +26,10 @@ legacy fixed-step path.
 5. Produce compact reproducible case-study summaries and diagnostics.
 6. Retire the `swxps` shim only in a separately planned breaking release.
 
+The two standalone fitting demonstrations now live under `examples/fitting/` and use `swanx`. Generated `runs/` and `archive/` content remains ignored. The experimental `case_studies/` tree is intentionally retained; no Git-history rewrite is planned.
+
 The current priority is workflows, examples, validation, and repository
-readability鈥攏ot adding more core physics.
+readability闁炽儲鏀簅t adding more core physics.
 
 ## Deferred features
 

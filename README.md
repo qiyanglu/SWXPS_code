@@ -38,6 +38,17 @@ from swanx.diagnostics import compute_parameter_diagnostics
 Flat imports such as `from swanx.slicing import LayerSlicingPolicy` and all
 old `swxps.*` paths remain compatibility shims, but are no longer preferred.
 
+Preferred advanced optics imports are:
+
+```python
+from swanx.optics import transfer_matrix_reflectivity_array
+from swanx.optics import transfer_matrix_electric_field_profiles
+from swanx.optics.unified_grid import simulate_reflectivity_unified
+```
+
+Flat optics imports such as `swanx.fields`, `swanx.reflectivity`, and
+`swanx.unified_grid` remain compatibility shims for existing code.
+
 ## Capabilities
 
 - Parratt-recursion s-polarized reflectivity.
@@ -99,6 +110,8 @@ Optional fitting extras are `fit`, `gradient`, and `least-squares`.
 python examples/reflectivity/plot_lno_sto_reflectivity.py
 python examples/fields/plot_lno_sto_field_profile.py
 python examples/xps/plot_lno_la4d_rocking_curve.py
+python examples/fitting/jax_gradient_reflectivity_fit.py
+python examples/fitting/jax_least_squares_reflectivity_fit.py
 python benchmarks/synthetic_c_lno_sto/fit_reflectivity_rc_bo.py --generate-only
 ```
 
@@ -113,8 +126,8 @@ effect. New examples and user code should import `swanx`.
 - `examples/`: small reproducible tutorials.
 - `case_studies/`: experimental inputs, maintained runners, and canonical results.
 - `benchmarks/`: synthetic fitting studies and performance benchmarks.
-- `runs/`: generated optimizer output, ignored by Git.
-- `archive/`: superseded local experiments, ignored by Git.
+- `runs/`: generated optimizer output, ignored by Git except contributor guidance.
+- `archive/`: superseded local experiments, ignored by Git except contributor guidance.
 - `docs/`: architecture, roadmap, plans, handoff, and historical documents.
 - `OPC/`, `IMFP/`: optical-constant and attenuation tables.
 

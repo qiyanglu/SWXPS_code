@@ -1,5 +1,7 @@
 # Adaptive unified-grid and fixed-shape slicing plan
 
+> Stage 3 namespace status (2026-06-23): Roughness fields and unified-grid optics now live in `swanx.optics.fields` and `swanx.optics.unified_grid`; flat and legacy paths remain shims.
+
 > Stage 2 namespace status (2026-06-23): The maintained slicing implementation now lives in `swanx.stack.slicing`; flat `swanx.slicing` and `swxps.slicing` imports are compatibility shims.
 
 > Current status (2026-06-23): Implemented. Unified slicing is now the default high-level path; `slicing=None` selects the legacy fixed-step path. The primary namespace is `swanx`, with `swxps` retained as a compatibility alias.

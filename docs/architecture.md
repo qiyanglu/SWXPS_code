@@ -21,10 +21,14 @@ facades improve discovery without rewriting or duplicating numerical kernels.
 
 Diagnostics covariance/plot implementations and stack slicing/profile implementations now live in their public subpackages. `swanx.slicing`, `swanx.profiles`, and `swanx._diagnostics` are thin compatibility shims. Legacy `swxps.slicing`, `swxps.profiles`, and `swxps.diagnostics` resolve to the same canonical objects. Optics, XPS, simulation, and fitting implementations remain flat for later, separately tested stages.
 
+## Stage 3 optics implementation locations
+
+Parratt reflectivity, transfer-matrix/electric-field, and unified-grid optics implementations now live in `swanx.optics.parratt`, `swanx.optics.fields`, and `swanx.optics.unified_grid`. Flat `swanx.reflectivity`, `swanx.fields`, and `swanx.unified_grid` modules are thin compatibility shims; legacy `swxps.*` paths expose the same objects. Existing `simulate_reflectivity_unified` and `simulate_rocking_curves_unified` remain implemented in `simulation_unified.py` and are lazily re-exported from `swanx.optics.unified_grid` to avoid cycles. XPS, simulation, fitting, and workflow implementations were not moved.
+
 ## Core physics
 
-- `reflectivity.py`: Parratt amplitudes and reflectivity.
-- `fields.py`: transfer-matrix fields and rough-interface effective layers.
+- `optics/parratt.py`: Parratt amplitudes and reflectivity.
+- `optics/fields.py`: transfer-matrix fields and rough-interface effective layers.
 - `_xps.py`: attenuation and normalized rocking-curve integration.
 - `stack/profiles.py`: material and concentration profiles versus depth.
 - `stack/slicing.py`: adaptive and fixed-plan unified layer grids.

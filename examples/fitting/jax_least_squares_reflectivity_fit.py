@@ -8,17 +8,18 @@ import sys
 
 import numpy as np
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "src"))
 
-from swxps import (  # noqa: E402
+from swanx import (  # noqa: E402
     FitParameter,
     JaxLeastSquaresOptimizerSettings,
+    JaxLeastSquaresResidualSettings,
     ReflectivityData,
     build_jax_residual_function,
     optimize_with_jax_least_squares,
 )
-from swxps.reflectivity_jax import parratt_reflectivity_jax  # noqa: E402
+from swanx.reflectivity_jax import parratt_reflectivity_jax  # noqa: E402
 
 
 def main() -> None:
@@ -44,6 +45,7 @@ def main() -> None:
         name="synthetic reflectivity",
         angles=np.asarray(angles),
         reflectivity=target,
+        sigma=np.full(target.shape, 1.0e-5),
     )
 
     def simulate_curves(parameters):
@@ -61,6 +63,7 @@ def main() -> None:
     residual_function = build_jax_residual_function(
         simulate_curves,
         reflectivity=data,
+        settings=JaxLeastSquaresResidualSettings(reflectivity_log=False),
     )
     parameters = (
         FitParameter(
@@ -68,10 +71,10 @@ def main() -> None:
             5.0,
             50.0,
             "Angstrom",
-            initial=25.0,
+            initial=35.0,
         ),
     )
-    initial_residuals = residual_function(np.array([25.0]))
+    initial_residuals = residual_function(np.array([35.0]))
     initial_cost = 0.5 * float(np.dot(initial_residuals, initial_residuals))
 
     start = perf_counter()

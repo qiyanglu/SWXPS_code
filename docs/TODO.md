@@ -91,6 +91,22 @@ Last updated: 2026-06-23
 - Reproduced the canonical optimum and one-time JAX compilation counts.
 - Confirmed a rank-6/7 Jacobian; treat substrate-roughness uncertainty as unidentifiable rather than precise.
 
+## Completed public repository cleanup
+
+- Retained `case_studies/` and avoided destructive history rewriting.
+- Confirmed `runs/` and `archive/` generated contents remain ignored.
+- Moved two standalone fitting scripts into `examples/fitting/`.
+- Migrated both examples to `swanx` and verified 24 Angstrom recovery.
+
+## Completed Stage 3 optics migration
+
+- Moved Parratt, field/transfer-matrix, and unified-grid implementation bodies into `swanx.optics`.
+- Preserved flat `swanx.*`, legacy `swxps.*`, and beginner top-level APIs.
+- Added lazy access to existing high-level unified simulation entry points.
+- Added canonical-location and object-identity tests.
+- Deferred XPS, simulation, fitting, and workflow implementation moves.
+- Full regression result: 158 passed and 1 expected failure.
+
 ## Completed Stage 2 subpackage migration
 
 - Moved slicing and profile implementation bodies into `swanx.stack`.

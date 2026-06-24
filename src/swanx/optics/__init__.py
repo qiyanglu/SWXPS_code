@@ -1,7 +1,7 @@
 """Parratt, transfer-matrix, field, and unified-grid optics."""
 
 from ..constants import HC_EV_ANGSTROM
-from ..fields import (
+from .fields import (
     FieldProfile,
     depth_grid,
     effective_layers_with_roughness,
@@ -15,7 +15,7 @@ from ..fields import (
     transfer_matrix_reflectivity_array,
     transfer_matrix_reflection_amplitude,
 )
-from ..reflectivity import (
+from .parratt import (
     apply_roughness,
     energy_to_wavelength,
     fresnel_r_s,
@@ -23,9 +23,11 @@ from ..reflectivity import (
     parratt_amplitude,
     parratt_reflectivity,
 )
-from ..unified_grid import (
+from .unified_grid import (
+    cell_centered_attenuation,
     effective_layers_from_grid,
     field_profiles_on_grid,
+    integrate_xps_on_grid,
     materialize_layer_grid,
     reflectivity_on_grid,
 )
