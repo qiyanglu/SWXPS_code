@@ -8,26 +8,32 @@ substantial coding session.
 
 ## Namespace migration
 
-- `swanx` means *standing-wave analysis for X-ray spectroscopy* and is now the primary distribution and import namespace.
+- **SWANX** means **S**tanding-**W**ave **A**nalysis for **N**anoscale
+  **X**-ray spectroscopy; its Python distribution and import name is `swanx`.
 - Maintained implementation modules live under `src/swanx/`.
 - `src/swxps/` is a temporary compatibility shim; existing `swxps.*` imports resolve to the same implementation objects.
 - Stack, optics, XPS, fitting, diagnostics, I/O, and workflow subpackages are
   internal implementation namespaces, not competing user entry points.
 - The frozen user entry pattern is `import swanx as sx`.
-- High-level unified slicing remains the default; `slicing=None` remains the legacy fixed-step selector.
-- The README now uses `swanx_logo.png`, explains the name, and starts with the high-level API.
+- Unified slicing is the default for high-level simulation requests and
+  `FittingProblem`; `slicing=None` remains the legacy fixed-step selector.
+- The README now distinguishes the beginner simulation API from advanced
+  `swanx.fitting` imports and documents JAX/autodiff fitting first.
 - No physics algorithms were changed.
 
 ## Git state at handoff
 
 - Branch: `main`.
-- Published base commit entering this handoff: `68c26a1`
-  (`Remove local-only files from repository`).
-- This handoff freezes the ten-name top-level `swanx` API and consolidates
-  README usage around one `import swanx as sx` workflow.
+- Published base commit entering this Stage 7 session: `7191f2c`
+  (`Freeze public API and consolidate user workflow`).
+- Stage 7 is complete, validated, and ready for publication.
+- `FittingProblem` now defaults to `LayerSlicingPolicy()` and rejects
+  non-default legacy step controls unless `slicing=None` is explicit.
+- README-linked tutorials use `swanx`; fixed-step BO and older case-study
+  runners opt into legacy slicing explicitly.
 - JAX automatic differentiation is documented as the primary optimizer;
   Bayesian optimization is explicitly a baseline comparison.
-- Full API-freeze verification: 173 passed and 1 expected failure.
+- Stage 7 verification: 177 passed and 1 expected failure.
 - Local `runs/` and `archive/` contents are ignored and do not travel through Git.
 
 ## Collaboration and Git preference

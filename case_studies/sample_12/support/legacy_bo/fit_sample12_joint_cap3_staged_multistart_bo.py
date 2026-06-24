@@ -153,6 +153,7 @@ def make_stage_problem(
         angle_offset_parameter="reflectivity_angle_offset",
         field_step=5.0,
         roughness_step=2.0,
+        slicing=None,
         fixed_values=fixed_values,
     )
     rc_problem = FittingProblem(
@@ -164,6 +165,7 @@ def make_stage_problem(
         angle_offset_parameter="rc_angle_offset",
         field_step=5.0,
         roughness_step=2.0,
+        slicing=None,
         offpeak_mask=np.ones_like(data.rc_angle, dtype=bool),
         fixed_values=fixed_values,
     )

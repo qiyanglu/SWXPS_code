@@ -16,8 +16,8 @@ import sys
 
 sys.path.insert(0, str(ROOT / "src"))
 
-from swanx.fitting import FitParameter  # noqa: E402
-from swanx.jax_gradient import (  # noqa: E402
+from swanx.fitting import (  # noqa: E402
+    FitParameter,
     JaxGradientOptimizerSettings,
     optimize_with_jax_gradient,
 )

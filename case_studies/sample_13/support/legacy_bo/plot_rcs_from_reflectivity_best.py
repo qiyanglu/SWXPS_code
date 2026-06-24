@@ -124,6 +124,7 @@ def make_rc_problem(data: sample13.PreparedData) -> FittingProblem:
         angle_offset_parameter="rc_angle_offset",
         field_step=5.0,
         roughness_step=2.0,
+        slicing=None,
         offpeak_mask=np.ones_like(data.rc_angle, dtype=bool),
     )
 

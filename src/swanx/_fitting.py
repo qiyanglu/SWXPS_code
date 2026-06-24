@@ -19,6 +19,7 @@ from .workflows.simulate import (
     RockingCurveResult,
     simulate_reflectivity,
     simulate_rocking_curves,
+    _is_default_legacy_step,
 )
 
 
@@ -187,7 +188,9 @@ class FittingProblem:
     field_step: float = 1.0
     roughness_step: float | Sequence[float] = 1.0
     roughness_profile: Literal["erf", "linear"] = "erf"
-    slicing: LayerSlicingPolicy | FixedLayerGridPlan | None = None
+    slicing: LayerSlicingPolicy | FixedLayerGridPlan | None = field(
+        default_factory=LayerSlicingPolicy
+    )
     offpeak_mask: np.ndarray | None = None
     rocking_curve_normalization: Literal["mean", "edge_polynomial"] = "mean"
     normalization_edge_fraction: float = 0.10
@@ -213,6 +216,18 @@ class FittingProblem:
         if self.rocking_curve_normalization not in {"mean", "edge_polynomial"}:
             raise ValueError(
                 "rocking_curve_normalization must be 'mean' or 'edge_polynomial'"
+            )
+        if self.slicing is not None and not _is_default_legacy_step(self.field_step):
+            raise ValueError(
+                "field_step is only used by the legacy path; "
+                "set slicing=None or remove field_step"
+            )
+        if self.slicing is not None and not _is_default_legacy_step(
+            self.roughness_step
+        ):
+            raise ValueError(
+                "roughness_step is only used by the legacy path; "
+                "set slicing=None or remove roughness_step"
             )
 
     def objective(self) -> JointObjective:

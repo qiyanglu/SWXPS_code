@@ -360,6 +360,7 @@ def make_problem(
         angle_offset_parameter="angle_offset",
         field_step=1.0,
         roughness_step=1.0,
+        slicing=None,
         offpeak_mask=offpeak_mask,
     )
 

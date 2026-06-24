@@ -11,8 +11,9 @@ import numpy as np
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "src"))
 
-from swanx.fitting import FitParameter, ReflectivityData  # noqa: E402
-from swanx.jax_least_squares import (  # noqa: E402
+from swanx.fitting import (  # noqa: E402
+    FitParameter,
+    ReflectivityData,
     JaxLeastSquaresOptimizerSettings,
     JaxLeastSquaresResidualSettings,
     build_jax_residual_function,

@@ -586,6 +586,7 @@ def make_fit_problem(
         angle_offset_parameter="rc_angle_offset",
         field_step=5.0,
         roughness_step=2.0,
+        slicing=None,
         offpeak_mask=np.ones_like(data.rc_angle, dtype=bool),
         fixed_values=initial_values,
     )
@@ -605,6 +606,7 @@ def make_fit_problem(
         angle_offset_parameter="reflectivity_angle_offset",
         field_step=5.0,
         roughness_step=2.0,
+        slicing=None,
         fixed_values=initial_values,
     )
     if fit_mode == "reflectivity":

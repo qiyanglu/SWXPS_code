@@ -1,8 +1,9 @@
 # Architecture
 
-The primary package is `swanx`: *standing-wave analysis for X-ray
-spectroscopy*. `swxps` is a temporary compatibility package that aliases the
-same modules and objects; new code should import `swanx`.
+The scientific tool **SWANX** means **S**tanding-**W**ave **A**nalysis for
+**N**anoscale **X**-ray spectroscopy. The primary Python package is `swanx`.
+`swxps` is a temporary compatibility package that aliases the same modules and
+objects; new code should import `swanx`.
 
 ## Frozen user API
 
@@ -28,7 +29,11 @@ rewriting or duplicating numerical kernels.
 
 ## Stage 2 implementation locations
 
-Diagnostics covariance/plot implementations and stack slicing/profile implementations now live in their public subpackages. `swanx.slicing`, `swanx.profiles`, and `swanx._diagnostics` are thin compatibility shims. Legacy `swxps.slicing`, `swxps.profiles`, and `swxps.diagnostics` resolve to the same canonical objects. Optics, XPS, simulation, and fitting implementations remain flat for later, separately tested stages.
+Diagnostics covariance/plot implementations and stack slicing/profile
+implementations live in their public subpackages. `swanx.slicing`,
+`swanx.profiles`, and `swanx._diagnostics` are thin compatibility shims.
+Legacy `swxps.slicing`, `swxps.profiles`, and `swxps.diagnostics` resolve to
+the same canonical objects. Later Stages 3-6 completed the remaining moves.
 
 ## Stage 3 optics implementation locations
 
@@ -43,7 +48,6 @@ curves, and cell-centered grid integration now live in
 module, the former XPS exports from `swanx.optics.unified_grid`, and legacy
 `swxps.*` paths remain identity-preserving compatibility shims. High-level
 simulation exports from `swanx.xps` are lazy to avoid initialization cycles.
-Simulation, fitting, and workflow implementations were not moved.
 
 ## Stage 5 stack-model and simulation-workflow locations
 

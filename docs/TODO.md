@@ -2,6 +2,19 @@
 
 Last updated: 2026-06-24
 
+## Completed Stage 7 API consistency
+
+- Expanded every letter in SWANX and distinguished it from the `swanx` import.
+- Made unified slicing the `FittingProblem` default, matching simulation.
+- Preserved explicit `slicing=None` behavior in legacy fixed-step runners.
+- Added fitting-default propagation and conflicting-step validation tests.
+- Rewrote README fitting guidance around `swanx.fitting`, recommended JAX
+  least squares/autodiff, and baseline Bayesian optimization.
+- Migrated README-linked tutorials away from `swxps` imports.
+- Replaced stale/corrupt roadmap text with the post-Stage-6 priorities.
+- Targeted verification: 29 passed. Full verification: 177 passed and
+  1 expected failure.
+
 ## Completed first-stage `swanx` namespace migration
 
 - Renamed the distribution and primary implementation namespace to `swanx`.

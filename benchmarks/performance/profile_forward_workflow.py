@@ -229,6 +229,7 @@ def _fitting_problem(
         angle_offset_parameter=None,
         field_step=1.0,
         roughness_step=1.0,
+        slicing=None,
     )
 
 

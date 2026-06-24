@@ -13,15 +13,17 @@ SRC_DIR = REPO_ROOT / "src"
 if str(SRC_DIR) not in sys.path:
     sys.path.insert(0, str(SRC_DIR))
 
-from swxps import (
-    CoreLevelRequest,
+from swanx.stack import (
     LayerTemplate,
-    ReflectivityRequest,
-    RockingCurveRequest,
     StackTemplate,
     SuperlatticeTemplate,
-    energy_to_wavelength,
-    imfp_from_file,
+)
+from swanx.optics import energy_to_wavelength
+from swanx.io import imfp_from_file
+from swanx.workflows import (
+    CoreLevelRequest,
+    ReflectivityRequest,
+    RockingCurveRequest,
     simulate_reflectivity,
     simulate_rocking_curves,
 )

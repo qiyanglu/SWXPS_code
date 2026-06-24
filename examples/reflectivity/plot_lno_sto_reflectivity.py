@@ -13,10 +13,12 @@ SRC_DIR = REPO_ROOT / "src"
 if str(SRC_DIR) not in sys.path:
     sys.path.insert(0, str(SRC_DIR))
 
-from swxps import (
+from swanx.stack import (
     LayerTemplate,
     StackTemplate,
     SuperlatticeTemplate,
+)
+from swanx.optics import (
     energy_to_wavelength,
     transfer_matrix_reflectivity,
 )
