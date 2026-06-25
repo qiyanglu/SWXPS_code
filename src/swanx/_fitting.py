@@ -7,6 +7,8 @@ from dataclasses import dataclass, field
 from time import perf_counter
 from typing import Literal
 
+from .polarization import Polarization, polarization_weights
+
 import numpy as np
 
 from .stack.model import SimulationStack, StackLayer
@@ -188,6 +190,7 @@ class FittingProblem:
     field_step: float = 1.0
     roughness_step: float | Sequence[float] = 1.0
     roughness_profile: Literal["erf", "linear"] = "erf"
+    polarization: Polarization = "s"
     slicing: LayerSlicingPolicy | FixedLayerGridPlan | None = field(
         default_factory=LayerSlicingPolicy
     )
@@ -211,6 +214,7 @@ class FittingProblem:
             mask = np.asarray(self.offpeak_mask, dtype=bool)
             if mask.shape != self.rocking_curves[0].angles.shape:
                 raise ValueError("offpeak_mask must match rocking-curve angles")
+        polarization_weights(self.polarization)
         if self.simulation_backend not in {"numpy", "jax"}:
             raise ValueError("simulation_backend must be 'numpy' or 'jax'")
         if self.rocking_curve_normalization not in {"mean", "edge_polynomial"}:
@@ -261,6 +265,7 @@ class FittingProblem:
                     angle_offset=angle_offset,
                     roughness_step=self.roughness_step,
                     roughness_profile=self.roughness_profile,
+                    polarization=self.polarization,
                     slicing=self.slicing,
                 )
             )
@@ -289,6 +294,7 @@ class FittingProblem:
                     field_step=self.field_step,
                     roughness_step=self.roughness_step,
                     roughness_profile=self.roughness_profile,
+                    polarization=self.polarization,
                     slicing=self.slicing,
                     offpeak_mask=self.offpeak_mask,
                     normalization_mode=self.rocking_curve_normalization,
@@ -343,6 +349,7 @@ class FittingProblem:
                     angle_offset=angle_offset,
                     roughness_step=self.roughness_step,
                     roughness_profile=self.roughness_profile,
+                    polarization=self.polarization,
                     slicing=self.slicing,
                 )
             )
@@ -358,6 +365,7 @@ class FittingProblem:
                     field_step=self.field_step,
                     roughness_step=self.roughness_step,
                     roughness_profile=self.roughness_profile,
+                    polarization=self.polarization,
                     slicing=self.slicing,
                     offpeak_mask=self.offpeak_mask,
                     normalization_mode=self.rocking_curve_normalization,

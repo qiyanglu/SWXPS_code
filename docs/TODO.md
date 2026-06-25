@@ -2,6 +2,7 @@
 
 ## Current cleanup
 
+- [x] Propagate polarization through `FittingProblem` and require mixed weights to sum to 1.
 - [x] Keep `swanx` as the only supported namespace.
 - [x] Keep tutorial inputs under root-level `data/`.
 - [x] Keep `swanx.io` narrow: OPC, IMFP, material-table builders, stack/core
@@ -10,6 +11,9 @@
 - [x] Keep fitting data consumption under `swanx.fitting`.
 - [x] Run and record Step 10 final validation.
 - [x] Add s/p/mixed polarization support with `polarization="s"` as the default.
+- [x] Document polarization behavior in the user guide.
+- [x] Sweep active examples and case-study runners for `swanx` imports and
+  root-level `data/OPC`, `data/IMFP`, and `data/curves` paths.
 
 ## Near-term priorities
 
@@ -17,12 +21,10 @@
    representative case-study inputs.
 2. Keep README-linked examples executable and based on `swanx`.
 3. Improve fixed-shape JAX least-squares fitting documentation.
-4. Document polarization assumptions and recommended experimental usage in the
-   user guide.
-5. Add richer experimental-data formats only when real lab conventions require
+4. Add richer experimental-data formats only when real lab conventions require
    them.
-6. Add fit-result and best-fit-curve export workflow docs.
-7. Continue validating RC preprocessing, weighting, angular offsets, parameter
+5. Add fit-result and best-fit-curve export workflow docs.
+6. Continue validating RC preprocessing, weighting, angular offsets, parameter
    identifiability, and fitted structures.
 
 ## Maintenance

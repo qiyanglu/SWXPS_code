@@ -111,7 +111,7 @@ rocking_curves = sx.simulate_rocking_curves(
 ```
 
 OPC tables are interpolated at photon energy. IMFP tables are interpolated at
-photoelectron kinetic energy, `E_kin = hν - E_B`. `RockingCurveRequest` does
+photoelectron kinetic energy, `E_kin = h nu - E_B`. `RockingCurveRequest` does
 not read files directly; `swanx.io` prepares file inputs before request
 creation.
 
@@ -171,6 +171,11 @@ Headerless curve files are supported when explicit column indices are supplied.
 
 High-level simulations use unified layer slicing by default. Set `slicing=None`
 only when reproducing the legacy fixed-step path.
+
+Reflectivity and rocking-curve requests default to s polarization. Set
+`polarization="p"` for p polarization or pass a mixed dictionary such as
+`{"s": 0.5, "p": 0.5}` to combine raw s/p reflectivity or SW-XPS intensity
+before any rocking-curve normalization.
 
 ## Fitting and optimization
 

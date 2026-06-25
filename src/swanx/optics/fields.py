@@ -21,7 +21,11 @@ from .parratt import (
 
 @dataclass(frozen=True)
 class FieldProfile:
-    """Electric field sampled on a depth grid."""
+    """Electric field sampled on a depth grid.
+
+    ``electric_field`` is a scalar representative amplitude. For p-polarized or
+    mixed-polarization calculations, use ``intensity`` for physical weighting.
+    """
 
     depth: np.ndarray
     electric_field: np.ndarray

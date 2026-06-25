@@ -22,6 +22,8 @@ a baseline and robustness check.
 4. Preserve NumPy/JAX numerical parity and source-location tests.
 5. Continue validating RC preprocessing, weighting, angular offsets, parameter
    identifiability, and fitted structures.
+6. Keep s/p/mixed polarization examples and tests aligned with representative
+   multilayer and superlattice cases.
 
 ## Future IO extensions
 
@@ -33,7 +35,6 @@ a baseline and robustness check.
 
 ## Deferred physics/features
 
-- p-polarization;
 - online optical-constant databases;
 - expanded photoionization cross-section models;
 - new optimizers without a demonstrated validation need;

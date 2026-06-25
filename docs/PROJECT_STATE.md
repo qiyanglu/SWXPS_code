@@ -48,6 +48,44 @@ Tutorial data live at:
 
 ## Latest validation
 
+Polarization fitting integration fix completed:
+
+```bash
+python -m pytest tests/test_polarization.py tests/test_fitting.py tests/test_unified_fitting.py tests/test_reflectivity_jax.py tests/test_jax_gradient.py -q
+# 36 passed
+```
+
+- `FittingProblem` now accepts and validates `polarization`.
+- Fitting `evaluate(...)` and `simulate(...)` propagate polarization into reflectivity and rocking-curve requests.
+- Mixed polarization weights must sum to 1.
+
+
+Pre-commit consistency sweep completed:
+
+```bash
+python -m pytest tests/test_polarization.py tests/test_namespace_imports.py tests/test_io_curves.py -q --basetemp runs/pytest_sweep_targeted
+# 30 passed
+
+python examples/io/opc_imfp_rocking_curve_quickstart.py
+# reflectivity points: 201
+# La 4d: kinetic energy 795.0 eV, normalized RC mean 1.000
+
+python examples/io/experimental_curve_loading.py
+# FittingProblem datasets: reflectivity=tutorial reflectivity, rocking_curves=1
+
+python examples/reflectivity/plot_lno_sto_reflectivity.py
+# saved examples/reflectivity/lno_sto_reflectivity.png
+
+python examples/xps/plot_lno_la4d_rocking_curve.py
+# saved examples/xps/lno_la4d_o1s_ti2p_rocking_curves.png
+
+python examples/fitting/jax_least_squares_reflectivity_fit.py
+# final cost: 4.667158e-21
+
+python -m pytest -q --basetemp runs/pytest_sweep_full
+# 218 passed, 1 xfailed, 1 warning
+```
+
 Step 10 validation completed:
 
 ```bash

@@ -36,6 +36,8 @@ from `swanx.io`.
 
 - `optics/parratt.py`: Parratt amplitudes and reflectivity.
 - `optics/fields.py`: transfer-matrix fields and rough-interface effective layers.
+- `polarization.py`: shared validation and weighting for s, p, and mixed
+  polarization requests.
 - `xps/attenuation.py`: electron attenuation through depth-dependent IMFPs.
 - `xps/intensity.py`: continuous XPS integration and graded property sampling.
 - `xps/rocking_curve.py`: normalized rocking-curve construction.

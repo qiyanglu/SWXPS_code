@@ -29,6 +29,8 @@ def polarization_weights(polarization: Polarization) -> tuple[float, float]:
             raise ValueError("polarization weights must be non-negative")
         if s_weight == 0.0 and p_weight == 0.0:
             raise ValueError("at least one polarization weight must be positive")
+        if not np.isclose(s_weight + p_weight, 1.0):
+            raise ValueError("mixed polarization weights must sum to 1")
         return s_weight, p_weight
     raise ValueError("polarization must be 's', 'p', or {'s': fs, 'p': fp}")
 

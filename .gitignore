@@ -1,4 +1,4 @@
-# Python caches
+﻿# Python caches
 __pycache__/
 *.py[cod]
 .pytest_cache/
@@ -15,6 +15,7 @@ dist/
 /runs/
 /archive/
 /archives/
+/case_studies/
 
 # Local Codex contributor instructions and planning template
 /AGENTS.md
@@ -33,3 +34,4 @@ examples/**/*.pdf
 
 # Local reference paper copy; avoid uploading copyrighted PDFs by accident.
 references/*.pdf
+
