@@ -1,4 +1,4 @@
-﻿# User guide
+# User guide
 
 SWANX (**S**tanding-**W**ave **A**nalysis for **N**anoscale **X**-ray spectroscopy) is imported as `swanx`.
 
@@ -8,7 +8,9 @@ Beginner scripts should start with:
 import swanx as sx
 ```
 
-Advanced users can import focused APIs from `swanx.stack`, `swanx.optics`, `swanx.xps`, `swanx.fitting`, `swanx.diagnostics`, and `swanx.io`.
+The recommended simulation entry pattern is `import swanx as sx`. File readers,
+fitting data classes, and diagnostics live in focused namespaces for explicit
+workflow steps.
 
 ## Optical constants (OPC)
 
@@ -35,7 +37,7 @@ Use:
 ```python
 from swanx.io import read_optical_constants
 
-table = read_optical_constants("OPC/LaNiO3.dat")
+table = read_optical_constants("data/OPC/LaNiO3.dat")
 delta, beta = table.at_energy(900.0)
 ```
 
@@ -52,7 +54,7 @@ Use:
 ```python
 from swanx.io import read_imfp
 
-table = read_imfp("IMFP/LNO.ANG")
+table = read_imfp("data/IMFP/LNO.ANG")
 lambda_angstrom = table.at_kinetic_energy(795.0)
 ```
 
@@ -68,24 +70,25 @@ vacuum
 
 ## Loading material tables
 
-Users may place files in project folders such as `OPC/` and `IMFP/`, or pass explicit paths:
+Users may place files wherever convenient and pass explicit paths. The tutorial
+files live under `data/OPC/` and `data/IMFP/`:
 
 ```python
 from swanx.io import load_material_tables
 
 tables = load_material_tables(
-    opc_files={"LNO": "OPC/LaNiO3.dat", "STO": "OPC/SrTiO3.dat"},
-    imfp_files={"LNO": "IMFP/LNO.ANG", "STO": "IMFP/STO.ANG"},
+    opc_files={"LNO": "data/OPC/LaNiO3.dat", "STO": "data/OPC/SrTiO3.dat"},
+    imfp_files={"LNO": "data/IMFP/LNO.ANG", "STO": "data/IMFP/STO.ANG"},
 )
 ```
 
 Directory mode is also available:
 
 ```python
-tables = load_material_tables(opc_dir="OPC", imfp_dir="IMFP", materials=["LNO", "STO"])
+tables = load_material_tables(opc_dir="data/OPC", imfp_dir="data/IMFP", materials=["LNO", "STO"])
 ```
 
-The repository examples use `examples/data/OPC/` and `examples/data/IMFP/`. These are tutorial/example data, not a complete built-in materials database.
+The repository examples use `data/OPC/` and `data/IMFP/`. These are tutorial/example data, not a complete built-in materials database.
 
 ## Building simulation requests
 
@@ -112,6 +115,84 @@ la4d = core_level_from_tables(
     imfp_tables=tables.imfp,
 )
 ```
+
+## Loading experimental reflectivity data
+
+Experimental reflectivity files can be CSV or whitespace-separated tables with
+headers:
+
+```text
+angle_deg,reflectivity
+5.0,0.010
+5.1,0.012
+```
+
+Use:
+
+```python
+from swanx.io import read_reflectivity_data
+
+reflectivity_exp = read_reflectivity_data("data/curves/lno_sto_reflectivity.csv")
+```
+
+Headerless files are supported when explicit column indices are provided:
+
+```python
+reflectivity_exp = read_reflectivity_data(
+    "reflectivity.dat",
+    angle_column=0,
+    intensity_column=1,
+)
+```
+
+The loader sorts rows by angle, rejects duplicate angles, rejects non-finite
+angles/intensities/sigma values, and rejects negative sigma. Negative intensity
+is allowed for background-subtracted data.
+
+## Loading experimental rocking curves
+
+Rocking-curve files use the same table conventions:
+
+```python
+from swanx.io import read_rocking_curve_data
+
+la4d_exp = read_rocking_curve_data("data/curves/la4d_rocking_curve.csv")
+```
+
+Common intensity headers include `intensity`, `I`, `counts`, and `signal`.
+Headerless files require explicit column indices.
+
+## Rocking-curve normalization
+
+`swanx.io` reads external files. `swanx.preprocessing` owns normalization
+algorithms. `swanx.fitting` consumes `ReflectivityData` and `RockingCurveData`
+objects.
+
+To normalize while loading a rocking curve, pass a preprocessing mode through
+the loader:
+
+```python
+la4d_exp = read_rocking_curve_data(
+    "data/curves/la4d_rocking_curve.csv",
+    normalization_mode="mean",
+)
+```
+
+Supported modes match `swanx.preprocessing.normalize_rocking_curve`, including
+`mean` and `edge_polynomial`. With `normalization_mode=None`, raw intensity is
+returned.
+
+## Full fitting input workflow
+
+A realistic file-based fitting setup is:
+
+1. Read OPC files with `load_material_tables(...)`.
+2. Read IMFP files with `load_material_tables(...)`.
+3. Build a `SimulationStack` with `stack_from_layer_specs(...)`.
+4. Build core-level requests with `core_level_from_tables(...)`.
+5. Load experimental reflectivity with `read_reflectivity_data(...)`.
+6. Load experimental rocking curves with `read_rocking_curve_data(...)`.
+7. Pass those objects into `swanx.fitting.FittingProblem`.
 
 ## Optimization
 

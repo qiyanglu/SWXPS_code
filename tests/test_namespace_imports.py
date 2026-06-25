@@ -1,4 +1,4 @@
-﻿"""Public namespace and package import coverage."""
+"""Public namespace and package import coverage."""
 
 import pytest
 
@@ -41,6 +41,8 @@ def test_io_namespace_exports_file_workflow_helpers():
         load_material_tables,
         read_imfp,
         read_optical_constants,
+        read_reflectivity_data,
+        read_rocking_curve_data,
         stack_from_layer_specs,
     )
 
@@ -49,6 +51,8 @@ def test_io_namespace_exports_file_workflow_helpers():
     assert callable(load_material_tables)
     assert callable(stack_from_layer_specs)
     assert callable(core_level_from_tables)
+    assert callable(read_reflectivity_data)
+    assert callable(read_rocking_curve_data)
 
 
 def test_all_first_stage_namespaces_import():

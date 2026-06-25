@@ -58,10 +58,10 @@ def read_imfp(
 
     if has_header:
         header = [_normalize_column_name(token) for token in first_tokens]
-        data_lines = lines[1:]
+        data_lines = _data_lines_from_first_numeric(lines[1:], delimiter, path)
     elif energy_column is not None or imfp_column is not None:
         header = []
-        data_lines = lines
+        data_lines = _data_lines_from_first_numeric(lines, delimiter, path)
     else:
         header, data_lines = _detect_ang_header(lines, delimiter)
 
@@ -85,8 +85,8 @@ def read_imfp(
         parts = _split_line(raw_line.strip(), delimiter)
         try:
             rows.append((float(parts[energy_index]), float(parts[imfp_index])))
-        except (IndexError, ValueError):
-            continue
+        except (IndexError, ValueError) as error:
+            raise ValueError(f"invalid IMFP row in {path} line {line_number}") from error
 
     kinetic_energy_ev, imfp_angstrom = _validated_imfp(rows, path=path)
     return IMFPTable(
@@ -143,6 +143,17 @@ def _first_numeric_line_index(lines: list[tuple[int, str]], delimiter: str | Non
     return None
 
 
+def _data_lines_from_first_numeric(
+    lines: list[tuple[int, str]],
+    delimiter: str | None,
+    path: Path,
+) -> list[tuple[int, str]]:
+    first_numeric = _first_numeric_line_index(lines, delimiter)
+    if first_numeric is None:
+        raise ValueError(f"could not find numeric IMFP rows in {path}")
+    return lines[first_numeric:]
+
+
 def _detect_ang_header(
     lines: list[tuple[int, str]],
     delimiter: str | None,
@@ -150,7 +161,10 @@ def _detect_ang_header(
     for index, (_, raw_line) in enumerate(lines):
         tokens = [_normalize_column_name(token) for token in _split_line(raw_line.strip(), delimiter)]
         if "energy" in tokens and "imfp" in tokens:
-            return tokens, lines[index + 1 :]
+            first_numeric = _first_numeric_line_index(lines[index + 1 :], delimiter)
+            if first_numeric is None:
+                raise ValueError("could not find numeric IMFP rows")
+            return tokens, lines[index + 1 + first_numeric :]
     first_numeric = _first_numeric_line_index(lines, delimiter)
     if first_numeric is None:
         raise ValueError("could not find numeric IMFP rows")

@@ -280,6 +280,9 @@ def _validated_columns(
         raise ValueError(f"{x_name} values in {path} must be positive")
     if positive_y and np.any(data[:, 1:] <= 0.0):
         raise ValueError(f"{y_names[0]} and {y_names[1]} values in {path} must be positive")
+    beta = data[:, 2]
+    if np.any(beta < 0.0):
+        raise ValueError(f"beta values in {path} must be non-negative")
     order = np.argsort(x)
     sorted_data = data[order]
     if np.any(np.diff(sorted_data[:, 0]) == 0.0):

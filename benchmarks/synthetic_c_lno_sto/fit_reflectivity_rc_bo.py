@@ -151,7 +151,7 @@ def stack_template(
             LayerTemplate.vacuum(),
             LayerTemplate.from_file(
                 "C",
-                "examples/data/OPC/C.dat",
+                "data/OPC/C.dat",
                 thickness="carbon_thickness",
                 roughness=carbon_roughness,
             ),
@@ -160,13 +160,13 @@ def stack_template(
                 period=(
                     LayerTemplate.from_file(
                         "LNO",
-                        "examples/data/OPC/LaNiO3.dat",
+                        "data/OPC/LaNiO3.dat",
                         thickness="lno_thickness",
                         roughness="superlattice_roughness",
                     ),
                     LayerTemplate.from_file(
                         "STO",
-                        "examples/data/OPC/SrTiO3.dat",
+                        "data/OPC/SrTiO3.dat",
                         thickness="sto_thickness",
                         roughness="superlattice_roughness",
                     ),
@@ -174,7 +174,7 @@ def stack_template(
             ),
             LayerTemplate.from_file(
                 "STO",
-                "examples/data/OPC/SrTiO3.dat",
+                "data/OPC/SrTiO3.dat",
                 thickness=0.0,
                 roughness="substrate_roughness",
             ),
@@ -216,9 +216,9 @@ def core_level_requests() -> tuple[CoreLevelRequest, ...]:
         "C 1s": 285.0,
     }
     imfp_files = {
-        "C": REPO_ROOT / "examples" / "data" / "IMFP" / "C.ANG",
-        "LNO": REPO_ROOT / "examples" / "data" / "IMFP" / "LNO.ANG",
-        "STO": REPO_ROOT / "examples" / "data" / "IMFP" / "STO.ANG",
+        "C": REPO_ROOT / "data" / "IMFP" / "C.ANG",
+        "LNO": REPO_ROOT / "data" / "IMFP" / "LNO.ANG",
+        "STO": REPO_ROOT / "data" / "IMFP" / "STO.ANG",
     }
     imfp_by_core = {}
     for core_name, binding_energy in binding_energies.items():

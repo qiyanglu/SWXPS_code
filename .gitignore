@@ -19,6 +19,7 @@ dist/
 # Local Codex contributor instructions and planning template
 /AGENTS.md
 /PLANS.md
+/.codex-tools/
 
 # Editor and OS files
 .vscode/

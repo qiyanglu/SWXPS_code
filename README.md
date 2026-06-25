@@ -1,34 +1,67 @@
-﻿<p align="center">
+<p align="center">
   <img src="swanx_logo.png" width="360" alt="SWANX logo">
 </p>
 
 # SWANX
 
-**SWANX** stands for **S**tanding-**W**ave **A**nalysis for **N**anoscale **X**-ray spectroscopy.
+**SWANX** means **S**tanding-**W**ave **A**nalysis for **N**anoscale
+**X**-ray spectroscopy: Python tools for multilayer X-ray reflectivity,
+standing-wave XPS simulation, fitting, and diagnostics.
 
-The Python package is imported as `swanx`.
+## What problem does SWANX solve?
 
-SWANX provides transparent Python tools for multilayer X-ray reflectivity,
-standing-wave XPS simulation, fitting, and diagnostics. The package prepares
-optical constants and IMFP values from local files, then passes explicit
-numerical requests into the simulation and fitting kernels.
+SWANX turns local data files into explicit simulation and fitting inputs:
 
-The early development namespace `swxps` was retired before public release. New
-code should use `swanx`.
+```text
+data/OPC + data/IMFP + data/curves
+        -> swanx.io
+        -> SimulationStack / CoreLevelRequest / ReflectivityData / RockingCurveData
+        -> simulation + fitting + diagnostics
+```
 
-## Start here: OPC + IMFP workflow
+The recommended simulation entry pattern is:
 
-Beginner users should start with `import swanx as sx`. Advanced users can use
-subpackages such as `swanx.stack`, `swanx.optics`, `swanx.xps`,
-`swanx.fitting`, `swanx.diagnostics`, and `swanx.io`.
+```python
+import swanx as sx
+
+result = sx.simulate_reflectivity(
+    sx.ReflectivityRequest(...)
+)
+```
+
+## Installation
+
+```bash
+python -m pip install -e .
+```
+
+Recommended JAX least-squares and plotting environment:
+
+```bash
+python -m pip install -e ".[least-squares,plot]"
+```
+
+Bayesian-optimization baseline:
+
+```bash
+python -m pip install -e ".[fit]"
+```
+
+Run tests with:
+
+```bash
+python -m pytest
+```
+
+## Start here: OPC + IMFP -> reflectivity + SW-XPS rocking curves
 
 ```python
 import numpy as np
 import swanx as sx
 from swanx.io import (
+    core_level_from_tables,
     load_material_tables,
     stack_from_layer_specs,
-    core_level_from_tables,
 )
 
 energy_ev = 900.0
@@ -36,12 +69,12 @@ angles = np.linspace(5.0, 15.0, 201)
 
 tables = load_material_tables(
     opc_files={
-        "LNO": "examples/data/OPC/LaNiO3.dat",
-        "STO": "examples/data/OPC/SrTiO3.dat",
+        "LNO": "data/OPC/LaNiO3.dat",
+        "STO": "data/OPC/SrTiO3.dat",
     },
     imfp_files={
-        "LNO": "examples/data/IMFP/LNO.ANG",
-        "STO": "examples/data/IMFP/STO.ANG",
+        "LNO": "data/IMFP/LNO.ANG",
+        "STO": "data/IMFP/STO.ANG",
     },
 )
 
@@ -56,11 +89,7 @@ stack = stack_from_layer_specs(
 )
 
 reflectivity = sx.simulate_reflectivity(
-    sx.ReflectivityRequest(
-        angles=angles,
-        energy_ev=energy_ev,
-        stack=stack,
-    )
+    sx.ReflectivityRequest(angles=angles, energy_ev=energy_ev, stack=stack)
 )
 
 la4d = core_level_from_tables(
@@ -81,142 +110,108 @@ rocking_curves = sx.simulate_rocking_curves(
 )
 ```
 
-OPC files are interpolated at photon energy. IMFP files are interpolated at
-photoelectron kinetic energy, `E_kin = hν - E_B`. `RockingCurveRequest` does not
-read files; `swanx.io` resolves files before request creation. The stack already
-contains optical constants at `photon_energy_ev`, and each `CoreLevelRequest`
-already contains IMFP values at its own kinetic energy.
+OPC tables are interpolated at photon energy. IMFP tables are interpolated at
+photoelectron kinetic energy, `E_kin = hν - E_B`. `RockingCurveRequest` does
+not read files directly; `swanx.io` prepares file inputs before request
+creation.
 
-High-level simulations use unified layer slicing by default. Set `slicing=None`
-only to select the legacy fixed-step path.
-
-## Public API shape
-
-The compact beginner-facing objects are:
-
-- `sx.SimulationStack`
-- `sx.StackLayer`
-- `sx.ReflectivityRequest`
-- `sx.RockingCurveRequest`
-- `sx.CoreLevelRequest`
-- `sx.simulate_reflectivity(...)`
-- `sx.simulate_rocking_curves(...)`
-
-Function/action names use lowercase `snake_case`. Classes and dataclasses use
-`PascalCase`. Advanced code should import from focused subpackages rather than
-old flat implementation modules.
-
-## Advanced fitting API
-
-Fitting utilities intentionally live under `swanx.fitting`, rather than all
-being exposed at top level:
+## Load experimental curves for fitting
 
 ```python
-from swanx.fitting import (
-    FitParameter,
-    ReflectivityData,
-    RockingCurveData,
-    build_jax_residual_function,
-    optimize_with_jax_least_squares,
+from swanx.io import read_reflectivity_data, read_rocking_curve_data
+
+reflectivity_exp = read_reflectivity_data(
+    "data/curves/lno_sto_reflectivity.csv",
+)
+
+la4d_exp = read_rocking_curve_data(
+    "data/curves/la4d_rocking_curve.csv",
+    normalization_mode="mean",
 )
 ```
 
-`FittingProblem` uses unified slicing by default, matching the high-level
-simulation requests. Pass `slicing=None` explicitly only when reproducing the
-legacy separate `field_step` and `roughness_step` calculations.
+The loaders return `ReflectivityData` and `RockingCurveData` objects consumed by
+`swanx.fitting`. IO reads files; `swanx.preprocessing` owns rocking-curve
+normalization algorithms.
 
-## Optimization
+## Input file formats
 
-SWANX supports two fitting strategies.
-
-### JAX-based automatic differentiation (recommended)
-
-- differentiable fixed-shape reflectivity and SW-XPS models;
-- exact Jacobians of the implemented forward model via autodiff;
-- JIT-compatible residual and Jacobian evaluation;
-- much faster convergence than BO in the tested real-data workflows.
-
-### Bayesian optimization (baseline)
-
-- black-box global search;
-- useful for robustness checks and comparison;
-- generally slower for the current differentiable SWANX workflows.
-
-Generic Python/NumPy grid materialization is not JAX-traceable. End-to-end JAX
-fitting uses the maintained fixed-shape JAX path with topology/grid structure
-prepared outside the traced function. OPC and IMFP files are read outside the
-JAX-traced residual function; JAX fitting receives fixed numerical arrays or
-fixed-shape model inputs.
-
-## Unified layer slicing
-
-For each finite layer, the default high-level grid uses
+OPC files use CXRO-style columns:
 
 ```text
-N_i = max(min_slices, ceil(t_i / max_slice_thickness))
+Energy(eV), Delta, Beta
 ```
 
-with `min_slices=10` and `max_slice_thickness=2.0` Angstrom by default. The same
-default applies to simulation and `FittingProblem`.
+IMFP files may be TPP-style `.ANG`, CSV, or whitespace tables with energy and
+IMFP columns.
 
-## Install and test
+Reflectivity and rocking-curve files may be CSV or whitespace tables:
 
-Minimal editable install:
-
-```bash
-python -m pip install -e .
+```text
+angle_deg,reflectivity
+5.0,0.010
 ```
 
-Recommended JAX least-squares and plotting environment:
-
-```bash
-python -m pip install -e ".[least-squares,plot]"
+```text
+angle_deg,intensity
+5.0,1.00
 ```
 
-Bayesian-optimization baseline:
+Headerless curve files are supported when explicit column indices are supplied.
 
-```bash
-python -m pip install -e ".[fit]"
-```
+## Public API map
 
-Run the regression suite with:
+- `import swanx as sx`: recommended simulation entry point.
+- `swanx.io`: OPC, IMFP, material-table, stack/core-level, and experimental
+  curve readers.
+- `swanx.preprocessing`: rocking-curve normalization.
+- `swanx.fitting`: fitting data classes, objectives, BO baseline, and JAX
+  optimizers.
+- `swanx.diagnostics`: uncertainty, correlation, plotting, and reports.
 
-```bash
-python -m pytest
-```
+High-level simulations use unified layer slicing by default. Set `slicing=None`
+only when reproducing the legacy fixed-step path.
+
+## Fitting and optimization
+
+JAX-based automatic differentiation is the primary fitting method for
+fixed-shape differentiable workflows. It provides autodiff Jacobians, JIT
+compatibility, and fast least-squares convergence.
+
+Bayesian optimization is retained as a global black-box baseline and robustness
+comparison. It is generally slower for the current differentiable SWANX
+workflows.
+
+File IO is outside JAX-traced residual functions; fitting receives fixed arrays
+or fixed-shape model inputs.
 
 ## Examples
 
 ```bash
 python examples/io/opc_imfp_rocking_curve_quickstart.py
+python examples/io/experimental_curve_loading.py
 python examples/reflectivity/plot_lno_sto_reflectivity.py
-python examples/fields/plot_lno_sto_field_profile.py
 python examples/xps/plot_lno_la4d_rocking_curve.py
-python examples/fitting/jax_gradient_reflectivity_fit.py
 python examples/fitting/jax_least_squares_reflectivity_fit.py
-python benchmarks/synthetic_c_lno_sto/fit_reflectivity_rc_bo.py --generate-only
 ```
 
-The repository examples use tutorial data under `examples/data/OPC` and
-`examples/data/IMFP`. For real analyses, users should provide their own OPC and
-IMFP files and pass explicit paths through `load_material_tables`. These example
-files are not a built-in materials database.
+Tutorial data live under `data/`. These files are examples, not a built-in
+materials database.
 
-The BO benchmark is retained as an explicit legacy/baseline workflow and selects
-`slicing=None` where it uses fixed steps.
+## Development notes
 
-## Repository layout
+- `src/swanx/`: maintained package and only supported Python namespace.
+- `tests/`: regression tests.
+- `examples/`: compact tutorials.
+- `case_studies/`: experimental inputs, maintained runners, and canonical
+  results.
+- `benchmarks/`: synthetic fitting and performance benchmarks.
+- `runs/`: local generated outputs, ignored by Git.
+- `archive/`: local superseded experiments, ignored by Git.
+- `docs/`: architecture, roadmap, plans, project state, TODO, and history.
 
-- `src/swanx/`: primary package implementation and public namespaces.
-- `tests/`: physics, fitting, namespace, IO, and parity regression tests.
-- `examples/`: small reproducible tutorials.
-- `examples/data/OPC/`, `examples/data/IMFP/`: tutorial OPC and IMFP files.
-- `case_studies/`: experimental inputs, maintained runners, and canonical results.
-- `benchmarks/`: synthetic fitting studies and performance benchmarks.
-- `runs/`: local generated optimizer output, fully ignored by Git.
-- `archive/`: local superseded experiments, fully ignored by Git.
-- `docs/`: architecture, roadmap, plans, handoff, and historical documents.
+Generated attempts belong in `runs/`, not in `examples/`, `case_studies/`, or
+`benchmarks/`.
 
-Generated attempts never belong in `examples`, `case_studies`, or `benchmarks`.
-Only raw inputs, maintained scripts, deterministic fixtures, and selected
-canonical results should be versioned there.
+The early development namespace `swxps` was retired before public release. New
+code should use `swanx`.

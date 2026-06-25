@@ -80,9 +80,9 @@ CASE_DIR = Path(__file__).resolve().parents[2]
 REFLECTIVITY_FILE = CASE_DIR / "Reflectivity_Exp.dat"
 RC_FILE = CASE_DIR / "ExpRCs.dat"
 REFLECTIVITY_BO_HISTORY = CASE_DIR / "sample12_reflectivity_bo_history.csv"
-LNO_OPC_FILE = "examples/data/OPC/LaNiO3_800-900eV.dat"
-STO_OPC_FILE = "examples/data/OPC/SrTiO3_800-900eV.dat"
-C_OPC_FILE = "examples/data/OPC/C.dat"
+LNO_OPC_FILE = "data/OPC/LaNiO3_800-900eV.dat"
+STO_OPC_FILE = "data/OPC/SrTiO3_800-900eV.dat"
+C_OPC_FILE = "data/OPC/C.dat"
 
 REFLECTIVITY_START_DEG = 10.0
 REFLECTIVITY_STOP_DEG = 15.45
@@ -472,9 +472,9 @@ def core_level_requests() -> tuple[CoreLevelRequest, ...]:
     """Return Sample#12 C 1s, Ni 3p, and La 4d core-level requests."""
 
     imfp_files = {
-        "C": REPO_ROOT / "examples" / "data" / "IMFP" / "C.ANG",
-        "LNO": REPO_ROOT / "examples" / "data" / "IMFP" / "LNO.ANG",
-        "STO": REPO_ROOT / "examples" / "data" / "IMFP" / "STO.ANG",
+        "C": REPO_ROOT / "data" / "IMFP" / "C.ANG",
+        "LNO": REPO_ROOT / "data" / "IMFP" / "LNO.ANG",
+        "STO": REPO_ROOT / "data" / "IMFP" / "STO.ANG",
     }
     imfp_by_core = {}
     for core_name, binding_energy in BINDING_ENERGIES.items():

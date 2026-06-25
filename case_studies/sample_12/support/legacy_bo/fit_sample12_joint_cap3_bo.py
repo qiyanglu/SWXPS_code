@@ -243,9 +243,9 @@ def core_level_requests() -> tuple[CoreLevelRequest, ...]:
     """Return layer-selective C/Ni/La requests for the revised cap stack."""
 
     imfp_files = {
-        "C": sample12.REPO_ROOT / "examples" / "data" / "IMFP" / "C.ANG",
-        "LNO": sample12.REPO_ROOT / "examples" / "data" / "IMFP" / "LNO.ANG",
-        "STO": sample12.REPO_ROOT / "examples" / "data" / "IMFP" / "STO.ANG",
+        "C": sample12.REPO_ROOT / "data" / "IMFP" / "C.ANG",
+        "LNO": sample12.REPO_ROOT / "data" / "IMFP" / "LNO.ANG",
+        "STO": sample12.REPO_ROOT / "data" / "IMFP" / "STO.ANG",
     }
     imfp_by_core = {}
     for core_name, binding_energy in sample12.BINDING_ENERGIES.items():

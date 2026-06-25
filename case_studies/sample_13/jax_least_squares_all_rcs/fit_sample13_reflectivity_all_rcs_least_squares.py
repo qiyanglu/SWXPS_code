@@ -250,9 +250,9 @@ def la_core_level_request() -> CoreLevelRequest:
         - fit13.sample13.BINDING_ENERGIES["La 4d"]
     )
     imfp_files = {
-        "C": REPO_ROOT / "examples" / "data" / "IMFP" / "C.ANG",
-        "LNO": REPO_ROOT / "examples" / "data" / "IMFP" / "LNO.ANG",
-        "STO": REPO_ROOT / "examples" / "data" / "IMFP" / "STO.ANG",
+        "C": REPO_ROOT / "data" / "IMFP" / "C.ANG",
+        "LNO": REPO_ROOT / "data" / "IMFP" / "LNO.ANG",
+        "STO": REPO_ROOT / "data" / "IMFP" / "STO.ANG",
     }
     imfp = {
         material: imfp_from_file(path, kinetic_energy)

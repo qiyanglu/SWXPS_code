@@ -4,6 +4,8 @@ This directory contains only compact, reproducible demonstrations of package
 features. Scripts write their small representative figures beside the example.
 
 ```powershell
+python examples/io/opc_imfp_rocking_curve_quickstart.py
+python examples/io/experimental_curve_loading.py
 python examples/reflectivity/plot_lno_sto_reflectivity.py
 python examples/roughness/compare_lno_sto_roughness.py
 python examples/fields/plot_lno_sto_field_profile.py

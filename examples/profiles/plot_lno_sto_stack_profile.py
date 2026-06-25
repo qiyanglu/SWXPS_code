@@ -43,11 +43,11 @@ def make_lno_sto_stack(
             SuperlatticeTemplate(
                 repeats=repeats,
                 period=(
-                    LayerTemplate.from_file("LNO", "examples/data/OPC/LaNiO3.dat", layer_thickness, roughness),
-                    LayerTemplate.from_file("STO", "examples/data/OPC/SrTiO3.dat", layer_thickness, roughness),
+                    LayerTemplate.from_file("LNO", "data/OPC/LaNiO3.dat", layer_thickness, roughness),
+                    LayerTemplate.from_file("STO", "data/OPC/SrTiO3.dat", layer_thickness, roughness),
                 ),
             ),
-            LayerTemplate.from_file("STO", "examples/data/OPC/SrTiO3.dat", 0.0, roughness),
+            LayerTemplate.from_file("STO", "data/OPC/SrTiO3.dat", 0.0, roughness),
         ),
     )
     return template.build()
@@ -79,10 +79,10 @@ def main() -> None:
     la4d_kinetic_energy_ev = energy_ev - la4d_binding_energy_ev
     o1s_kinetic_energy_ev = energy_ev - o1s_binding_energy_ev
     ti2p_kinetic_energy_ev = energy_ev - ti2p_binding_energy_ev
-    la4d_imfp = imfp_from_file(REPO_ROOT / "examples" / "data" / "IMFP" / "LNO.ANG", la4d_kinetic_energy_ev)
-    ti2p_imfp = imfp_from_file(REPO_ROOT / "examples" / "data" / "IMFP" / "STO.ANG", ti2p_kinetic_energy_ev)
-    o1s_lno_imfp = imfp_from_file(REPO_ROOT / "examples" / "data" / "IMFP" / "LNO.ANG", o1s_kinetic_energy_ev)
-    o1s_sto_imfp = imfp_from_file(REPO_ROOT / "examples" / "data" / "IMFP" / "STO.ANG", o1s_kinetic_energy_ev)
+    la4d_imfp = imfp_from_file(REPO_ROOT / "data" / "IMFP" / "LNO.ANG", la4d_kinetic_energy_ev)
+    ti2p_imfp = imfp_from_file(REPO_ROOT / "data" / "IMFP" / "STO.ANG", ti2p_kinetic_energy_ev)
+    o1s_lno_imfp = imfp_from_file(REPO_ROOT / "data" / "IMFP" / "LNO.ANG", o1s_kinetic_energy_ev)
+    o1s_sto_imfp = imfp_from_file(REPO_ROOT / "data" / "IMFP" / "STO.ANG", o1s_kinetic_energy_ev)
 
     stack = make_lno_sto_stack(
         energy_ev=energy_ev,

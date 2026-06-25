@@ -73,6 +73,22 @@ def test_cxro_reader_rejects_out_of_range_duplicate_invalid_and_nonpositive(tmp_
     with pytest.raises(ValueError, match="positive"):
         read_optical_constants(nonpositive)
 
+    negative_beta = tmp_path / "negative_beta.dat"
+    negative_beta.write_text(
+        "M Density=1\nEnergy(eV), Delta, Beta\n100 0.1 -0.01\n",
+        encoding="utf-8",
+    )
+    with pytest.raises(ValueError, match="beta.*non-negative"):
+        read_optical_constants(negative_beta)
+
+    negative_delta = tmp_path / "negative_delta.dat"
+    negative_delta.write_text(
+        "M Density=1\nEnergy(eV), Delta, Beta\n100 -0.1 0.01\n200 -0.2 0.02\n",
+        encoding="utf-8",
+    )
+    table = read_optical_constants(negative_delta)
+    assert table.at_energy(150.0) == pytest.approx((-0.15, 0.015))
+
 
 def test_table_reader_uses_header_or_explicit_columns_for_beta_delta_order(tmp_path):
     header = tmp_path / "header.csv"

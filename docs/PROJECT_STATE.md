@@ -1,61 +1,68 @@
-﻿# PROJECT_STATE
-
-Last updated: 2026-06-25
+# PROJECT_STATE
 
 ## Current state
 
-SWANX is in a pre-release API cleanup stage. The only supported Python namespace is now `swanx`; the early development `swxps` compatibility package has been removed from `src/` and namespace tests now expect `import swxps` to fail.
-
-The package identity is:
+SWANX uses `swanx` as the only supported Python namespace. The beginner
+workflow is:
 
 ```text
-SWANX = Standing-Wave Analysis for Nanoscale X-ray spectroscopy
-Python import = swanx
+data/OPC + data/IMFP + data/curves
+        -> swanx.io
+        -> SimulationStack / CoreLevelRequest / ReflectivityData / RockingCurveData
+        -> simulation + fitting + diagnostics
 ```
 
-## Implemented in the current working tree
+Tutorial data live at:
 
-- Removed `src/swxps/` and `src/swanx/_legacy_api.py`.
-- Replaced active Python `swxps` imports with `swanx` canonical imports.
-- Added `swanx.io` readers/builders:
-  - `read_optical_constants(...)` with default CXRO `Energy(eV), Delta, Beta` parsing.
-  - `OpticalConstantTable.at_energy(...)` returning `(delta, beta)`.
-  - `read_imfp(...)` and `IMFPTable.at_kinetic_energy(...)`.
-  - `load_material_tables(...)`.
-  - `stack_from_layer_specs(...)`.
-  - `core_level_from_tables(...)` and `core_levels_from_specs(...)`.
-- Moved tutorial OPC/IMFP files from root `OPC/` and `IMFP/` into:
-  - `examples/data/OPC/`
-  - `examples/data/IMFP/`
-- Added `examples/io/opc_imfp_rocking_curve_quickstart.py`.
-- Updated README quickstart to use OPC/IMFP files instead of manually typed `delta`, `beta`, and IMFP values.
-- Updated `docs/user_guide.md`, `docs/architecture.md`, and `docs/roadmap.md` for the swanx-only namespace and realistic file-based workflow.
-- Replaced deprecated `np.trapz` with `np.trapezoid` in XPS intensity integration.
+- `data/OPC/`
+- `data/IMFP/`
+- `data/curves/`
 
-## API/workflow notes
+## Implemented workflow
 
-- Beginner users should start with `import swanx as sx`.
-- Advanced users should import from `swanx.stack`, `swanx.optics`, `swanx.xps`, `swanx.fitting`, `swanx.diagnostics`, and `swanx.io`.
-- `RockingCurveRequest` stays explicit. It receives a stack with already-resolved optical constants and core-level requests with already-resolved IMFP dictionaries.
+- `swanx.io` reads OPC, IMFP, reflectivity, and rocking-curve files.
+- `swanx.io` builds `SimulationStack` and `CoreLevelRequest` objects from
+  material tables.
+- `swanx.preprocessing` owns rocking-curve normalization algorithms.
+- `swanx.fitting` consumes `ReflectivityData` and `RockingCurveData`.
+- `swanx.io.__all__` is narrow and explicit; it does not export preprocessing
+  functions or legacy flat helpers.
+- `read_imfp(...)` raises on malformed rows after numeric data begins while
+  preserving `.ANG` support.
+- OPC validation rejects negative `beta`, allows negative `delta`, rejects
+  duplicate photon energies, and requires finite positive photon energies.
+
+## API notes
+
+- User simulations should start with `import swanx as sx`.
 - OPC files are interpolated at photon energy.
-- IMFP files are interpolated at photoelectron kinetic energy, `E_kin = h nu - E_B`.
-- JAX fitting remains the recommended path for differentiable fixed-shape workflows. OPC/IMFP file reading remains outside traced residual functions.
+- IMFP files are interpolated at `E_kin = h nu - E_B`.
+- `RockingCurveRequest` does not read files directly.
+- Unified slicing is the default high-level simulation path.
+- JAX least-squares/autodiff is the recommended fitting path for fixed-shape
+  workflows; BO remains a baseline.
 
-## Validation status
+## Latest validation
 
-Validation completed in this session:
+Step 10 validation completed:
 
 ```bash
-python -m pytest -q
-# 192 passed, 1 xfailed
+python -m pytest -q --basetemp runs/pytest_step10_full
+# 210 passed, 1 xfailed, 1 warning
 
 python examples/io/opc_imfp_rocking_curve_quickstart.py
 # reflectivity points: 201
-# La 4d kinetic energy: 795.0 eV
+# La 4d: kinetic energy 795.0 eV, normalized RC mean 1.000
+
+python examples/io/experimental_curve_loading.py
+# FittingProblem datasets: reflectivity=tutorial reflectivity, rocking_curves=1
+
+python examples/reflectivity/plot_lno_sto_reflectivity.py
+# saved examples/reflectivity/lno_sto_reflectivity.png
+
+python examples/xps/plot_lno_la4d_rocking_curve.py
+# saved examples/xps/lno_la4d_o1s_ti2p_rocking_curves.png
+
+python examples/fitting/jax_least_squares_reflectivity_fit.py
+# final cost: 4.667158e-21
 ```
-
-The quickstart intentionally uses one finite emitting LNO core level. A substrate-only STO core level in this minimal stack would produce zero finite-depth XPS signal and fail normalization, which is correct behavior rather than an IO issue.
-
-## Git status
-
-No commit has been requested for this stage yet. Leave changes in the working tree unless the user explicitly asks to commit/push.

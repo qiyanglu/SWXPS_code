@@ -53,14 +53,14 @@ from swanx.stack_builders import (  # noqa: E402
 
 ENERGY_EV = 1000.0
 OPTICAL_PATHS = (
-    ROOT / "examples" / "data" / "OPC" / "C.dat",
-    ROOT / "examples" / "data" / "OPC" / "LaNiO3.dat",
-    ROOT / "examples" / "data" / "OPC" / "SrTiO3.dat",
+    ROOT / "data" / "OPC" / "C.dat",
+    ROOT / "data" / "OPC" / "LaNiO3.dat",
+    ROOT / "data" / "OPC" / "SrTiO3.dat",
 )
 IMFP_PATHS = (
-    ROOT / "examples" / "data" / "IMFP" / "C.ANG",
-    ROOT / "examples" / "data" / "IMFP" / "LNO.ANG",
-    ROOT / "examples" / "data" / "IMFP" / "STO.ANG",
+    ROOT / "data" / "IMFP" / "C.ANG",
+    ROOT / "data" / "IMFP" / "LNO.ANG",
+    ROOT / "data" / "IMFP" / "STO.ANG",
 )
 
 
@@ -136,19 +136,19 @@ def _stack_template() -> StackTemplate:
         base_dir=ROOT,
         parts=(
             LayerTemplate.vacuum(),
-            LayerTemplate.from_file("C", "examples/data/OPC/C.dat", 8.0, roughness=2.0),
+            LayerTemplate.from_file("C", "data/OPC/C.dat", 8.0, roughness=2.0),
             SuperlatticeTemplate(
                 repeats=8,
                 period=(
                     LayerTemplate.from_file(
                         "LNO",
-                        "examples/data/OPC/LaNiO3.dat",
+                        "data/OPC/LaNiO3.dat",
                         "lno_thickness",
                         roughness=3.0,
                     ),
                     LayerTemplate.from_file(
                         "STO",
-                        "examples/data/OPC/SrTiO3.dat",
+                        "data/OPC/SrTiO3.dat",
                         "sto_thickness",
                         roughness=3.0,
                     ),
@@ -156,7 +156,7 @@ def _stack_template() -> StackTemplate:
             ),
             LayerTemplate.from_file(
                 "STO",
-                "examples/data/OPC/SrTiO3.dat",
+                "data/OPC/SrTiO3.dat",
                 0.0,
                 roughness=3.0,
             ),
@@ -167,10 +167,10 @@ def _stack_template() -> StackTemplate:
 def _la_4d_request() -> CoreLevelRequest:
     kinetic_energy_ev = ENERGY_EV - 105.0
     imfp_by_material = {
-        "vacuum": load_imfp(ROOT / "examples" / "data" / "IMFP" / "C.ANG").imfp_at(kinetic_energy_ev),
-        "C": load_imfp(ROOT / "examples" / "data" / "IMFP" / "C.ANG").imfp_at(kinetic_energy_ev),
-        "LNO": load_imfp(ROOT / "examples" / "data" / "IMFP" / "LNO.ANG").imfp_at(kinetic_energy_ev),
-        "STO": load_imfp(ROOT / "examples" / "data" / "IMFP" / "STO.ANG").imfp_at(kinetic_energy_ev),
+        "vacuum": load_imfp(ROOT / "data" / "IMFP" / "C.ANG").imfp_at(kinetic_energy_ev),
+        "C": load_imfp(ROOT / "data" / "IMFP" / "C.ANG").imfp_at(kinetic_energy_ev),
+        "LNO": load_imfp(ROOT / "data" / "IMFP" / "LNO.ANG").imfp_at(kinetic_energy_ev),
+        "STO": load_imfp(ROOT / "data" / "IMFP" / "STO.ANG").imfp_at(kinetic_energy_ev),
     }
     return CoreLevelRequest(
         name="La 4d",

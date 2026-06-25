@@ -89,9 +89,9 @@ def load_best_values(path: Path) -> dict[str, float]:
 
 def core_request(name: str, layer_indices: tuple[int, ...]) -> CoreLevelRequest:
     imfp_files = {
-        "C": REPO_ROOT / "examples" / "data" / "IMFP" / "C.ANG",
-        "LNO": REPO_ROOT / "examples" / "data" / "IMFP" / "LNO.ANG",
-        "STO": REPO_ROOT / "examples" / "data" / "IMFP" / "STO.ANG",
+        "C": REPO_ROOT / "data" / "IMFP" / "C.ANG",
+        "LNO": REPO_ROOT / "data" / "IMFP" / "LNO.ANG",
+        "STO": REPO_ROOT / "data" / "IMFP" / "STO.ANG",
     }
     kinetic_energy = fit13.sample13.PHOTON_ENERGY_EV - fit13.sample13.BINDING_ENERGIES[name]
     imfp = {

@@ -135,9 +135,9 @@ def core_level_requests(stack: SimulationStack, emission_mode: str) -> tuple[Cor
     for core_name, binding_energy in sample13.BINDING_ENERGIES.items():
         kinetic_energy = sample13.PHOTON_ENERGY_EV - binding_energy
         imfp_by_core[core_name] = {
-            "C": imfp_from_file(REPO_ROOT / "examples" / "data" / "IMFP" / "C.ANG", kinetic_energy),
-            "LNO": imfp_from_file(REPO_ROOT / "examples" / "data" / "IMFP" / "LNO.ANG", kinetic_energy),
-            "STO": imfp_from_file(REPO_ROOT / "examples" / "data" / "IMFP" / "STO.ANG", kinetic_energy),
+            "C": imfp_from_file(REPO_ROOT / "data" / "IMFP" / "C.ANG", kinetic_energy),
+            "LNO": imfp_from_file(REPO_ROOT / "data" / "IMFP" / "LNO.ANG", kinetic_energy),
+            "STO": imfp_from_file(REPO_ROOT / "data" / "IMFP" / "STO.ANG", kinetic_energy),
         }
 
     c_layers = _layer_indices(stack, "C")

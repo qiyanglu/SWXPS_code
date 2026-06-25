@@ -19,7 +19,7 @@ from swanx.stack import (
     SuperlatticeTemplate,
 )
 from swanx.optics import energy_to_wavelength
-from swanx.io import imfp_from_file
+from swanx.io import read_imfp
 from swanx.workflows import (
     CoreLevelRequest,
     ReflectivityRequest,
@@ -45,11 +45,11 @@ def make_lno_sto_superlattice(
             SuperlatticeTemplate(
                 repeats=repeats,
                 period=(
-                    LayerTemplate.from_file("LNO", "examples/data/OPC/LaNiO3.dat", layer_thickness, roughness),
-                    LayerTemplate.from_file("STO", "examples/data/OPC/SrTiO3.dat", layer_thickness, roughness),
+                    LayerTemplate.from_file("LNO", "data/OPC/LaNiO3.dat", layer_thickness, roughness),
+                    LayerTemplate.from_file("STO", "data/OPC/SrTiO3.dat", layer_thickness, roughness),
                 ),
             ),
-            LayerTemplate.from_file("STO", "examples/data/OPC/SrTiO3.dat", 0.0, roughness),
+            LayerTemplate.from_file("STO", "data/OPC/SrTiO3.dat", 0.0, roughness),
         ),
     )
     return template.build()
@@ -67,12 +67,14 @@ def main() -> None:
     roughness = 3.0
     repeats = 20
 
-    lno_la4d_imfp = imfp_from_file(REPO_ROOT / "examples" / "data" / "IMFP" / "LNO.ANG", la4d_kinetic_energy_ev)
-    sto_la4d_imfp = imfp_from_file(REPO_ROOT / "examples" / "data" / "IMFP" / "STO.ANG", la4d_kinetic_energy_ev)
-    lno_o1s_imfp = imfp_from_file(REPO_ROOT / "examples" / "data" / "IMFP" / "LNO.ANG", o1s_kinetic_energy_ev)
-    sto_o1s_imfp = imfp_from_file(REPO_ROOT / "examples" / "data" / "IMFP" / "STO.ANG", o1s_kinetic_energy_ev)
-    lno_ti2p_imfp = imfp_from_file(REPO_ROOT / "examples" / "data" / "IMFP" / "LNO.ANG", ti2p_kinetic_energy_ev)
-    sto_ti2p_imfp = imfp_from_file(REPO_ROOT / "examples" / "data" / "IMFP" / "STO.ANG", ti2p_kinetic_energy_ev)
+    lno_imfp = read_imfp(REPO_ROOT / "data" / "IMFP" / "LNO.ANG")
+    sto_imfp = read_imfp(REPO_ROOT / "data" / "IMFP" / "STO.ANG")
+    lno_la4d_imfp = lno_imfp.at_kinetic_energy(la4d_kinetic_energy_ev)
+    sto_la4d_imfp = sto_imfp.at_kinetic_energy(la4d_kinetic_energy_ev)
+    lno_o1s_imfp = lno_imfp.at_kinetic_energy(o1s_kinetic_energy_ev)
+    sto_o1s_imfp = sto_imfp.at_kinetic_energy(o1s_kinetic_energy_ev)
+    lno_ti2p_imfp = lno_imfp.at_kinetic_energy(ti2p_kinetic_energy_ev)
+    sto_ti2p_imfp = sto_imfp.at_kinetic_energy(ti2p_kinetic_energy_ev)
 
     stack = make_lno_sto_superlattice(
         energy_ev=photon_energy_ev,
