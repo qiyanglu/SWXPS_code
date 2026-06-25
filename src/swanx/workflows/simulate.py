@@ -14,6 +14,7 @@ from ..optics.fields import (
     transfer_matrix_electric_field_profiles,
     transfer_matrix_reflectivity_array,
 )
+from ..polarization import Polarization, polarization_weights
 from ..preprocessing import normalize_rocking_curve
 from ..stack.model import SimulationStack
 from ..stack.slicing import FixedLayerGridPlan, LayerSlicingPolicy
@@ -41,11 +42,13 @@ class ReflectivityRequest:
     roughness_profile: Literal["erf", "linear"] = "erf"
     erf_truncation_factor: float = 4.0
     linear_width_factor: float = sqrt(3.0)
+    polarization: Polarization = "s"
     slicing: LayerSlicingPolicy | FixedLayerGridPlan | None = field(
         default_factory=LayerSlicingPolicy
     )
 
     def __post_init__(self) -> None:
+        polarization_weights(self.polarization)
         if self.slicing is not None and not _is_default_legacy_step(
             self.roughness_step
         ):
@@ -107,6 +110,7 @@ class RockingCurveRequest:
     roughness_profile: Literal["erf", "linear"] = "erf"
     erf_truncation_factor: float = 4.0
     linear_width_factor: float = sqrt(3.0)
+    polarization: Polarization = "s"
     offpeak_mask: np.ndarray | None = None
     normalization_mode: Literal["mean", "edge_polynomial"] = "mean"
     normalization_edge_fraction: float = 0.10
@@ -116,6 +120,7 @@ class RockingCurveRequest:
     )
 
     def __post_init__(self) -> None:
+        polarization_weights(self.polarization)
         if self.slicing is None:
             return
         if not _is_default_legacy_step(self.field_step):
@@ -168,6 +173,7 @@ def simulate_reflectivity(request: ReflectivityRequest) -> ReflectivityResult:
         roughness_profile=request.roughness_profile,
         erf_truncation_factor=request.erf_truncation_factor,
         linear_width_factor=request.linear_width_factor,
+        polarization=request.polarization,
     ).astype(
         float,
         copy=False,
@@ -196,6 +202,7 @@ def simulate_rocking_curve(
         roughness_profile=request.roughness_profile,
         erf_truncation_factor=request.erf_truncation_factor,
         linear_width_factor=request.linear_width_factor,
+        polarization=request.polarization,
         offpeak_mask=request.offpeak_mask,
         normalization_mode=request.normalization_mode,
         normalization_edge_fraction=request.normalization_edge_fraction,
@@ -229,6 +236,7 @@ def simulate_rocking_curves(request: RockingCurveRequest) -> RockingCurveResult:
         roughness_profile=request.roughness_profile,
         erf_truncation_factor=request.erf_truncation_factor,
         linear_width_factor=request.linear_width_factor,
+        polarization=request.polarization,
     )
     results = tuple(
         _simulate_core_from_profiles(

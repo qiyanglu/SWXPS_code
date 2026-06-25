@@ -9,12 +9,14 @@ from typing import Literal
 import numpy as np
 
 from .fields import (
+    _field_intensity,
     _graded_delta_beta_at_depth,
     _nominal_boundaries,
     _transfer_matrix_field_amplitudes_sharp_batched,
     FieldProfile,
 )
 from ..layers import Layer
+from ..polarization import Polarization, polarization_weights
 from .parratt import energy_to_wavelength, kz_in_layers
 from ..stack.slicing import (
     FixedLayerGridPlan,
@@ -82,13 +84,34 @@ def reflectivity_on_grid(
     angles: np.ndarray,
     energy_ev: float,
     effective_layers: Sequence[Layer],
+    polarization: Polarization = "s",
 ) -> np.ndarray:
     """Return NumPy transfer-matrix reflectivity for a materialized grid."""
 
+    s_weight, p_weight = polarization_weights(polarization)
+    if s_weight and p_weight:
+        return (
+            s_weight
+            * reflectivity_on_grid(
+                angles,
+                energy_ev,
+                effective_layers,
+                polarization="s",
+            )
+            + p_weight
+            * reflectivity_on_grid(
+                angles,
+                energy_ev,
+                effective_layers,
+                polarization="p",
+            )
+        )
+    pure_polarization = "s" if s_weight else "p"
     downward, upward = _transfer_matrix_field_amplitudes_sharp_batched(
         np.asarray(angles, dtype=float),
         energy_ev,
         effective_layers,
+        polarization=pure_polarization,
     )
     return np.abs(upward[0] / downward[0]) ** 2
 
@@ -98,25 +121,64 @@ def field_profiles_on_grid(
     energy_ev: float,
     effective_layers: Sequence[Layer],
     grid: LayerGrid,
+    polarization: Polarization = "s",
 ) -> tuple[FieldProfile, ...]:
     """Evaluate fields at the same centers used by the effective optical cells."""
 
     angles = np.asarray(angles, dtype=float)
+    s_weight, p_weight = polarization_weights(polarization)
+    if s_weight and p_weight:
+        s_profiles = field_profiles_on_grid(
+            angles,
+            energy_ev,
+            effective_layers,
+            grid,
+            polarization="s",
+        )
+        p_profiles = field_profiles_on_grid(
+            angles,
+            energy_ev,
+            effective_layers,
+            grid,
+            polarization="p",
+        )
+        return tuple(
+            FieldProfile(
+                depth=s_profile.depth,
+                electric_field=s_profile.electric_field,
+                intensity=s_weight * s_profile.intensity + p_weight * p_profile.intensity,
+                layer_index=s_profile.layer_index,
+            )
+            for s_profile, p_profile in zip(s_profiles, p_profiles)
+        )
+    pure_polarization = "s" if s_weight else "p"
     downward, upward = _transfer_matrix_field_amplitudes_sharp_batched(
         angles,
         energy_ev,
         effective_layers,
+        polarization=pure_polarization,
     )
     wavelength = energy_to_wavelength(energy_ev)
     kz = kz_in_layers(angles, wavelength, [layer.n for layer in effective_layers])
     sampled_layers = grid.effective_layer_index
     local_depth = 0.5 * grid.widths
     phase = kz[sampled_layers] * local_depth[:, np.newaxis]
-    electric_field = (
-        downward[sampled_layers] * np.exp(1j * phase)
-        + upward[sampled_layers] * np.exp(-1j * phase)
+    down_field = downward[sampled_layers] * np.exp(1j * phase)
+    up_field = upward[sampled_layers] * np.exp(-1j * phase)
+    electric_field = down_field + up_field
+    k0 = 2.0 * np.pi / wavelength
+    n_sampled = np.asarray([layer.n for layer in effective_layers], dtype=complex)[
+        sampled_layers,
+        np.newaxis,
+    ]
+    intensity = _field_intensity(
+        down_field,
+        up_field,
+        kz[sampled_layers],
+        n_sampled,
+        k0,
+        pure_polarization,
     )
-    intensity = np.abs(electric_field) ** 2
     return tuple(
         FieldProfile(
             depth=grid.centers,

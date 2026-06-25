@@ -9,6 +9,7 @@
 - [x] Keep rocking-curve normalization under `swanx.preprocessing`.
 - [x] Keep fitting data consumption under `swanx.fitting`.
 - [x] Run and record Step 10 final validation.
+- [x] Add s/p/mixed polarization support with `polarization="s"` as the default.
 
 ## Near-term priorities
 
@@ -16,10 +17,12 @@
    representative case-study inputs.
 2. Keep README-linked examples executable and based on `swanx`.
 3. Improve fixed-shape JAX least-squares fitting documentation.
-4. Add richer experimental-data formats only when real lab conventions require
+4. Document polarization assumptions and recommended experimental usage in the
+   user guide.
+5. Add richer experimental-data formats only when real lab conventions require
    them.
-5. Add fit-result and best-fit-curve export workflow docs.
-6. Continue validating RC preprocessing, weighting, angular offsets, parameter
+6. Add fit-result and best-fit-curve export workflow docs.
+7. Continue validating RC preprocessing, weighting, angular offsets, parameter
    identifiability, and fitted structures.
 
 ## Maintenance

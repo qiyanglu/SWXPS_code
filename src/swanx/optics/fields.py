@@ -10,6 +10,7 @@ from typing import Literal
 import numpy as np
 
 from ..layers import Layer
+from ..polarization import Polarization, polarization_weights
 from .parratt import (
     apply_roughness,
     energy_to_wavelength,
@@ -163,6 +164,7 @@ def transfer_matrix_reflection_amplitude(
     roughness_profile: Literal["erf", "linear"] = "erf",
     erf_truncation_factor: float = 4.0,
     linear_width_factor: float = sqrt(3.0),
+    polarization: Polarization = "s",
 ) -> complex:
     """Return the reflection amplitude from transfer matrices.
 
@@ -170,6 +172,10 @@ def transfer_matrix_reflection_amplitude(
     graded stack of thin effective layers.
     """
 
+    s_weight, p_weight = polarization_weights(polarization)
+    if s_weight and p_weight:
+        raise ValueError("reflection amplitude requires a pure 's' or 'p' polarization")
+    pure_polarization = "s" if s_weight else "p"
     downward, upward = transfer_matrix_field_amplitudes(
         angle_deg,
         energy_ev,
@@ -178,6 +184,7 @@ def transfer_matrix_reflection_amplitude(
         roughness_profile=roughness_profile,
         erf_truncation_factor=erf_truncation_factor,
         linear_width_factor=linear_width_factor,
+        polarization=pure_polarization,
     )
     return upward[0] / downward[0]
 
@@ -190,9 +197,37 @@ def transfer_matrix_reflectivity(
     roughness_profile: Literal["erf", "linear"] = "erf",
     erf_truncation_factor: float = 4.0,
     linear_width_factor: float = sqrt(3.0),
+    polarization: Polarization = "s",
 ) -> float:
     """Return reflectivity from the transfer-matrix solution."""
 
+    s_weight, p_weight = polarization_weights(polarization)
+    if s_weight and p_weight:
+        return float(
+            s_weight
+            * transfer_matrix_reflectivity(
+                angle_deg,
+                energy_ev,
+                layers,
+                roughness_step=roughness_step,
+                roughness_profile=roughness_profile,
+                erf_truncation_factor=erf_truncation_factor,
+                linear_width_factor=linear_width_factor,
+                polarization="s",
+            )
+            + p_weight
+            * transfer_matrix_reflectivity(
+                angle_deg,
+                energy_ev,
+                layers,
+                roughness_step=roughness_step,
+                roughness_profile=roughness_profile,
+                erf_truncation_factor=erf_truncation_factor,
+                linear_width_factor=linear_width_factor,
+                polarization="p",
+            )
+        )
+    pure_polarization = "s" if s_weight else "p"
     amplitude = transfer_matrix_reflection_amplitude(
         angle_deg,
         energy_ev,
@@ -201,6 +236,7 @@ def transfer_matrix_reflectivity(
         roughness_profile=roughness_profile,
         erf_truncation_factor=erf_truncation_factor,
         linear_width_factor=linear_width_factor,
+        polarization=pure_polarization,
     )
     return float(abs(amplitude) ** 2)
 
@@ -213,6 +249,7 @@ def transfer_matrix_reflectivity_array(
     roughness_profile: Literal["erf", "linear"] = "erf",
     erf_truncation_factor: float = 4.0,
     linear_width_factor: float = sqrt(3.0),
+    polarization: Polarization = "s",
 ) -> np.ndarray:
     """Return transfer-matrix reflectivity for many angles.
 
@@ -221,6 +258,33 @@ def transfer_matrix_reflectivity_array(
     """
 
     angles = np.asarray(angle_deg, dtype=float)
+    s_weight, p_weight = polarization_weights(polarization)
+    if s_weight and p_weight:
+        return (
+            s_weight
+            * transfer_matrix_reflectivity_array(
+                angles,
+                energy_ev,
+                layers,
+                roughness_step=roughness_step,
+                roughness_profile=roughness_profile,
+                erf_truncation_factor=erf_truncation_factor,
+                linear_width_factor=linear_width_factor,
+                polarization="s",
+            )
+            + p_weight
+            * transfer_matrix_reflectivity_array(
+                angles,
+                energy_ev,
+                layers,
+                roughness_step=roughness_step,
+                roughness_profile=roughness_profile,
+                erf_truncation_factor=erf_truncation_factor,
+                linear_width_factor=linear_width_factor,
+                polarization="p",
+            )
+        )
+    pure_polarization = "s" if s_weight else "p"
     if angles.ndim == 0:
         return np.asarray(
             transfer_matrix_reflectivity(
@@ -231,6 +295,7 @@ def transfer_matrix_reflectivity_array(
                 roughness_profile=roughness_profile,
                 erf_truncation_factor=erf_truncation_factor,
                 linear_width_factor=linear_width_factor,
+                polarization=pure_polarization,
             )
         )
 
@@ -245,6 +310,7 @@ def transfer_matrix_reflectivity_array(
         angles,
         energy_ev,
         effective_layers,
+        polarization=pure_polarization,
     )
     return np.abs(upward[0] / downward[0]) ** 2
 
@@ -257,6 +323,7 @@ def transfer_matrix_field_amplitudes(
     roughness_profile: Literal["erf", "linear"] = "erf",
     erf_truncation_factor: float = 4.0,
     linear_width_factor: float = sqrt(3.0),
+    polarization: Polarization = "s",
 ) -> tuple[np.ndarray, np.ndarray]:
     """Return downward and upward amplitudes in each transfer-matrix layer.
 
@@ -273,13 +340,23 @@ def transfer_matrix_field_amplitudes(
         linear_width_factor=linear_width_factor,
     )
 
-    return _transfer_matrix_field_amplitudes_sharp(angle_deg, energy_ev, effective_layers)
+    s_weight, p_weight = polarization_weights(polarization)
+    if s_weight and p_weight:
+        raise ValueError("field amplitudes require a pure 's' or 'p' polarization")
+    pure_polarization = "s" if s_weight else "p"
+    return _transfer_matrix_field_amplitudes_sharp(
+        angle_deg,
+        energy_ev,
+        effective_layers,
+        polarization=pure_polarization,
+    )
 
 
 def _transfer_matrix_field_amplitudes_sharp_batched(
     angle_deg: np.ndarray,
     energy_ev: float,
     layers: Sequence[Layer],
+    polarization: Literal["s", "p"] = "s",
 ) -> tuple[np.ndarray, np.ndarray]:
     """Return transfer-matrix amplitudes for a sharp stack at many angles."""
 
@@ -294,6 +371,8 @@ def _transfer_matrix_field_amplitudes_sharp_batched(
 
     wavelength = energy_to_wavelength(energy_ev)
     kz = kz_in_layers(angles, wavelength, [layer.n for layer in layers])
+    n_values = np.asarray([layer.n for layer in layers], dtype=complex)[:, np.newaxis]
+    admittance = _admittance(kz, n_values, polarization)
     thicknesses = np.asarray([layer.thickness for layer in layers], dtype=float)
 
     total_00 = np.ones(angles.shape, dtype=complex)
@@ -301,7 +380,10 @@ def _transfer_matrix_field_amplitudes_sharp_batched(
     total_10 = np.zeros(angles.shape, dtype=complex)
     total_11 = np.ones(angles.shape, dtype=complex)
     for j in range(len(layers) - 1):
-        m00, m01, m10, m11 = _interface_matrix_elements(kz[j], kz[j + 1])
+        m00, m01, m10, m11 = _interface_matrix_elements(
+            admittance[j],
+            admittance[j + 1],
+        )
         p = np.exp(1j * kz[j] * thicknesses[j])
         q = np.exp(-1j * kz[j] * thicknesses[j])
         next_00 = m00 * p * total_00 + m01 * q * total_10
@@ -323,7 +405,10 @@ def _transfer_matrix_field_amplitudes_sharp_batched(
     upward[0] = reflection
 
     for j in range(len(layers) - 1):
-        m00, m01, m10, m11 = _interface_matrix_elements(kz[j], kz[j + 1])
+        m00, m01, m10, m11 = _interface_matrix_elements(
+            admittance[j],
+            admittance[j + 1],
+        )
         p = np.exp(1j * kz[j] * thicknesses[j])
         q = np.exp(-1j * kz[j] * thicknesses[j])
         propagated_down = p * downward[j]
@@ -338,16 +423,19 @@ def _transfer_matrix_field_amplitudes_sharp(
     angle_deg: float,
     energy_ev: float,
     layers: Sequence[Layer],
+    polarization: Literal["s", "p"] = "s",
 ) -> tuple[np.ndarray, np.ndarray]:
     """Return transfer-matrix amplitudes for a sharp-interface stack."""
 
     wavelength = energy_to_wavelength(energy_ev)
     kz = kz_in_layers(angle_deg, wavelength, [layer.n for layer in layers])
+    n_values = np.asarray([layer.n for layer in layers], dtype=complex)
+    admittance = _admittance(kz, n_values, polarization)
     thicknesses = np.asarray([layer.thickness for layer in layers], dtype=float)
 
     total = np.eye(2, dtype=complex)
     for j in range(len(layers) - 1):
-        total = _interface_matrix(kz[j], kz[j + 1]) @ _propagation_matrix(
+        total = _interface_matrix(admittance[j], admittance[j + 1]) @ _propagation_matrix(
             kz[j],
             thicknesses[j],
         ) @ total
@@ -361,7 +449,7 @@ def _transfer_matrix_field_amplitudes_sharp(
 
     state = np.array([downward[0], upward[0]], dtype=complex)
     for j in range(len(layers) - 1):
-        state = _interface_matrix(kz[j], kz[j + 1]) @ _propagation_matrix(
+        state = _interface_matrix(admittance[j], admittance[j + 1]) @ _propagation_matrix(
             kz[j],
             thicknesses[j],
         ) @ state
@@ -380,10 +468,45 @@ def transfer_matrix_electric_field_profiles(
     roughness_profile: Literal["erf", "linear"] = "erf",
     erf_truncation_factor: float = 4.0,
     linear_width_factor: float = sqrt(3.0),
+    polarization: Polarization = "s",
 ) -> tuple[FieldProfile, ...]:
     """Return transfer-matrix electric-field profiles for many angles."""
 
     angles = np.asarray(angle_deg, dtype=float)
+    s_weight, p_weight = polarization_weights(polarization)
+    if s_weight and p_weight:
+        s_profiles = transfer_matrix_electric_field_profiles(
+            angles,
+            energy_ev,
+            layers,
+            step=step,
+            roughness_step=roughness_step,
+            roughness_profile=roughness_profile,
+            erf_truncation_factor=erf_truncation_factor,
+            linear_width_factor=linear_width_factor,
+            polarization="s",
+        )
+        p_profiles = transfer_matrix_electric_field_profiles(
+            angles,
+            energy_ev,
+            layers,
+            step=step,
+            roughness_step=roughness_step,
+            roughness_profile=roughness_profile,
+            erf_truncation_factor=erf_truncation_factor,
+            linear_width_factor=linear_width_factor,
+            polarization="p",
+        )
+        return tuple(
+            FieldProfile(
+                depth=s_profile.depth,
+                electric_field=s_profile.electric_field,
+                intensity=s_weight * s_profile.intensity + p_weight * p_profile.intensity,
+                layer_index=s_profile.layer_index,
+            )
+            for s_profile, p_profile in zip(s_profiles, p_profiles)
+        )
+    pure_polarization = "s" if s_weight else "p"
     if angles.ndim == 0:
         return (
             transfer_matrix_electric_field_profile(
@@ -395,6 +518,7 @@ def transfer_matrix_electric_field_profiles(
                 roughness_profile=roughness_profile,
                 erf_truncation_factor=erf_truncation_factor,
                 linear_width_factor=linear_width_factor,
+                polarization=pure_polarization,
             ),
         )
     if angles.ndim != 1:
@@ -427,6 +551,7 @@ def transfer_matrix_electric_field_profiles(
         angles,
         energy_ev,
         effective_layers,
+        polarization=pure_polarization,
     )
     wavelength = energy_to_wavelength(energy_ev)
     kz = kz_in_layers(angles, wavelength, [layer.n for layer in effective_layers])
@@ -435,11 +560,20 @@ def transfer_matrix_electric_field_profiles(
     sampled_layers = layer_indices
     local_depth = depths - starts[sampled_layers]
     phase = kz[sampled_layers] * local_depth[:, np.newaxis]
-    electric_field_by_depth = (
-        downward[sampled_layers] * np.exp(1j * phase)
-        + upward[sampled_layers] * np.exp(-1j * phase)
+    down_field = downward[sampled_layers] * np.exp(1j * phase)
+    up_field = upward[sampled_layers] * np.exp(-1j * phase)
+    electric_field_by_depth = down_field + up_field
+    k0 = 2.0 * np.pi / wavelength
+    n_sampled = np.asarray([layer.n for layer in effective_layers], dtype=complex)[sampled_layers, np.newaxis]
+    kz_sampled = kz[sampled_layers]
+    intensity_by_depth = _field_intensity(
+        down_field,
+        up_field,
+        kz_sampled,
+        n_sampled,
+        k0,
+        pure_polarization,
     )
-    intensity_by_depth = np.abs(electric_field_by_depth) ** 2
 
     return tuple(
         FieldProfile(
@@ -461,6 +595,7 @@ def transfer_matrix_electric_field_profile(
     roughness_profile: Literal["erf", "linear"] = "erf",
     erf_truncation_factor: float = 4.0,
     linear_width_factor: float = sqrt(3.0),
+    polarization: Polarization = "s",
 ) -> FieldProfile:
     """Return a transfer-matrix electric-field profile.
 
@@ -469,6 +604,37 @@ def transfer_matrix_electric_field_profile(
     """
 
     _validate_field_inputs(angle_deg, layers)
+    s_weight, p_weight = polarization_weights(polarization)
+    if s_weight and p_weight:
+        s_profile = transfer_matrix_electric_field_profile(
+            angle_deg,
+            energy_ev,
+            layers,
+            step=step,
+            roughness_step=roughness_step,
+            roughness_profile=roughness_profile,
+            erf_truncation_factor=erf_truncation_factor,
+            linear_width_factor=linear_width_factor,
+            polarization="s",
+        )
+        p_profile = transfer_matrix_electric_field_profile(
+            angle_deg,
+            energy_ev,
+            layers,
+            step=step,
+            roughness_step=roughness_step,
+            roughness_profile=roughness_profile,
+            erf_truncation_factor=erf_truncation_factor,
+            linear_width_factor=linear_width_factor,
+            polarization="p",
+        )
+        return FieldProfile(
+            depth=s_profile.depth,
+            electric_field=s_profile.electric_field,
+            intensity=s_weight * s_profile.intensity + p_weight * p_profile.intensity,
+            layer_index=s_profile.layer_index,
+        )
+    pure_polarization = "s" if s_weight else "p"
     effective_layers = effective_layers_with_roughness(
         layers,
         step=roughness_step,
@@ -490,24 +656,37 @@ def transfer_matrix_electric_field_profile(
         angle_deg,
         energy_ev,
         effective_layers,
+        polarization=pure_polarization,
     )
     wavelength = energy_to_wavelength(energy_ev)
     kz = kz_in_layers(angle_deg, wavelength, [layer.n for layer in effective_layers])
     starts = _finite_layer_start_depths(effective_layers)
 
     electric_field = np.empty(depths.shape, dtype=complex)
+    down_field = np.empty(depths.shape, dtype=complex)
+    up_field = np.empty(depths.shape, dtype=complex)
+    kz_sampled = np.empty(depths.shape, dtype=complex)
     for index in range(1, len(effective_layers) - 1):
         mask = layer_indices == index
         local_depth = depths[mask] - starts[index]
-        electric_field[mask] = (
-            downward[index] * np.exp(1j * kz[index] * local_depth)
-            + upward[index] * np.exp(-1j * kz[index] * local_depth)
-        )
+        down_field[mask] = downward[index] * np.exp(1j * kz[index] * local_depth)
+        up_field[mask] = upward[index] * np.exp(-1j * kz[index] * local_depth)
+        electric_field[mask] = down_field[mask] + up_field[mask]
+        kz_sampled[mask] = kz[index]
+    k0 = 2.0 * np.pi / wavelength
+    n_sampled = np.asarray([layer.n for layer in effective_layers], dtype=complex)[layer_indices]
 
     return FieldProfile(
         depth=depths,
         electric_field=electric_field,
-        intensity=np.abs(electric_field) ** 2,
+        intensity=_field_intensity(
+            down_field,
+            up_field,
+            kz_sampled,
+            n_sampled,
+            k0,
+            pure_polarization,
+        ),
         layer_index=layer_indices,
     )
 
@@ -619,8 +798,8 @@ def _propagation_matrix(kz: complex, thickness: float) -> np.ndarray:
     )
 
 
-def _interface_matrix(kz_top: complex, kz_bottom: complex) -> np.ndarray:
-    m00, m01, m10, m11 = _interface_matrix_elements(kz_top, kz_bottom)
+def _interface_matrix(y_top: complex, y_bottom: complex) -> np.ndarray:
+    m00, m01, m10, m11 = _interface_matrix_elements(y_top, y_bottom)
     return np.array(
         [
             [m00, m01],
@@ -631,18 +810,50 @@ def _interface_matrix(kz_top: complex, kz_bottom: complex) -> np.ndarray:
 
 
 def _interface_matrix_elements(
-    kz_top: complex | np.ndarray,
-    kz_bottom: complex | np.ndarray,
+    y_top: complex | np.ndarray,
+    y_bottom: complex | np.ndarray,
 ) -> tuple[
     complex | np.ndarray,
     complex | np.ndarray,
     complex | np.ndarray,
     complex | np.ndarray,
 ]:
-    ratio = kz_top / kz_bottom
+    ratio = y_top / y_bottom
     same = 0.5 * (1.0 + ratio)
     opposite = 0.5 * (1.0 - ratio)
     return same, opposite, opposite, same
+
+
+def _admittance(
+    kz: complex | np.ndarray,
+    n: complex | np.ndarray,
+    polarization: Literal["s", "p"],
+) -> complex | np.ndarray:
+    if polarization == "s":
+        return kz
+    if polarization == "p":
+        return kz / (n**2)
+    raise ValueError("polarization must be 's' or 'p'")
+
+
+def _field_intensity(
+    down_field: np.ndarray,
+    up_field: np.ndarray,
+    kz: np.ndarray,
+    n: np.ndarray,
+    k0: float,
+    polarization: Literal["s", "p"],
+) -> np.ndarray:
+    if polarization == "s":
+        return np.abs(down_field + up_field) ** 2
+    if polarization != "p":
+        raise ValueError("polarization must be 's' or 'p'")
+    sin_phi = kz / (k0 * n)
+    cos_phi = np.sqrt(1.0 - sin_phi**2)
+    return (
+        np.abs((down_field - up_field) * sin_phi) ** 2
+        + np.abs((down_field + up_field) * cos_phi) ** 2
+    )
 
 
 def _has_roughness(layers: Sequence[Layer]) -> bool:

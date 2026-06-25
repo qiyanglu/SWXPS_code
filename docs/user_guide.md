@@ -116,6 +116,30 @@ la4d = core_level_from_tables(
 )
 ```
 
+## Polarization
+
+High-level reflectivity and rocking-curve requests use s-polarization by
+default:
+
+```python
+request = sx.ReflectivityRequest(angles=angles, energy_ev=900.0, stack=stack)
+```
+
+Set `polarization="p"` for p-polarized optics, or pass a mixed raw weighting:
+
+```python
+request = sx.RockingCurveRequest(
+    angles=angles,
+    photon_energy_ev=900.0,
+    stack=stack,
+    core_levels=(la4d,),
+    polarization={"s": 0.7, "p": 0.3},
+)
+```
+
+For mixed polarization, SWANX combines raw reflectivity or raw SW-XPS intensity
+as `fs * s + fp * p` before rocking-curve normalization.
+
 ## Loading experimental reflectivity data
 
 Experimental reflectivity files can be CSV or whitespace-separated tables with

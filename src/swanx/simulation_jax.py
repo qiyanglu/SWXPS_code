@@ -11,6 +11,7 @@ from __future__ import annotations
 import numpy as np
 
 from .optics.fields import depth_grid, effective_layers_with_roughness
+from .polarization import polarization_weights
 from .preprocessing import normalize_rocking_curve
 from .reflectivity_jax import (
     jitted_normalized_rocking_curve_from_field,
@@ -49,16 +50,32 @@ def simulate_reflectivity_jax(request: ReflectivityRequest) -> ReflectivityResul
         linear_width_factor=request.linear_width_factor,
     )
     thicknesses, deltas, betas, _ = layer_arrays_from_layers(effective_layers)
-    reflectivity = np.asarray(
-        jitted_transfer_matrix_reflectivity(
-            calculation_angle,
-            request.energy_ev,
-            thicknesses,
-            deltas,
-            betas,
-        ),
-        dtype=float,
-    )
+    s_weight, p_weight = polarization_weights(request.polarization)
+    reflectivity = np.zeros(calculation_angle.shape, dtype=float)
+    if s_weight:
+        reflectivity += s_weight * np.asarray(
+            jitted_transfer_matrix_reflectivity(
+                calculation_angle,
+                request.energy_ev,
+                thicknesses,
+                deltas,
+                betas,
+                0,
+            ),
+            dtype=float,
+        )
+    if p_weight:
+        reflectivity += p_weight * np.asarray(
+            jitted_transfer_matrix_reflectivity(
+                calculation_angle,
+                request.energy_ev,
+                thicknesses,
+                deltas,
+                betas,
+                1,
+            ),
+            dtype=float,
+        )
     return ReflectivityResult(
         angle=angles,
         calculation_angle=calculation_angle,
@@ -90,15 +107,36 @@ def simulate_rocking_curves_jax(request: RockingCurveRequest) -> RockingCurveRes
     if depth.size == 0:
         field_intensity = np.zeros((0, angles.size), dtype=float)
     else:
-        field_intensity = jitted_transfer_matrix_field_intensity(
-            calculation_angle,
-            request.photon_energy_ev,
-            thicknesses,
-            deltas,
-            betas,
-            depth,
-            layer_index,
-        )
+        s_weight, p_weight = polarization_weights(request.polarization)
+        field_intensity = np.zeros((depth.size, angles.size), dtype=float)
+        if s_weight:
+            field_intensity += s_weight * np.asarray(
+                jitted_transfer_matrix_field_intensity(
+                    calculation_angle,
+                    request.photon_energy_ev,
+                    thicknesses,
+                    deltas,
+                    betas,
+                    depth,
+                    layer_index,
+                    0,
+                ),
+                dtype=float,
+            )
+        if p_weight:
+            field_intensity += p_weight * np.asarray(
+                jitted_transfer_matrix_field_intensity(
+                    calculation_angle,
+                    request.photon_energy_ev,
+                    thicknesses,
+                    deltas,
+                    betas,
+                    depth,
+                    layer_index,
+                    1,
+                ),
+                dtype=float,
+            )
 
     results = tuple(
         _simulate_core_from_jax_field(

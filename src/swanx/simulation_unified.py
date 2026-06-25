@@ -6,6 +6,7 @@ from typing import Literal
 
 import numpy as np
 
+from .polarization import polarization_weights
 from .preprocessing import normalize_rocking_curve
 from .workflows.simulate import (
     CoreLevelResult,
@@ -50,6 +51,7 @@ def simulate_reflectivity_unified(
             calculation_angle,
             request.energy_ev,
             effective_layers,
+            polarization=request.polarization,
         )
     elif backend == "jax":
         from .reflectivity_jax import (
@@ -58,16 +60,32 @@ def simulate_reflectivity_unified(
         )
 
         thicknesses, deltas, betas, _ = layer_arrays_from_layers(effective_layers)
-        reflectivity = np.asarray(
-            jitted_transfer_matrix_reflectivity(
-                calculation_angle,
-                request.energy_ev,
-                thicknesses,
-                deltas,
-                betas,
-            ),
-            dtype=float,
-        )
+        s_weight, p_weight = polarization_weights(request.polarization)
+        reflectivity = np.zeros(calculation_angle.shape, dtype=float)
+        if s_weight:
+            reflectivity += s_weight * np.asarray(
+                jitted_transfer_matrix_reflectivity(
+                    calculation_angle,
+                    request.energy_ev,
+                    thicknesses,
+                    deltas,
+                    betas,
+                    0,
+                ),
+                dtype=float,
+            )
+        if p_weight:
+            reflectivity += p_weight * np.asarray(
+                jitted_transfer_matrix_reflectivity(
+                    calculation_angle,
+                    request.energy_ev,
+                    thicknesses,
+                    deltas,
+                    betas,
+                    1,
+                ),
+                dtype=float,
+            )
     else:
         raise ValueError("backend must be 'numpy' or 'jax'")
     return ReflectivityResult(
@@ -103,6 +121,7 @@ def simulate_rocking_curves_unified(
             request.photon_energy_ev,
             effective_layers,
             grid,
+            polarization=request.polarization,
         )
         field_intensity = np.column_stack(
             [profile.intensity for profile in profiles]
@@ -114,18 +133,36 @@ def simulate_rocking_curves_unified(
         )
 
         thicknesses, deltas, betas, _ = layer_arrays_from_layers(effective_layers)
-        field_intensity = np.asarray(
-            jitted_transfer_matrix_field_intensity(
-                calculation_angle,
-                request.photon_energy_ev,
-                thicknesses,
-                deltas,
-                betas,
-                grid.centers,
-                grid.effective_layer_index,
-            ),
-            dtype=float,
-        )
+        s_weight, p_weight = polarization_weights(request.polarization)
+        field_intensity = np.zeros((grid.centers.size, calculation_angle.size), dtype=float)
+        if s_weight:
+            field_intensity += s_weight * np.asarray(
+                jitted_transfer_matrix_field_intensity(
+                    calculation_angle,
+                    request.photon_energy_ev,
+                    thicknesses,
+                    deltas,
+                    betas,
+                    grid.centers,
+                    grid.effective_layer_index,
+                    0,
+                ),
+                dtype=float,
+            )
+        if p_weight:
+            field_intensity += p_weight * np.asarray(
+                jitted_transfer_matrix_field_intensity(
+                    calculation_angle,
+                    request.photon_energy_ev,
+                    thicknesses,
+                    deltas,
+                    betas,
+                    grid.centers,
+                    grid.effective_layer_index,
+                    1,
+                ),
+                dtype=float,
+            )
     else:
         raise ValueError("backend must be 'numpy' or 'jax'")
 

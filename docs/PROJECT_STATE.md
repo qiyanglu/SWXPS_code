@@ -39,6 +39,10 @@ Tutorial data live at:
 - IMFP files are interpolated at `E_kin = h nu - E_B`.
 - `RockingCurveRequest` does not read files directly.
 - Unified slicing is the default high-level simulation path.
+- `ReflectivityRequest` and `RockingCurveRequest` support `polarization="s"`
+  by default, `polarization="p"`, and mixed dictionaries such as
+  `{"s": 0.7, "p": 0.3}`. Mixed reflectivity and SW-XPS raw intensity are
+  combined before normalization.
 - JAX least-squares/autodiff is the recommended fitting path for fixed-shape
   workflows; BO remains a baseline.
 
@@ -65,4 +69,7 @@ python examples/xps/plot_lno_la4d_rocking_curve.py
 
 python examples/fitting/jax_least_squares_reflectivity_fit.py
 # final cost: 4.667158e-21
+
+python -m pytest -q --basetemp runs/pytest_polarization_full
+# 217 passed, 1 xfailed, 1 warning
 ```

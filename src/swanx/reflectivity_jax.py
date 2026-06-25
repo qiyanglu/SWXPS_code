@@ -221,6 +221,7 @@ def transfer_matrix_field_amplitudes_jax(
     thicknesses: jax.Array,
     deltas: jax.Array,
     betas: jax.Array,
+    polarization_code: int = 0,
 ) -> tuple[jax.Array, jax.Array]:
     """Return transfer-matrix amplitudes for a sharp effective stack.
 
@@ -230,6 +231,8 @@ def transfer_matrix_field_amplitudes_jax(
     """
 
     kz = kz_in_layers_jax(angle_deg, energy_ev, deltas, betas)
+    n_array = (1.0 - jnp.asarray(deltas, dtype=jnp.float64) + 1j * jnp.asarray(betas, dtype=jnp.float64))[:, jnp.newaxis]
+    admittance = _admittance_jax(kz, n_array, polarization_code)
     thickness_array = jnp.asarray(thicknesses, dtype=jnp.float64)
 
     total0 = (
@@ -244,7 +247,10 @@ def transfer_matrix_field_amplitudes_jax(
         index: jax.Array,
     ) -> tuple[tuple[jax.Array, jax.Array, jax.Array, jax.Array], None]:
         total_00, total_01, total_10, total_11 = total
-        m00, m01, m10, m11 = _interface_matrix_elements_jax(kz[index], kz[index + 1])
+        m00, m01, m10, m11 = _interface_matrix_elements_jax(
+            admittance[index],
+            admittance[index + 1],
+        )
         p = jnp.exp(1.0j * kz[index] * thickness_array[index])
         q = jnp.exp(-1.0j * kz[index] * thickness_array[index])
         next_total = (
@@ -271,7 +277,10 @@ def transfer_matrix_field_amplitudes_jax(
         index: jax.Array,
     ) -> tuple[tuple[jax.Array, jax.Array], tuple[jax.Array, jax.Array]]:
         downward, upward = state
-        m00, m01, m10, m11 = _interface_matrix_elements_jax(kz[index], kz[index + 1])
+        m00, m01, m10, m11 = _interface_matrix_elements_jax(
+            admittance[index],
+            admittance[index + 1],
+        )
         p = jnp.exp(1.0j * kz[index] * thickness_array[index])
         q = jnp.exp(-1.0j * kz[index] * thickness_array[index])
         propagated_down = p * downward
@@ -296,6 +305,7 @@ def transfer_matrix_reflectivity_jax(
     thicknesses: jax.Array,
     deltas: jax.Array,
     betas: jax.Array,
+    polarization_code: int = 0,
 ) -> jax.Array:
     """Return transfer-matrix reflectivity for a sharp effective stack."""
 
@@ -305,6 +315,7 @@ def transfer_matrix_reflectivity_jax(
         thicknesses,
         deltas,
         betas,
+        polarization_code,
     )
     return jnp.abs(upward[0] / downward[0]) ** 2
 
@@ -320,6 +331,7 @@ def transfer_matrix_field_intensity_jax(
     betas: jax.Array,
     depth: jax.Array,
     layer_index: jax.Array,
+    polarization_code: int = 0,
 ) -> jax.Array:
     """Return transfer-matrix field intensity on a fixed effective depth grid."""
 
@@ -332,15 +344,25 @@ def transfer_matrix_field_intensity_jax(
         thicknesses,
         deltas,
         betas,
+        polarization_code,
     )
     starts = finite_layer_start_depths_jax(thicknesses)
     local_depth = depth_array - starts[sampled_layers]
     phase = kz[sampled_layers] * local_depth[:, jnp.newaxis]
-    electric_field = (
-        downward[sampled_layers] * jnp.exp(1.0j * phase)
-        + upward[sampled_layers] * jnp.exp(-1.0j * phase)
+    down_field = downward[sampled_layers] * jnp.exp(1.0j * phase)
+    up_field = upward[sampled_layers] * jnp.exp(-1.0j * phase)
+    wavelength = HC_EV_ANGSTROM / energy_ev
+    k0 = 2.0 * jnp.pi / wavelength
+    n_array = 1.0 - jnp.asarray(deltas, dtype=jnp.float64) + 1j * jnp.asarray(betas, dtype=jnp.float64)
+    n_sampled = n_array[sampled_layers, jnp.newaxis]
+    return _field_intensity_jax(
+        down_field,
+        up_field,
+        kz[sampled_layers],
+        n_sampled,
+        k0,
+        polarization_code,
     )
-    return jnp.abs(electric_field) ** 2
 
 
 jitted_transfer_matrix_field_intensity = jax.jit(transfer_matrix_field_intensity_jax)
@@ -400,6 +422,7 @@ def normalized_rocking_curve_jax(
     attenuation_length: jax.Array,
     emission_angle_deg: float,
     offpeak_mask: jax.Array,
+    polarization_code: int = 0,
 ) -> tuple[jax.Array, jax.Array, jax.Array]:
     """Return normalized, raw, and normalization values for one RC."""
 
@@ -412,6 +435,7 @@ def normalized_rocking_curve_jax(
         betas,
         depth,
         layer_index,
+        polarization_code,
     )
     raw = raw_xps_intensity_jax(
         intensity,
@@ -559,10 +583,36 @@ def finite_layer_start_depths_jax(thicknesses: jax.Array) -> jax.Array:
 
 
 def _interface_matrix_elements_jax(
-    kz_top: jax.Array,
-    kz_bottom: jax.Array,
+    y_top: jax.Array,
+    y_bottom: jax.Array,
 ) -> tuple[jax.Array, jax.Array, jax.Array, jax.Array]:
-    ratio = kz_top / kz_bottom
+    ratio = y_top / y_bottom
     same = 0.5 * (1.0 + ratio)
     opposite = 0.5 * (1.0 - ratio)
     return same, opposite, opposite, same
+
+
+def _admittance_jax(
+    kz: jax.Array,
+    n: jax.Array,
+    polarization_code: int,
+) -> jax.Array:
+    return jnp.where(polarization_code == 0, kz, kz / (n**2))
+
+
+def _field_intensity_jax(
+    down_field: jax.Array,
+    up_field: jax.Array,
+    kz: jax.Array,
+    n: jax.Array,
+    k0: float,
+    polarization_code: int,
+) -> jax.Array:
+    s_intensity = jnp.abs(down_field + up_field) ** 2
+    sin_phi = kz / (k0 * n)
+    cos_phi = jnp.sqrt(1.0 - sin_phi**2)
+    p_intensity = (
+        jnp.abs((down_field - up_field) * sin_phi) ** 2
+        + jnp.abs((down_field + up_field) * cos_phi) ** 2
+    )
+    return jnp.where(polarization_code == 0, s_intensity, p_intensity)
