@@ -1,6 +1,10 @@
 import pytest
 
-from swxps import SimulationStack, StackLayer, schematic_layers
+from swanx.diagnostics import schematic_layers
+from swanx.stack import (
+    SimulationStack,
+    StackLayer,
+)
 
 
 def test_schematic_layers_collapses_middle_layers():

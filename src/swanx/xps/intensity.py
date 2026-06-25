@@ -1,4 +1,4 @@
-"""XPS intensity integration and roughness-sampled layer properties."""
+﻿"""XPS intensity integration and roughness-sampled layer properties."""
 
 from __future__ import annotations
 
@@ -34,7 +34,7 @@ def integrate_xps_intensity(
         emission_angle_deg=emission_angle_deg,
     )
     integrand = concentration * profile.intensity * attenuation
-    return float(np.trapz(integrand, profile.depth))
+    return float(np.trapezoid(integrand, profile.depth))
 
 
 def nominal_layer_index_at_depth(
@@ -140,3 +140,4 @@ __all__ = [
     "integrate_xps_intensity",
     "nominal_layer_index_at_depth",
 ]
+

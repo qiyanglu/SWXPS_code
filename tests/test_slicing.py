@@ -1,8 +1,8 @@
 import numpy as np
 import pytest
 
-from swxps import Layer
-from swxps.slicing import (
+from swanx.stack import Layer
+from swanx.slicing import (
     FixedLayerGridPlan,
     LayerSlicingPolicy,
     adaptive_layer_grid,

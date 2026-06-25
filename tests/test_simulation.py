@@ -1,11 +1,13 @@
 import numpy as np
 
-from swxps import (
+from swanx.stack import (
+    SimulationStack,
+    StackLayer,
+)
+from swanx.workflows.simulate import (
     CoreLevelRequest,
     ReflectivityRequest,
     RockingCurveRequest,
-    SimulationStack,
-    StackLayer,
     simulate_reflectivity,
     simulate_rocking_curves,
 )

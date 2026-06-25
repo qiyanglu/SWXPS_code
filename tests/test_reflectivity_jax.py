@@ -2,18 +2,22 @@ import numpy as np
 import pytest
 
 jax_reflectivity = pytest.importorskip(
-    "swxps.reflectivity_jax",
+    "swanx.reflectivity_jax",
     exc_type=ImportError,
 )
 
-from swxps import (
-    Layer,
+from swanx.optics import (
     depth_grid,
     electric_field_profile,
+    parratt_reflectivity,
+)
+from swanx.stack import (
+    Layer,
+    vacuum,
+)
+from swanx.xps import (
     nominal_layer_index_at_depth,
     normalized_rocking_curve,
-    parratt_reflectivity,
-    vacuum,
 )
 
 

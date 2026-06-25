@@ -1,6 +1,6 @@
 import numpy as np
 
-from swxps import (
+from swanx.stack import (
     SimulationStack,
     StackLayer,
     sample_concentration_profiles,

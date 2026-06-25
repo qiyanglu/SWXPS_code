@@ -4,17 +4,17 @@ import pytest
 jax = pytest.importorskip("jax")
 jnp = pytest.importorskip("jax.numpy")
 
-from swxps import (  # noqa: E402
+from swanx.stack import (  # noqa: E402
     Layer,
     LayerSlicingPolicy,
-    ReflectivityRequest,
     SimulationStack,
     StackLayer,
     fixed_layer_grid,
     fixed_layer_grid_plan,
 )
-from swxps.reflectivity_jax import transfer_matrix_reflectivity_jax  # noqa: E402
-from swxps.simulation_jax import simulate_reflectivity_jax  # noqa: E402
+from swanx.workflows.simulate import ReflectivityRequest  # noqa: E402
+from swanx.reflectivity_jax import transfer_matrix_reflectivity_jax  # noqa: E402
+from swanx.simulation_jax import simulate_reflectivity_jax  # noqa: E402
 
 
 def make_capacity_layers():

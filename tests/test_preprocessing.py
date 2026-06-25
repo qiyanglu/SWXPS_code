@@ -1,6 +1,6 @@
 import numpy as np
 
-from swxps import (
+from swanx.preprocessing import (
     normalize_by_background,
     normalize_by_mean,
     normalize_rocking_curve,

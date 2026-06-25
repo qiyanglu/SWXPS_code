@@ -13,12 +13,22 @@ SRC_DIR = REPO_ROOT / "src"
 if str(SRC_DIR) not in sys.path:
     sys.path.insert(0, str(SRC_DIR))
 
-from swxps import (
-    LayerTemplate,
-    StackTemplate,
-    SuperlatticeTemplate,
+from swanx.optics import (
+
     energy_to_wavelength,
+
     transfer_matrix_reflectivity,
+
+)
+
+from swanx.stack import (
+
+    LayerTemplate,
+
+    StackTemplate,
+
+    SuperlatticeTemplate,
+
 )
 
 
@@ -39,11 +49,11 @@ def make_lno_sto_superlattice(
             SuperlatticeTemplate(
                 repeats=repeats,
                 period=(
-                    LayerTemplate.from_file("LNO", "OPC/LaNiO3.dat", lno_thickness, roughness),
-                    LayerTemplate.from_file("STO", "OPC/SrTiO3.dat", sto_thickness, roughness),
+                    LayerTemplate.from_file("LNO", "examples/data/OPC/LaNiO3.dat", lno_thickness, roughness),
+                    LayerTemplate.from_file("STO", "examples/data/OPC/SrTiO3.dat", sto_thickness, roughness),
                 ),
             ),
-            LayerTemplate.from_file("STO", "OPC/SrTiO3.dat", 0.0, roughness),
+            LayerTemplate.from_file("STO", "examples/data/OPC/SrTiO3.dat", 0.0, roughness),
         ),
     )
     return template.build().optical_layers

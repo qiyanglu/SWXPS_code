@@ -3,7 +3,7 @@ from types import SimpleNamespace
 import numpy as np
 import pytest
 
-from swxps import (
+from swanx.fitting import (
     FitParameter,
     JaxGradientOptimizerSettings,
     optimize_with_jax_gradient,
@@ -24,7 +24,7 @@ def test_parameter_scaling_round_trips():
 
 
 def test_jax_gradient_optimizer_reduces_loss_and_records_history(monkeypatch):
-    import swxps.jax_gradient as jax_gradient
+    import swanx.jax_gradient as jax_gradient
 
     captured = {}
 
@@ -75,7 +75,7 @@ def test_jax_gradient_optimizer_reduces_loss_and_records_history(monkeypatch):
 
 
 def test_jax_gradient_optimizer_keeps_result_inside_bounds(monkeypatch):
-    import swxps.jax_gradient as jax_gradient
+    import swanx.jax_gradient as jax_gradient
 
     def fake_minimize(func, x0, method, jac, bounds, callback, options):
         del method, jac, callback, options
@@ -105,10 +105,10 @@ def test_jax_gradient_optimizer_keeps_result_inside_bounds(monkeypatch):
 
 def test_jax_gradient_optimizer_can_call_existing_jax_value_and_grad(monkeypatch):
     jax_reflectivity = pytest.importorskip(
-        "swxps.reflectivity_jax",
+        "swanx.reflectivity_jax",
         exc_type=ImportError,
     )
-    import swxps.jax_gradient as jax_gradient
+    import swanx.jax_gradient as jax_gradient
 
     def fake_minimize(func, x0, method, jac, bounds, callback, options):
         del method, jac, bounds, callback, options

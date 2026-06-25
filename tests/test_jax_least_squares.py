@@ -5,8 +5,8 @@ jax = pytest.importorskip("jax")
 jnp = pytest.importorskip("jax.numpy")
 pytest.importorskip("scipy.optimize")
 
-from swxps.fitting import FitParameter, ReflectivityData, RockingCurveData
-from swxps.jax_least_squares import (
+from swanx.fitting import FitParameter, ReflectivityData, RockingCurveData
+from swanx.jax_least_squares import (
     JaxLeastSquaresOptimizerSettings,
     JaxLeastSquaresResidualSettings,
     build_jax_residual_function,

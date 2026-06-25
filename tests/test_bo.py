@@ -2,7 +2,7 @@ from dataclasses import dataclass
 
 import numpy as np
 
-from swxps import (
+from swanx.fitting import (
     BayesianOptimizationResult,
     BayesianOptimizationSettings,
     FitContribution,
@@ -11,11 +11,13 @@ from swxps import (
     FittingProblem,
     JointObjective,
     ReflectivityData,
-    SimulationStack,
-    StackLayer,
     evaluation_from_contributions,
     run_bayesian_optimization,
     run_staged_multistart_bayesian_fit,
+)
+from swanx.stack import (
+    SimulationStack,
+    StackLayer,
 )
 
 
@@ -44,7 +46,7 @@ class FakeModel:
 
 
 def test_bayesian_optimization_adapter_returns_native_result(monkeypatch):
-    from swxps import bo
+    import swanx.bo as bo
 
     def fake_gp_minimize(
         func,
@@ -112,7 +114,7 @@ def test_bayesian_optimization_result_predicts_surrogate_mean_and_std():
 
 
 def test_staged_multistart_fit_carries_best_parameters_forward(monkeypatch):
-    from swxps import bo
+    import swanx.bo as bo
 
     calls = []
 

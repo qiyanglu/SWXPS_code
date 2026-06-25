@@ -22,11 +22,20 @@ if str(SRC_DIR) not in sys.path:
 if str(CASE_DIR) not in sys.path:
     sys.path.insert(0, str(CASE_DIR))
 
-from swxps import (  # noqa: E402
+from swanx.fitting import (
+
     FittingProblem,
-    LayerTemplate,
+
     RockingCurveData,
+
+)
+
+from swanx.stack import (
+
+    LayerTemplate,
+
     StackTemplate,
+
 )
 
 import fit_sample12_bo as sample12  # noqa: E402

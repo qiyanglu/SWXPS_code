@@ -15,7 +15,7 @@ if str(SRC_DIR) not in sys.path:
 if str(SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPT_DIR))
 
-from swxps import plot_vertical_concentration_profiles  # noqa: E402
+from swanx.stack import plot_vertical_concentration_profiles
 
 import fit_sample13_joint_cap3_jax_gradient_lno2_roughness as fit13  # noqa: E402
 

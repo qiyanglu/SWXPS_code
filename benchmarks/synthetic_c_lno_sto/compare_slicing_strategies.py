@@ -18,15 +18,17 @@ if str(CASE_DIR) not in sys.path:
     sys.path.insert(0, str(CASE_DIR))
 
 import fit_reflectivity_rc_bo as case  # noqa: E402
-from swxps import (  # noqa: E402
+from swanx.stack import (
     LayerSlicingPolicy,
+    fixed_layer_grid_plan,
+)
+from swanx.workflows.simulate import (
     ReflectivityRequest,
     RockingCurveRequest,
-    fixed_layer_grid_plan,
     simulate_reflectivity,
     simulate_rocking_curves,
 )
-from swxps.fields import effective_layers_with_roughness  # noqa: E402
+from swanx.fields import effective_layers_with_roughness  # noqa: E402
 
 DEFAULT_OUTPUT_DIR = REPO_ROOT / "runs" / "synthetic_c_lno_sto" / "slicing_comparison"
 

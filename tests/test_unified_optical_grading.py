@@ -1,9 +1,9 @@
 import numpy as np
 
-from swxps import Layer, LayerSlicingPolicy
-from swxps.fields import effective_layers_with_roughness
-from swxps.slicing import adaptive_layer_grid
-from swxps.unified_grid import effective_layers_from_grid
+from swanx.stack import Layer, LayerSlicingPolicy
+from swanx.fields import effective_layers_with_roughness
+from swanx.slicing import adaptive_layer_grid
+from swanx.unified_grid import effective_layers_from_grid
 
 
 def test_unified_optical_cells_match_legacy_grading_on_identical_grid():

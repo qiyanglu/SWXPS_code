@@ -58,7 +58,7 @@ def test_reflectivity_compatibility_and_canonical_results_match_exactly():
     from swanx.simulation import simulate_reflectivity as compatibility_simulate
     from swanx.workflows.simulate import ReflectivityRequest
     from swanx.workflows.simulate import simulate_reflectivity as canonical_simulate
-    from swxps.simulation import simulate_reflectivity as legacy_simulate
+    from swanx.simulation import simulate_reflectivity as legacy_simulate
 
     request = ReflectivityRequest(
         angles=np.array([0.5, 1.0, 1.5]),
@@ -80,11 +80,11 @@ def test_reflectivity_compatibility_and_canonical_results_match_exactly():
     np.testing.assert_array_equal(legacy.reflectivity, canonical.reflectivity)
 
 
-def test_swxps_compatibility_and_canonical_results_match_exactly():
+def test_swanx_compatibility_and_canonical_results_match_exactly():
     from swanx.simulation import simulate_rocking_curves as compatibility_simulate
     from swanx.workflows.simulate import CoreLevelRequest, RockingCurveRequest
     from swanx.workflows.simulate import simulate_rocking_curves as canonical_simulate
-    from swxps.simulation import simulate_rocking_curves as legacy_simulate
+    from swanx.simulation import simulate_rocking_curves as legacy_simulate
 
     core = CoreLevelRequest(
         name="film level",

@@ -1,16 +1,17 @@
-"""Public namespace and temporary compatibility-import coverage."""
+﻿"""Public namespace and package import coverage."""
+
+import pytest
 
 
-def test_primary_and_compatibility_namespaces_share_public_objects():
+def test_primary_namespace_and_removed_legacy_namespace():
     import swanx as sx
-    import swxps
 
-    from swanx.stack import LayerSlicingPolicy
-    from swxps.slicing import LayerSlicingPolicy as OldLayerSlicingPolicy
-
+    assert sx.ReflectivityRequest is not None
+    assert sx.simulate_reflectivity is not None
     assert not hasattr(sx, "LayerSlicingPolicy")
-    assert OldLayerSlicingPolicy is LayerSlicingPolicy
-    assert swxps.LayerSlicingPolicy is LayerSlicingPolicy
+
+    with pytest.raises(ModuleNotFoundError):
+        __import__("swxps")
 
 
 def test_first_stage_subpackage_imports():
@@ -23,16 +24,31 @@ def test_first_stage_subpackage_imports():
     assert RockingCurveRequest.__module__ == "swanx.workflows.simulate"
 
 
-def test_old_submodules_alias_canonical_modules():
+def test_flat_swanx_submodules_still_alias_canonical_modules():
     import swanx.simulation
     import swanx.slicing
-    import swxps.simulation
-    import swxps.slicing
-    from swxps.simulation import ReflectivityRequest
+    from swanx.simulation import ReflectivityRequest
+    from swanx.stack import LayerSlicingPolicy
+    from swanx.slicing import LayerSlicingPolicy as FlatLayerSlicingPolicy
 
-    assert swxps.simulation is swanx.simulation
-    assert swxps.slicing is swanx.slicing
+    assert FlatLayerSlicingPolicy is LayerSlicingPolicy
     assert ReflectivityRequest is swanx.simulation.ReflectivityRequest
+
+
+def test_io_namespace_exports_file_workflow_helpers():
+    from swanx.io import (
+        core_level_from_tables,
+        load_material_tables,
+        read_imfp,
+        read_optical_constants,
+        stack_from_layer_specs,
+    )
+
+    assert callable(read_optical_constants)
+    assert callable(read_imfp)
+    assert callable(load_material_tables)
+    assert callable(stack_from_layer_specs)
+    assert callable(core_level_from_tables)
 
 
 def test_all_first_stage_namespaces_import():

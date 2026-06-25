@@ -4,7 +4,7 @@
 def test_slicing_implementation_and_compatibility_paths_share_objects():
     from swanx.slicing import LayerSlicingPolicy as FlatSwanxPolicy
     from swanx.stack.slicing import LayerSlicingPolicy
-    from swxps.slicing import LayerSlicingPolicy as LegacyPolicy
+    from swanx.slicing import LayerSlicingPolicy as LegacyPolicy
 
     assert LayerSlicingPolicy.__module__ == "swanx.stack.slicing"
     assert FlatSwanxPolicy is LayerSlicingPolicy
@@ -14,7 +14,7 @@ def test_slicing_implementation_and_compatibility_paths_share_objects():
 def test_profile_implementation_and_compatibility_paths_share_objects():
     from swanx.profiles import StackProfiles as FlatSwanxProfiles
     from swanx.stack.profiles import StackProfiles
-    from swxps.profiles import StackProfiles as LegacyProfiles
+    from swanx.profiles import StackProfiles as LegacyProfiles
 
     assert StackProfiles.__module__ == "swanx.stack.profiles"
     assert FlatSwanxProfiles is StackProfiles
@@ -27,7 +27,7 @@ def test_diagnostics_implementation_and_compatibility_paths_share_objects():
     from swanx.diagnostics.covariance import (
         compute_parameter_diagnostics as canonical_compute,
     )
-    from swxps.diagnostics import compute_parameter_diagnostics as legacy_compute
+    from swanx.diagnostics import compute_parameter_diagnostics as legacy_compute
 
     assert canonical_compute.__module__ == "swanx.diagnostics.covariance"
     assert compute_parameter_diagnostics is canonical_compute

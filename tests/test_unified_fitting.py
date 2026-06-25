@@ -3,18 +3,22 @@ from importlib import import_module
 import numpy as np
 import pytest
 
-from swxps import (
+from swanx.fitting import (
     FitParameter,
     FittingProblem,
-    LayerSlicingPolicy,
     ReflectivityData,
-    ReflectivityRequest,
+)
+from swanx.stack import (
+    LayerSlicingPolicy,
     SimulationStack,
     StackLayer,
     fixed_layer_grid_plan,
+)
+from swanx.workflows.simulate import (
+    ReflectivityRequest,
     simulate_reflectivity,
 )
-from swxps.reflectivity import parratt_reflectivity
+from swanx.reflectivity import parratt_reflectivity
 
 
 def test_unified_grid_vacuum_substrate_retains_fresnel_reflectivity():

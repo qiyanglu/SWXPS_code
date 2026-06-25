@@ -22,30 +22,66 @@ SRC_DIR = REPO_ROOT / "src"
 if str(SRC_DIR) not in sys.path:
     sys.path.insert(0, str(SRC_DIR))
 
-from swxps import (  # noqa: E402
-    BayesianOptimizationSettings,
-    CoreLevelRequest,
-    FitParameter,
-    FitStage,
-    FittingProblem,
-    LayerTemplate,
-    ReflectivityData,
-    ReflectivityRequest,
-    RockingCurveData,
-    RockingCurveRequest,
-    StackTemplate,
-    SuperlatticeTemplate,
-    energy_to_wavelength,
-    imfp_from_file,
+from swanx.diagnostics import (
+
     plot_fit_convergence,
+
     plot_stack_schematic,
+
     plot_surrogate_slices,
-    run_bayesian_fit,
-    run_staged_multistart_bayesian_fit,
+
     save_fit_history_csv,
+
     save_staged_fit_summary_csv,
+
+)
+
+from swanx.fitting import (
+
+    BayesianOptimizationSettings,
+
+    FitParameter,
+
+    FitStage,
+
+    FittingProblem,
+
+    ReflectivityData,
+
+    RockingCurveData,
+
+    run_bayesian_fit,
+
+    run_staged_multistart_bayesian_fit,
+
+)
+
+from swanx.imfp import imfp_from_file
+
+from swanx.optics import energy_to_wavelength
+
+from swanx.stack import (
+
+    LayerTemplate,
+
+    StackTemplate,
+
+    SuperlatticeTemplate,
+
+)
+
+from swanx.workflows.simulate import (
+
+    CoreLevelRequest,
+
+    ReflectivityRequest,
+
+    RockingCurveRequest,
+
     simulate_reflectivity,
+
     simulate_rocking_curves,
+
 )
 
 PHOTON_ENERGY_EV = 1000.0
@@ -115,7 +151,7 @@ def stack_template(
             LayerTemplate.vacuum(),
             LayerTemplate.from_file(
                 "C",
-                "OPC/C.dat",
+                "examples/data/OPC/C.dat",
                 thickness="carbon_thickness",
                 roughness=carbon_roughness,
             ),
@@ -124,13 +160,13 @@ def stack_template(
                 period=(
                     LayerTemplate.from_file(
                         "LNO",
-                        "OPC/LaNiO3.dat",
+                        "examples/data/OPC/LaNiO3.dat",
                         thickness="lno_thickness",
                         roughness="superlattice_roughness",
                     ),
                     LayerTemplate.from_file(
                         "STO",
-                        "OPC/SrTiO3.dat",
+                        "examples/data/OPC/SrTiO3.dat",
                         thickness="sto_thickness",
                         roughness="superlattice_roughness",
                     ),
@@ -138,7 +174,7 @@ def stack_template(
             ),
             LayerTemplate.from_file(
                 "STO",
-                "OPC/SrTiO3.dat",
+                "examples/data/OPC/SrTiO3.dat",
                 thickness=0.0,
                 roughness="substrate_roughness",
             ),
@@ -180,9 +216,9 @@ def core_level_requests() -> tuple[CoreLevelRequest, ...]:
         "C 1s": 285.0,
     }
     imfp_files = {
-        "C": REPO_ROOT / "IMFP" / "C.ANG",
-        "LNO": REPO_ROOT / "IMFP" / "LNO.ANG",
-        "STO": REPO_ROOT / "IMFP" / "STO.ANG",
+        "C": REPO_ROOT / "examples" / "data" / "IMFP" / "C.ANG",
+        "LNO": REPO_ROOT / "examples" / "data" / "IMFP" / "LNO.ANG",
+        "STO": REPO_ROOT / "examples" / "data" / "IMFP" / "STO.ANG",
     }
     imfp_by_core = {}
     for core_name, binding_energy in binding_energies.items():

@@ -17,21 +17,36 @@ import sys
 
 sys.path.insert(0, str(ROOT / "src"))
 
-from swxps import (
-    CoreLevelRequest,
+from swanx.optics import parratt_reflectivity
+
+from swanx.stack import (
+
     Layer,
-    ReflectivityRequest,
-    RockingCurveRequest,
+
     SimulationStack,
+
     StackLayer,
-    parratt_reflectivity,
-    simulate_reflectivity,
-    simulate_rocking_curves,
+
     vacuum,
+
 )
-from swxps.fields import depth_grid, transfer_matrix_electric_field_profiles
-from swxps.xps import nominal_layer_index_at_depth, normalized_rocking_curve
-from swxps.reflectivity_jax import (
+
+from swanx.workflows.simulate import (
+
+    CoreLevelRequest,
+
+    ReflectivityRequest,
+
+    RockingCurveRequest,
+
+    simulate_reflectivity,
+
+    simulate_rocking_curves,
+
+)
+from swanx.fields import depth_grid, transfer_matrix_electric_field_profiles
+from swanx.xps import nominal_layer_index_at_depth, normalized_rocking_curve
+from swanx.reflectivity_jax import (
     jitted_electric_field_intensity,
     jitted_normalized_rocking_curve,
     jitted_parratt_reflectivity,
@@ -39,7 +54,7 @@ from swxps.reflectivity_jax import (
     jitted_value_and_grad_reflectivity_loss,
     layer_arrays_from_layers,
 )
-from swxps.simulation_jax import simulate_reflectivity_jax, simulate_rocking_curves_jax
+from swanx.simulation_jax import simulate_reflectivity_jax, simulate_rocking_curves_jax
 
 
 def main() -> None:

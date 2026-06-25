@@ -23,11 +23,16 @@ if str(SRC_DIR) not in sys.path:
 if str(FIT_DIR) not in sys.path:
     sys.path.insert(0, str(FIT_DIR))
 
-from swxps import (  # noqa: E402
+from swanx.imfp import imfp_from_file
+
+from swanx.workflows.simulate import (
+
     CoreLevelRequest,
+
     RockingCurveRequest,
-    imfp_from_file,
+
     simulate_rocking_curves,
+
 )
 
 import fit_sample13_reflectivity_c1s_ni3p_jax_gradient as fit13  # noqa: E402
@@ -84,9 +89,9 @@ def load_best_values(path: Path) -> dict[str, float]:
 
 def core_request(name: str, layer_indices: tuple[int, ...]) -> CoreLevelRequest:
     imfp_files = {
-        "C": REPO_ROOT / "IMFP" / "C.ANG",
-        "LNO": REPO_ROOT / "IMFP" / "LNO.ANG",
-        "STO": REPO_ROOT / "IMFP" / "STO.ANG",
+        "C": REPO_ROOT / "examples" / "data" / "IMFP" / "C.ANG",
+        "LNO": REPO_ROOT / "examples" / "data" / "IMFP" / "LNO.ANG",
+        "STO": REPO_ROOT / "examples" / "data" / "IMFP" / "STO.ANG",
     }
     kinetic_energy = fit13.sample13.PHOTON_ENERGY_EV - fit13.sample13.BINDING_ENERGIES[name]
     imfp = {

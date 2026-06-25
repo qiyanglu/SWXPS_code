@@ -3,8 +3,8 @@ import pytest
 
 jnp = pytest.importorskip("jax.numpy")
 
-from swxps import ReflectivityData
-from swxps.jax_least_squares import (
+from swanx.fitting import ReflectivityData
+from swanx.jax_least_squares import (
     JaxLeastSquaresResidualSettings,
     build_jax_residual_function,
 )

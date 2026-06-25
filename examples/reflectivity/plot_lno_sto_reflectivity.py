@@ -40,11 +40,11 @@ def make_lno_sto_superlattice(
             SuperlatticeTemplate(
                 repeats=repeats,
                 period=(
-                    LayerTemplate.from_file("LNO", "OPC/LaNiO3.dat", lno_thickness, 3.0),
-                    LayerTemplate.from_file("STO", "OPC/SrTiO3.dat", sto_thickness, 3.0),
+                    LayerTemplate.from_file("LNO", "examples/data/OPC/LaNiO3.dat", lno_thickness, 3.0),
+                    LayerTemplate.from_file("STO", "examples/data/OPC/SrTiO3.dat", sto_thickness, 3.0),
                 ),
             ),
-            LayerTemplate.from_file("STO", "OPC/SrTiO3.dat", 0.0, 3.0),
+            LayerTemplate.from_file("STO", "examples/data/OPC/SrTiO3.dat", 0.0, 3.0),
         ),
     )
     return template.build().optical_layers

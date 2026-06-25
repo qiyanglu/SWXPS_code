@@ -29,25 +29,51 @@ if str(SRC_DIR) not in sys.path:
 if str(CASE_DIR) not in sys.path:
     sys.path.insert(0, str(CASE_DIR))
 
-from swxps import (  # noqa: E402
-    BayesianOptimizationSettings,
-    CoreLevelRequest,
-    FitParameter,
-    FitSimulation,
-    FittingProblem,
-    JointObjective,
-    LayerTemplate,
-    ReflectivityData,
-    RockingCurveData,
-    StackTemplate,
-    evaluation_from_contributions,
-    imfp_from_file,
+from swanx.diagnostics import (
+
     plot_fit_convergence,
+
     plot_stack_schematic,
+
     plot_surrogate_slices,
-    run_bayesian_optimization,
+
     save_fit_history_csv,
+
 )
+
+from swanx.fitting import (
+
+    BayesianOptimizationSettings,
+
+    FitParameter,
+
+    FitSimulation,
+
+    FittingProblem,
+
+    JointObjective,
+
+    ReflectivityData,
+
+    RockingCurveData,
+
+    evaluation_from_contributions,
+
+    run_bayesian_optimization,
+
+)
+
+from swanx.imfp import imfp_from_file
+
+from swanx.stack import (
+
+    LayerTemplate,
+
+    StackTemplate,
+
+)
+
+from swanx.workflows.simulate import CoreLevelRequest
 
 import fit_sample12_bo as sample12  # noqa: E402
 
@@ -217,9 +243,9 @@ def core_level_requests() -> tuple[CoreLevelRequest, ...]:
     """Return layer-selective C/Ni/La requests for the revised cap stack."""
 
     imfp_files = {
-        "C": sample12.REPO_ROOT / "IMFP" / "C.ANG",
-        "LNO": sample12.REPO_ROOT / "IMFP" / "LNO.ANG",
-        "STO": sample12.REPO_ROOT / "IMFP" / "STO.ANG",
+        "C": sample12.REPO_ROOT / "examples" / "data" / "IMFP" / "C.ANG",
+        "LNO": sample12.REPO_ROOT / "examples" / "data" / "IMFP" / "LNO.ANG",
+        "STO": sample12.REPO_ROOT / "examples" / "data" / "IMFP" / "STO.ANG",
     }
     imfp_by_core = {}
     for core_name, binding_energy in sample12.BINDING_ENERGIES.items():

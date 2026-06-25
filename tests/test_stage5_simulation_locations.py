@@ -16,8 +16,8 @@ def test_stack_model_and_compatibility_paths_share_objects():
         StackLayer as canonical_layer,
         stack_from_layers as canonical_builder,
     )
-    from swxps.simulation import SimulationStack as legacy_stack
-    from swxps.simulation import StackLayer as legacy_layer
+    from swanx.simulation import SimulationStack as legacy_stack
+    from swanx.simulation import StackLayer as legacy_layer
 
     assert canonical_stack.__module__ == "swanx.stack.model"
     assert canonical_layer.__module__ == "swanx.stack.model"
@@ -34,8 +34,8 @@ def test_workflow_and_compatibility_paths_share_objects():
     from swanx.workflows import ReflectivityRequest, simulate_reflectivity
     from swanx.workflows.simulate import ReflectivityRequest as canonical_request
     from swanx.workflows.simulate import simulate_reflectivity as canonical_simulate
-    from swxps.simulation import ReflectivityRequest as legacy_request
-    from swxps.simulation import simulate_reflectivity as legacy_simulate
+    from swanx.simulation import ReflectivityRequest as legacy_request
+    from swanx.simulation import simulate_reflectivity as legacy_simulate
 
     assert canonical_request.__module__ == "swanx.workflows.simulate"
     assert canonical_simulate.__module__ == "swanx.workflows.simulate"

@@ -24,14 +24,26 @@ if str(SRC_DIR) not in sys.path:
 if str(CASE_DIR) not in sys.path:
     sys.path.insert(0, str(CASE_DIR))
 
-from swxps import (  # noqa: E402
-    BayesianOptimizationSettings,
-    FittingProblem,
+from swanx.diagnostics import (
+
     plot_fit_convergence,
+
     plot_stack_schematic,
+
     plot_surrogate_slices,
-    run_bayesian_optimization,
+
     save_fit_history_csv,
+
+)
+
+from swanx.fitting import (
+
+    BayesianOptimizationSettings,
+
+    FittingProblem,
+
+    run_bayesian_optimization,
+
 )
 
 import fit_sample12_joint_cap3_bo as joint  # noqa: E402

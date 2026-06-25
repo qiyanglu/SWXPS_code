@@ -22,21 +22,34 @@ for path in (SRC_DIR, LEGACY_TRF_DIR, GRADIENT_DIR):
     if str(path) not in sys.path:
         sys.path.insert(0, str(path))
 
-from swxps import (  # noqa: E402
+from swanx.diagnostics import plot_stack_schematic
+
+from swanx.fitting import (
+
     JaxLeastSquaresOptimizerSettings,
+
     JaxLeastSquaresResidualSettings,
-    LayerSlicingPolicy,
+
     build_jax_residual_function,
-    fixed_layer_grid,
-    fixed_layer_grid_plan,
+
     optimize_with_jax_least_squares,
-    plot_stack_schematic,
+
 )
-from swxps.reflectivity_jax import (  # noqa: E402
+
+from swanx.stack import (
+
+    LayerSlicingPolicy,
+
+    fixed_layer_grid,
+
+    fixed_layer_grid_plan,
+
+)
+from swanx.reflectivity_jax import (  # noqa: E402
     transfer_matrix_field_intensity_jax,
     transfer_matrix_reflectivity_jax,
 )
-from swxps.result_exports import (  # noqa: E402
+from swanx.result_exports import (  # noqa: E402
     save_fit_curve_data_csv,
     save_optimized_stack_csv,
 )

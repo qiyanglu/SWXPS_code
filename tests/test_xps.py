@@ -1,8 +1,8 @@
 import numpy as np
 
-from swxps import (
-    FieldProfile,
-    Layer,
+from swanx.optics import FieldProfile
+from swanx.stack import Layer
+from swanx.xps import (
     attenuation_factor,
     graded_layer_property_at_depth,
     nominal_layer_index_at_depth,
@@ -113,7 +113,7 @@ def test_xps_integration_rejects_shape_mismatch():
         layer_index=np.array([1, 1]),
     )
 
-    from swxps import integrate_xps_intensity
+    from swanx.xps import integrate_xps_intensity
 
     with np.testing.assert_raises(ValueError):
         integrate_xps_intensity(profile, np.array([1.0]), np.array([20.0, 20.0]))

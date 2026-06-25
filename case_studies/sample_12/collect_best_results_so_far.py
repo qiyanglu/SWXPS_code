@@ -20,8 +20,8 @@ if str(SRC_DIR) not in sys.path:
 if str(FIT_DIR) not in sys.path:
     sys.path.insert(0, str(FIT_DIR))
 
-from swxps import plot_vertical_concentration_profiles  # noqa: E402
-from swxps.result_exports import (  # noqa: E402
+from swanx.stack import plot_vertical_concentration_profiles
+from swanx.result_exports import (  # noqa: E402
     save_fit_curve_data_csv,
     save_optimized_stack_csv,
 )

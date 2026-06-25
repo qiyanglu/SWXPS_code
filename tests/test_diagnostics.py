@@ -1,14 +1,16 @@
 import numpy as np
 import pytest
 
-from swxps import (
-    FitParameter,
-    JaxLeastSquaresOptimizationResult,
+from swanx.diagnostics import (
     compute_parameter_diagnostics,
     diagnostics_from_least_squares_result,
     plot_correlation_matrix,
     plot_parameter_estimates,
     plot_singular_values,
+)
+from swanx.fitting import (
+    FitParameter,
+    JaxLeastSquaresOptimizationResult,
 )
 
 

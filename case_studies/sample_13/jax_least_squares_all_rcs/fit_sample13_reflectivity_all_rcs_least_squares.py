@@ -32,16 +32,16 @@ for path in (SRC_DIR, GRADIENT_DIR):
     if str(path) not in sys.path:
         sys.path.insert(0, str(path))
 
-from swxps import (  # noqa: E402
-    CoreLevelRequest,
+from swanx.diagnostics import plot_stack_schematic  # noqa: E402
+from swanx.fitting import (  # noqa: E402
     JaxLeastSquaresOptimizerSettings,
     JaxResidualFunction,
     RockingCurveData,
-    imfp_from_file,
     optimize_with_jax_least_squares,
-    plot_stack_schematic,
 )
-from swxps.result_exports import (  # noqa: E402
+from swanx.imfp import imfp_from_file  # noqa: E402
+from swanx.workflows.simulate import CoreLevelRequest  # noqa: E402
+from swanx.result_exports import (  # noqa: E402
     save_fit_curve_data_csv,
     save_optimized_stack_csv,
 )
@@ -250,9 +250,9 @@ def la_core_level_request() -> CoreLevelRequest:
         - fit13.sample13.BINDING_ENERGIES["La 4d"]
     )
     imfp_files = {
-        "C": REPO_ROOT / "IMFP" / "C.ANG",
-        "LNO": REPO_ROOT / "IMFP" / "LNO.ANG",
-        "STO": REPO_ROOT / "IMFP" / "STO.ANG",
+        "C": REPO_ROOT / "examples" / "data" / "IMFP" / "C.ANG",
+        "LNO": REPO_ROOT / "examples" / "data" / "IMFP" / "LNO.ANG",
+        "STO": REPO_ROOT / "examples" / "data" / "IMFP" / "STO.ANG",
     }
     imfp = {
         material: imfp_from_file(path, kinetic_energy)

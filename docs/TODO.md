@@ -1,214 +1,36 @@
-# TODO
+﻿# TODO
 
-Last updated: 2026-06-24
+Last updated: 2026-06-25
 
-## Completed Stage 7 API consistency
+## Current pre-release cleanup
 
-- Expanded every letter in SWANX and distinguished it from the `swanx` import.
-- Made unified slicing the `FittingProblem` default, matching simulation.
-- Preserved explicit `slicing=None` behavior in legacy fixed-step runners.
-- Added fitting-default propagation and conflicting-step validation tests.
-- Rewrote README fitting guidance around `swanx.fitting`, recommended JAX
-  least squares/autodiff, and baseline Bayesian optimization.
-- Migrated README-linked tutorials away from `swxps` imports.
-- Replaced stale/corrupt roadmap text with the post-Stage-6 priorities.
-- Targeted verification: 29 passed. Full verification: 177 passed and
-  1 expected failure.
+- [x] Remove the old `swxps` namespace before public release.
+- [x] Replace active Python `swxps` imports with `swanx` imports.
+- [x] Add `swanx.io` OPC and IMFP readers.
+- [x] Add material table loading, stack builder, and core-level builder helpers.
+- [x] Move tutorial OPC/IMFP files to `examples/data/OPC` and `examples/data/IMFP`.
+- [x] Add a maintained OPC/IMFP rocking-curve quickstart example.
+- [x] Update README and active docs for the file-based workflow.
+- [x] Replace deprecated `np.trapz` with `np.trapezoid`.
+- [x] Run full tests and quickstart example for this stage.
+- [x] Fix fallout from namespace removal or IO parser edge cases found by tests.
 
-## Completed first-stage `swanx` namespace migration
+## Near-term project priorities
 
-- Renamed the distribution and primary implementation namespace to `swanx`.
-- Preserved `swxps` and all former `swxps.*` imports as compatibility aliases.
-- Added stack, optics, XPS, fitting, diagnostics, I/O, and workflow discovery facades.
-- Updated the GitHub README, architecture, roadmap, and plan status notes.
-- Added namespace identity/import tests and verified editable installation.
-- Full namespace-migration regression result: 137 passed and 1 expected failure.
-- Diagnostics-plot regression result: 142 passed and 1 expected failure.
+1. Validate the new OPC/IMFP workflow on tutorial data and representative case-study inputs.
+2. Keep README-linked examples executable and based on `swanx` only.
+3. Improve JAX least-squares fitting documentation for fixed-shape workflows.
+4. Add experimental reflectivity/rocking-curve CSV readers when the desired file conventions are clear.
+5. Add fit-result export workflow docs for users.
+6. Continue physical validation of RC preprocessing, weighting, angular offsets, parameter identifiability, and fitted structures.
 
-## Completed unified-grid milestone
+## Maintenance
 
-- Added user-configurable `LayerSlicingPolicy`; defaults are 10 minimum cells
-  and 2 Angstrom maximum cell thickness.
-- Added adaptive grids and fixed-capacity plans for JAX/fitting shape stability.
-- Shared one cell-centered grid across roughness optics, fields,
-  concentration/IMFP, attenuation, and midpoint RC integration.
-- Added optional `slicing=` propagation through requests and `FittingProblem`.
-- Made unified slicing the request default and preserved legacy `field_step`
-  and `roughness_step` behavior through explicit `slicing=None`.
-- Documented that generic Python/NumPy grid materialization is not yet
-  end-to-end JAX differentiable; fixed-plan JAX-native array models are.
-- Added focused planner, physics, Fresnel, fitting, and NumPy/JAX parity tests.
-- Verified one JAX compilation across a 2-6 Angstrom thickness sweep.
-- Full regression result: 113 passed, 46 pre-existing warnings.
-- Default-unified follow-up regression: 126 passed, 1 expected JAX
-  materialization failure.
-- Parameter-diagnostics follow-up regression: 133 passed, 1 expected JAX
-  materialization failure.
+- Avoid adding new core physics until the user-facing API and validation workflows settle.
+- Keep generated outputs in `runs/`; keep superseded experiments in `archive/`.
+- Do not commit/push unless the user explicitly requests it in the current request.
 
-## Completed synthetic comparison
+## Latest validation
 
-- Added a reproducible legacy-versus-unified comparison runner.
-- Saved old/new/difference plot, pointwise CSV, and numerical summary under `runs/`.
-- Fixed the overlapping-roughness optical grading mismatch revealed by comparison.
-- Added exact identical-grid optical parity coverage.
-- Full regression result: 114 passed.
-
-## Next review and adoption steps
-
-- Review the synthetic comparison figure and numerical summary.
-- Add a concise user example to an appropriate maintained tutorial if desired.
-- Completed the first maintained Sample 13 fixed-capacity JAX/TRF migration.
-- Review the Sample 13 fit's 14/18 near-bound parameters before migrating any
-  other experimental runner.
-- Compare a reduced/reparameterized Sample 13 model against the preserved
-  legacy and fixed-grid results.
-- Consider per-layer maximum cell thickness only if that case study demonstrates
-  a concrete need; the current public value is global.
-
-## Namespace follow-up
-
-- Keep new code and documentation on `swanx`; migrate maintained examples gradually.
-- Add deprecation warnings and a removal release only through a separate breaking-change plan.
-- Do not move or refactor physics kernels merely to deepen the new subpackage layout.
-
-## Completed Sample 12 diagnostics sanity check
-
-- Migrated the maintained Sample 12 TRF runner to `swanx` imports.
-- Added normalized uncertainty, validated correlation, and correlation CSV outputs.
-- Ran in an isolated folder with canonical promotion disabled.
-- Verified exact correlation symmetry/unit diagonal and `|rho| <= 1`.
-- Recorded near-degenerate roughness and angular-offset parameter pairs.
-- Full regression result: 153 passed and 1 expected failure.
-- Repeated the maintained least-squares workflow after Stage 4 through the
-  `swanx` namespace with promotion disabled and all outputs under `runs/`.
-- The repeat converged in 23 evaluations at JAX/NumPy objective
-  `0.00338515813538`; uncertainty and correlation PNGs plus the 18x18
-  correlation CSV were generated and validated.
-- Continue treating Sample 12 roughness and angular offsets as strongly
-  correlated and the fit as diagnostics-only rather than canonical.
-
-## Scientific validation priorities
-
-- Audit experimental RC preprocessing and normalization against raw data.
-- Quantify sensitivity to weights, bounds, initialization, and local minima.
-- Check fitted structure and angular offsets against independent expectations.
-- Keep experimental results provisional until these checks are documented.
-- Audit why both independent angle offsets prefer first `+0.35 deg` and then
-  the expanded `+0.50 deg` bounds; check angular calibration independently.
-- Remove or constrain unidentifiable thickness-transition parameters when both
-  fitted thickness deltas collapse to zero.
-- Revisit roughness interpolation after all four endpoints separate to their
-  opposite bounds under both ranges (`5 -> 2`, then `6 -> 1 Angstrom`).
-- Review dataset weighting: expanded bounds improve weighted reflectivity and
-  C 1s but worsen Ni 3p and La 4d.
-
-## Completed diagnostics namespace sanity check
-
-- Migrated the synthetic fixed-grid JAX/TRF runner imports to `swanx`.
-- Generated uncertainty and correlation plots through `swanx.diagnostics`.
-- Normalized uncertainty plots by each finite parameter range and added raw bound endpoint labels; retained `normalization=None` for raw values.
-- Moved the CI legend above the axes and increased plot font, marker, and bound-bar sizes.
-- Reproduced the canonical optimum and one-time JAX compilation counts.
-- Confirmed a rank-6/7 Jacobian; treat substrate-roughness uncertainty as unidentifiable rather than precise.
-
-## Completed public repository cleanup
-
-- Retained `case_studies/` and avoided destructive history rewriting.
-- Confirmed `runs/` and `archive/` generated contents remain ignored.
-- Moved two standalone fitting scripts into `examples/fitting/`.
-- Migrated both examples to `swanx` and verified 24 Angstrom recovery.
-
-## Completed Stage 3 optics migration
-
-- Moved Parratt, field/transfer-matrix, and unified-grid implementation bodies into `swanx.optics`.
-- Preserved flat `swanx.*`, legacy `swxps.*`, and beginner top-level APIs.
-- Added lazy access to existing high-level unified simulation entry points.
-- Added canonical-location and object-identity tests.
-- Deferred XPS, simulation, fitting, and workflow implementation moves.
-- Full regression result: 158 passed and 1 expected failure.
-
-## Completed Stage 4 XPS migration
-
-- Split attenuation, intensity/property sampling, rocking-curve, and grid XPS
-  implementations into focused `swanx.xps` modules.
-- Preserved flat `swanx._xps`, former optics-grid, and legacy `swxps.*`
-  imports as identity-preserving compatibility paths.
-- Updated simulation and stack-profile internals to import canonical XPS
-  modules directly.
-- Added canonical-location, compatibility identity, and lazy high-level export
-  tests without changing numerical algorithms.
-- Deferred simulation, fitting, and workflow implementation moves.
-- Full regression result: 163 passed and 1 expected failure.
-
-## Completed Stage 5 simulation-layer migration
-
-- Moved `StackLayer`, `SimulationStack`, and `stack_from_layers` into
-  `swanx.stack.model`.
-- Moved high-level request/result classes, simulation entry points, and their
-  current private helpers into `swanx.workflows.simulate`.
-- Converted `swanx.simulation` to a thin compatibility shim while preserving
-  `swxps.simulation`, preferred subpackage, and top-level object identities.
-- Updated maintained internal imports to canonical model/workflow locations.
-- Made fitting and diagnostics conveniences from `swanx.workflows` lazy to
-  prevent circular imports.
-- Added canonical-location, compatibility-identity, lazy-facade, and minimal
-  unified-reflectivity smoke tests.
-- Full regression result: 167 passed and 1 expected failure.
-
-## Completed Stage 6 slim simulation layer
-
-- Moved material lookup and emitting-layer filtering helpers to
-  `swanx.xps.utils`.
-- Removed all private helper imports from the `swanx.simulation` compatibility
-  layer; it now defines no classes or functions.
-- Updated NumPy, JAX, and unified workflow internals to share the canonical
-  utility objects.
-- Added structural enforcement plus exact reflectivity and SW-XPS parity
-  tests across canonical, `swanx.simulation`, and `swxps.simulation` paths.
-- Full regression result: 171 passed and 1 expected failure.
-
-## Completed final API freeze
-
-- Reduced `swanx.__all__` to the exact ten-name stable user surface.
-- Standardized README on the sole recommended `import swanx as sx` workflow.
-- Documented JAX automatic differentiation as primary and Bayesian
-  optimization as a secondary baseline.
-- Removed recommended subpackage import alternatives from README.
-- Preserved broad historical `swxps` compatibility through an internal legacy
-  facade without re-expanding the `swanx` public API.
-- Migrated maintained advanced scripts and tests away from removed top-level
-  names.
-- Added exact API-surface and official-workflow smoke tests.
-- Full regression result: 173 passed and 1 expected failure.
-
-## Completed Stage 2 subpackage migration
-
-- Moved slicing and profile implementation bodies into `swanx.stack`.
-- Split diagnostics into covariance, plotting, and report namespaces.
-- Preserved flat `swanx.*`, legacy `swxps.*`, and top-level beginner exports.
-- Added canonical-location and object-identity tests.
-- Deferred optics, XPS, simulation, and fitting implementation moves.
-- Full regression result: 153 passed and 1 expected failure.
-
-## Completed covariance/correlation hardening
-
-- Recompute least-squares diagnostics covariance from final residuals/Jacobian by default.
-- Validate and symmetrize computed and externally supplied covariance matrices.
-- Reject non-finite, negative-variance, and materially indefinite inputs.
-- Enforce symmetric, bounded correlations and clip only tiny roundoff excursions.
-- Align stored optimizer covariance with `rcond=1e-12` and explicit symmetry.
-- Added failure-mode regression coverage; full result: 149 passed, 1 expected failure.
-
-## Small maintenance items
-
-- Added reusable local parameter uncertainty/correlation/singular-value
-  diagnostics; apply them to future experimental fits before promotion.
-- Replace deprecated `np.trapz` in a separate parity-tested change.
-- Move completed long-form plans to `docs/history/` when no longer active.
-
-## Session handoff checklist
-
-- Update this file and `docs/PROJECT_STATE.md`.
-- Record tests, benchmarks, decisions, current Git status, and blockers.
-- Leave revisions uncommitted unless the user explicitly requests a commit.
-- If the user requests a commit or push, verify the exact scope and Git status first.
+- `python -m pytest -q`: 192 passed, 1 xfailed.
+- `python examples/io/opc_imfp_rocking_curve_quickstart.py`: completed successfully.

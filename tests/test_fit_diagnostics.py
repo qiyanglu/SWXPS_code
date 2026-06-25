@@ -1,6 +1,10 @@
 import numpy as np
 
-from swxps import (
+from swanx.diagnostics import (
+    save_fit_history_csv,
+    save_staged_fit_summary_csv,
+)
+from swanx.fitting import (
     BayesianOptimizationResult,
     FitContribution,
     FitEvaluation,
@@ -10,8 +14,6 @@ from swxps import (
     StageFitResult,
     StageRunResult,
     StagedFitResult,
-    save_fit_history_csv,
-    save_staged_fit_summary_csv,
 )
 
 

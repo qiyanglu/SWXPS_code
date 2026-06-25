@@ -23,29 +23,29 @@ import numpy as np
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "src"))
 
-from swxps.fields import (  # noqa: E402
+from swanx.fields import (  # noqa: E402
     effective_layers_with_roughness,
     transfer_matrix_reflectivity_array,
 )
-from swxps.fitting import (  # noqa: E402
+from swanx.fitting import (  # noqa: E402
     FitParameter,
     FittingProblem,
     ReflectivityData,
     RockingCurveData,
 )
-from swxps.imfp import clear_imfp_cache, load_imfp  # noqa: E402
-from swxps.optical_constants import (  # noqa: E402
+from swanx.imfp import clear_imfp_cache, load_imfp  # noqa: E402
+from swanx.optical_constants import (  # noqa: E402
     clear_optical_constants_cache,
     load_optical_constants,
 )
-from swxps.simulation import (  # noqa: E402
+from swanx.simulation import (  # noqa: E402
     CoreLevelRequest,
     ReflectivityRequest,
     RockingCurveRequest,
     simulate_reflectivity,
     simulate_rocking_curves,
 )
-from swxps.stack_builders import (  # noqa: E402
+from swanx.stack_builders import (  # noqa: E402
     LayerTemplate,
     StackTemplate,
     SuperlatticeTemplate,
@@ -53,14 +53,14 @@ from swxps.stack_builders import (  # noqa: E402
 
 ENERGY_EV = 1000.0
 OPTICAL_PATHS = (
-    ROOT / "OPC" / "C.dat",
-    ROOT / "OPC" / "LaNiO3.dat",
-    ROOT / "OPC" / "SrTiO3.dat",
+    ROOT / "examples" / "data" / "OPC" / "C.dat",
+    ROOT / "examples" / "data" / "OPC" / "LaNiO3.dat",
+    ROOT / "examples" / "data" / "OPC" / "SrTiO3.dat",
 )
 IMFP_PATHS = (
-    ROOT / "IMFP" / "C.ANG",
-    ROOT / "IMFP" / "LNO.ANG",
-    ROOT / "IMFP" / "STO.ANG",
+    ROOT / "examples" / "data" / "IMFP" / "C.ANG",
+    ROOT / "examples" / "data" / "IMFP" / "LNO.ANG",
+    ROOT / "examples" / "data" / "IMFP" / "STO.ANG",
 )
 
 
@@ -108,7 +108,7 @@ def run_benchmark(repeats: int = 5, angle_count: int = 61) -> dict[str, float]:
         roughness_step=1.0,
         slicing=None,
     )
-    fields_and_swxps_seconds = _best_time(
+    fields_and_swanx_seconds = _best_time(
         lambda: simulate_rocking_curves(rocking_request),
         repeats,
     )
@@ -125,7 +125,7 @@ def run_benchmark(repeats: int = 5, angle_count: int = 61) -> dict[str, float]:
         "stack_construction": stack_seconds,
         "roughness_discretization": roughness_seconds,
         "reflectivity_from_effective_stack": reflectivity_seconds,
-        "fields_and_swxps_forward": fields_and_swxps_seconds,
+        "fields_and_swanx_forward": fields_and_swanx_seconds,
         "full_fitting_objective": objective_seconds,
     }
 
@@ -136,19 +136,19 @@ def _stack_template() -> StackTemplate:
         base_dir=ROOT,
         parts=(
             LayerTemplate.vacuum(),
-            LayerTemplate.from_file("C", "OPC/C.dat", 8.0, roughness=2.0),
+            LayerTemplate.from_file("C", "examples/data/OPC/C.dat", 8.0, roughness=2.0),
             SuperlatticeTemplate(
                 repeats=8,
                 period=(
                     LayerTemplate.from_file(
                         "LNO",
-                        "OPC/LaNiO3.dat",
+                        "examples/data/OPC/LaNiO3.dat",
                         "lno_thickness",
                         roughness=3.0,
                     ),
                     LayerTemplate.from_file(
                         "STO",
-                        "OPC/SrTiO3.dat",
+                        "examples/data/OPC/SrTiO3.dat",
                         "sto_thickness",
                         roughness=3.0,
                     ),
@@ -156,7 +156,7 @@ def _stack_template() -> StackTemplate:
             ),
             LayerTemplate.from_file(
                 "STO",
-                "OPC/SrTiO3.dat",
+                "examples/data/OPC/SrTiO3.dat",
                 0.0,
                 roughness=3.0,
             ),
@@ -167,10 +167,10 @@ def _stack_template() -> StackTemplate:
 def _la_4d_request() -> CoreLevelRequest:
     kinetic_energy_ev = ENERGY_EV - 105.0
     imfp_by_material = {
-        "vacuum": load_imfp(ROOT / "IMFP" / "C.ANG").imfp_at(kinetic_energy_ev),
-        "C": load_imfp(ROOT / "IMFP" / "C.ANG").imfp_at(kinetic_energy_ev),
-        "LNO": load_imfp(ROOT / "IMFP" / "LNO.ANG").imfp_at(kinetic_energy_ev),
-        "STO": load_imfp(ROOT / "IMFP" / "STO.ANG").imfp_at(kinetic_energy_ev),
+        "vacuum": load_imfp(ROOT / "examples" / "data" / "IMFP" / "C.ANG").imfp_at(kinetic_energy_ev),
+        "C": load_imfp(ROOT / "examples" / "data" / "IMFP" / "C.ANG").imfp_at(kinetic_energy_ev),
+        "LNO": load_imfp(ROOT / "examples" / "data" / "IMFP" / "LNO.ANG").imfp_at(kinetic_energy_ev),
+        "STO": load_imfp(ROOT / "examples" / "data" / "IMFP" / "STO.ANG").imfp_at(kinetic_energy_ev),
     }
     return CoreLevelRequest(
         name="La 4d",

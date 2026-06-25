@@ -1,6 +1,6 @@
 import numpy as np
 
-from swxps import (
+from swanx.stack import (
     LayerTemplate,
     StackTemplate,
     SuperlatticeTemplate,

@@ -11,19 +11,34 @@ import numpy as np
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "src"))
 
-from swxps import (  # noqa: E402
-    CoreLevelRequest,
+from swanx.stack import (
+
     LayerSlicingPolicy,
-    ReflectivityRequest,
-    RockingCurveRequest,
+
     SimulationStack,
+
     StackLayer,
+
     fixed_layer_grid,
+
     fixed_layer_grid_plan,
-    simulate_reflectivity,
-    simulate_rocking_curves,
+
 )
-from swxps.fields import transfer_matrix_reflectivity_array  # noqa: E402
+
+from swanx.workflows.simulate import (
+
+    CoreLevelRequest,
+
+    ReflectivityRequest,
+
+    RockingCurveRequest,
+
+    simulate_reflectivity,
+
+    simulate_rocking_curves,
+
+)
+from swanx.fields import transfer_matrix_reflectivity_array  # noqa: E402
 
 
 def make_stack(

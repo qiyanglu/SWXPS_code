@@ -2,8 +2,8 @@ from pathlib import Path
 
 import numpy as np
 
-from swxps.imfp import clear_imfp_cache, load_imfp
-from swxps.optical_constants import (
+from swanx.imfp import clear_imfp_cache, load_imfp
+from swanx.optical_constants import (
     clear_optical_constants_cache,
     load_optical_constants,
 )

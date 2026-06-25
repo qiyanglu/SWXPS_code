@@ -2,11 +2,15 @@ from pathlib import Path
 
 import pytest
 
-from swxps import constants_from_file, layer_from_file, load_optical_constants
+from swanx.optical_constants import (
+    constants_from_file,
+    layer_from_file,
+    load_optical_constants,
+)
 
 
 def test_load_optical_constants_parses_header_and_rows():
-    table = load_optical_constants(Path("OPC") / "LaNiO3.dat")
+    table = load_optical_constants(Path("examples/data/OPC") / "LaNiO3.dat")
 
     assert table.material == "LaNiO3"
     assert table.density == 7.25
@@ -16,14 +20,14 @@ def test_load_optical_constants_parses_header_and_rows():
 
 
 def test_constants_from_file_returns_exact_tabulated_values():
-    delta, beta = constants_from_file(Path("OPC") / "LaNiO3.dat", energy_ev=5000.00049)
+    delta, beta = constants_from_file(Path("examples/data/OPC") / "LaNiO3.dat", energy_ev=5000.00049)
 
     assert delta == pytest.approx(4.89944032e-05)
     assert beta == pytest.approx(2.89918785e-06)
 
 
 def test_constants_from_file_linearly_interpolates_between_rows():
-    table = load_optical_constants(Path("OPC") / "LaNiO3.dat")
+    table = load_optical_constants(Path("examples/data/OPC") / "LaNiO3.dat")
     energy = 0.5 * (table.energy_ev[0] + table.energy_ev[1])
 
     delta, beta = table.constants_at(energy)
@@ -33,7 +37,7 @@ def test_constants_from_file_linearly_interpolates_between_rows():
 
 
 def test_constants_from_file_rejects_out_of_range_energy():
-    table = load_optical_constants(Path("OPC") / "LaNiO3.dat")
+    table = load_optical_constants(Path("examples/data/OPC") / "LaNiO3.dat")
 
     with pytest.raises(ValueError, match="outside the table range"):
         table.constants_at(8000.0)
@@ -41,7 +45,7 @@ def test_constants_from_file_rejects_out_of_range_energy():
 
 def test_layer_from_file_uses_interpolated_constants():
     layer = layer_from_file(
-        Path("OPC") / "SrTiO3.dat",
+        Path("examples/data/OPC") / "SrTiO3.dat",
         energy_ev=5000.00049,
         thickness=12.0,
         roughness=3.0,

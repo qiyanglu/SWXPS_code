@@ -68,6 +68,12 @@ class ReflectivityResult:
 class CoreLevelRequest:
     """Input parameters for one normalized SW-XPS core-level RC.
 
+    ``imfp_by_material`` must contain electron IMFP values in Angstrom at the
+    photoelectron kinetic energy for this core level. Use
+    ``swanx.io.read_imfp``, ``swanx.io.core_level_from_tables``, or
+    ``swanx.io.core_levels_from_specs`` to construct this dictionary from IMFP
+    files.
+
     Use `emitting_layer_indices` to select the stack layers that emit this
     core level. Leaving it as `None` keeps all layers with matching material
     labels active for backward-compatible material-level simulations.
@@ -83,7 +89,13 @@ class CoreLevelRequest:
 
 @dataclass(frozen=True)
 class RockingCurveRequest:
-    """Input parameters for one or more normalized SW-XPS RCs."""
+    """Input parameters for one or more normalized SW-XPS RCs.
+
+    ``RockingCurveRequest`` assumes the stack already contains optical
+    constants at ``photon_energy_ev``, and each ``CoreLevelRequest`` already
+    contains IMFP values at its own kinetic energy. It does not read OPC or
+    IMFP files directly.
+    """
 
     angles: np.ndarray
     photon_energy_ev: float

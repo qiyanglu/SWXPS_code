@@ -1,8 +1,9 @@
 import numpy as np
 
-from swxps import Layer, parratt_reflectivity
-from swxps.slicing import LayerSlicingPolicy, adaptive_layer_grid
-from swxps.unified_grid import (
+from swanx.optics import parratt_reflectivity
+from swanx.stack import Layer
+from swanx.slicing import LayerSlicingPolicy, adaptive_layer_grid
+from swanx.unified_grid import (
     cell_centered_attenuation,
     effective_layers_from_grid,
     field_profiles_on_grid,

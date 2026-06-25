@@ -1,20 +1,16 @@
 import numpy as np
 
-from swxps import (
+from swanx.stack import Layer, LayerSlicingPolicy, SimulationStack, StackLayer, fixed_layer_grid_plan
+from swanx.workflows.simulate import (
     CoreLevelRequest,
-    Layer,
-    LayerSlicingPolicy,
     ReflectivityRequest,
     RockingCurveRequest,
-    SimulationStack,
-    StackLayer,
-    fixed_layer_grid_plan,
     simulate_reflectivity,
     simulate_rocking_curves,
 )
-from swxps.fields import transfer_matrix_reflectivity_array
-from swxps.slicing import adaptive_layer_grid
-from swxps.unified_grid import integrate_xps_on_grid
+from swanx.fields import transfer_matrix_reflectivity_array
+from swanx.slicing import adaptive_layer_grid
+from swanx.unified_grid import integrate_xps_on_grid
 
 
 def make_rough_stack() -> SimulationStack:

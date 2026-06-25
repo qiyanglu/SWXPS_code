@@ -13,12 +13,18 @@ SRC_DIR = REPO_ROOT / "src"
 if str(SRC_DIR) not in sys.path:
     sys.path.insert(0, str(SRC_DIR))
 
-from swxps import (  # noqa: E402
-    SimulationStack,
+from swanx.stack import (
+
     LayerTemplate,
+
+    SimulationStack,
+
     StackTemplate,
+
     SuperlatticeTemplate,
+
     sample_concentration_profiles,
+
 )
 
 
@@ -38,11 +44,11 @@ def make_lno_sto_stack(
             SuperlatticeTemplate(
                 repeats=repeats,
                 period=(
-                    LayerTemplate.from_file("LNO", "OPC/LaNiO3.dat", layer_thickness, roughness),
-                    LayerTemplate.from_file("STO", "OPC/SrTiO3.dat", layer_thickness, roughness),
+                    LayerTemplate.from_file("LNO", "examples/data/OPC/LaNiO3.dat", layer_thickness, roughness),
+                    LayerTemplate.from_file("STO", "examples/data/OPC/SrTiO3.dat", layer_thickness, roughness),
                 ),
             ),
-            LayerTemplate.from_file("STO", "OPC/SrTiO3.dat", 0.0, roughness),
+            LayerTemplate.from_file("STO", "examples/data/OPC/SrTiO3.dat", 0.0, roughness),
         ),
     )
     return template.build()

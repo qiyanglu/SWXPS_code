@@ -36,22 +36,24 @@ if str(ARCHIVE_DIR) not in sys.path:
     sys.path.insert(0, str(ARCHIVE_DIR))
 
 import fit_sample13_bo as sample13  # noqa: E402
-from swxps import (  # noqa: E402
-    CoreLevelRequest,
+from swanx.diagnostics import plot_stack_schematic
+from swanx.fitting import (
     FitParameter,
     FitSimulation,
     FittingProblem,
     JaxGradientOptimizerSettings,
     JointObjective,
-    LayerTemplate,
     ReflectivityData,
     RockingCurveData,
-    StackTemplate,
     evaluation_from_contributions,
-    imfp_from_file,
     optimize_with_jax_gradient,
-    plot_stack_schematic,
 )
+from swanx.imfp import imfp_from_file
+from swanx.stack import (
+    LayerTemplate,
+    StackTemplate,
+)
+from swanx.workflows.simulate import CoreLevelRequest
 
 
 DEFAULT_OUTPUT_PREFIX = "sample13_joint_cap3_lnorough_jax_gradient"
@@ -359,9 +361,9 @@ def core_level_requests() -> tuple[CoreLevelRequest, ...]:
     """Return layer-selective C/Ni/La requests for the Sample#13 cap3 stack."""
 
     imfp_files = {
-        "C": REPO_ROOT / "IMFP" / "C.ANG",
-        "LNO": REPO_ROOT / "IMFP" / "LNO.ANG",
-        "STO": REPO_ROOT / "IMFP" / "STO.ANG",
+        "C": REPO_ROOT / "examples" / "data" / "IMFP" / "C.ANG",
+        "LNO": REPO_ROOT / "examples" / "data" / "IMFP" / "LNO.ANG",
+        "STO": REPO_ROOT / "examples" / "data" / "IMFP" / "STO.ANG",
     }
     imfp_by_core = {}
     for core_name, binding_energy in sample13.BINDING_ENERGIES.items():

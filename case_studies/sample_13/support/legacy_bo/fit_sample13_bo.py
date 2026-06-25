@@ -21,28 +21,57 @@ SRC_DIR = REPO_ROOT / "src"
 if str(SRC_DIR) not in sys.path:
     sys.path.insert(0, str(SRC_DIR))
 
-from swxps import (
-    BayesianOptimizationSettings,
-    CoreLevelRequest,
-    FitSimulation,
-    FitParameter,
-    FittingProblem,
-    JointObjective,
-    LayerTemplate,
-    ReflectivityData,
-    RockingCurveData,
-    StackTemplate,
-    SuperlatticeTemplate,
-    evaluation_from_contributions,
-    imfp_from_file,
+from swanx.diagnostics import (
+
     plot_best_fit,
+
     plot_fit_convergence,
+
     plot_stack_schematic,
+
     plot_surrogate_slices,
-    run_bayesian_optimization,
+
     save_fit_history_csv,
-    subtract_edge_polynomial_background,
+
 )
+
+from swanx.fitting import (
+
+    BayesianOptimizationSettings,
+
+    FitParameter,
+
+    FitSimulation,
+
+    FittingProblem,
+
+    JointObjective,
+
+    ReflectivityData,
+
+    RockingCurveData,
+
+    evaluation_from_contributions,
+
+    run_bayesian_optimization,
+
+)
+
+from swanx.imfp import imfp_from_file
+
+from swanx.preprocessing import subtract_edge_polynomial_background
+
+from swanx.stack import (
+
+    LayerTemplate,
+
+    StackTemplate,
+
+    SuperlatticeTemplate,
+
+)
+
+from swanx.workflows.simulate import CoreLevelRequest
 
 
 PHOTON_ENERGY_EV = 815.0
@@ -51,9 +80,9 @@ CASE_DIR = Path(__file__).resolve().parents[2]
 REFLECTIVITY_FILE = CASE_DIR / "Reflectivity_Exp.dat"
 RC_FILE = CASE_DIR / "ExpRCs.dat"
 REFLECTIVITY_BO_HISTORY = CASE_DIR / "sample13_reflectivity_bo_history.csv"
-LNO_OPC_FILE = "OPC/LaNiO3_800-900eV.dat"
-STO_OPC_FILE = "OPC/SrTiO3_800-900eV.dat"
-C_OPC_FILE = "OPC/C.dat"
+LNO_OPC_FILE = "examples/data/OPC/LaNiO3_800-900eV.dat"
+STO_OPC_FILE = "examples/data/OPC/SrTiO3_800-900eV.dat"
+C_OPC_FILE = "examples/data/OPC/C.dat"
 
 REFLECTIVITY_START_DEG = 10.0
 REFLECTIVITY_STOP_DEG = 15.45
@@ -446,9 +475,9 @@ def core_level_requests() -> tuple[CoreLevelRequest, ...]:
     """Return Sample#13 C 1s, Ni 3p, and La 4d core-level requests."""
 
     imfp_files = {
-        "C": REPO_ROOT / "IMFP" / "C.ANG",
-        "LNO": REPO_ROOT / "IMFP" / "LNO.ANG",
-        "STO": REPO_ROOT / "IMFP" / "STO.ANG",
+        "C": REPO_ROOT / "examples" / "data" / "IMFP" / "C.ANG",
+        "LNO": REPO_ROOT / "examples" / "data" / "IMFP" / "LNO.ANG",
+        "STO": REPO_ROOT / "examples" / "data" / "IMFP" / "STO.ANG",
     }
     imfp_by_core = {}
     for core_name, binding_energy in BINDING_ENERGIES.items():

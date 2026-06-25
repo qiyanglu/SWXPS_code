@@ -1,17 +1,19 @@
 import numpy as np
 import pytest
 
-from swxps import (
-    CoreLevelRequest,
+from swanx.stack import (
     LayerSlicingPolicy,
-    ReflectivityRequest,
-    RockingCurveRequest,
     SimulationStack,
     StackLayer,
+)
+from swanx.workflows.simulate import (
+    CoreLevelRequest,
+    ReflectivityRequest,
+    RockingCurveRequest,
     simulate_reflectivity,
     simulate_rocking_curves,
 )
-from swxps.fields import transfer_matrix_reflectivity_array
+from swanx.fields import transfer_matrix_reflectivity_array
 
 
 def make_stack() -> SimulationStack:

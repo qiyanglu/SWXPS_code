@@ -1,12 +1,14 @@
 import numpy as np
 
-from swxps import (
-    Layer,
+from swanx.optics import (
     apply_roughness,
     energy_to_wavelength,
     fresnel_r_s,
     kz_in_layers,
     parratt_reflectivity,
+)
+from swanx.stack import (
+    Layer,
     vacuum,
 )
 

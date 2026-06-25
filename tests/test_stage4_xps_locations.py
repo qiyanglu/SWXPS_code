@@ -2,10 +2,10 @@
 
 
 def test_attenuation_implementation_and_compatibility_paths_share_objects():
-    from swanx import _xps
+    import swanx._xps as _xps
     from swanx.xps import attenuation_factor
     from swanx.xps.attenuation import attenuation_factor as canonical
-    from swxps.xps import attenuation_factor as legacy
+    from swanx.xps import attenuation_factor as legacy
 
     assert canonical.__module__ == "swanx.xps.attenuation"
     assert attenuation_factor is canonical
@@ -14,10 +14,10 @@ def test_attenuation_implementation_and_compatibility_paths_share_objects():
 
 
 def test_intensity_implementation_and_compatibility_paths_share_objects():
-    from swanx import _xps
+    import swanx._xps as _xps
     from swanx.xps import integrate_xps_intensity
     from swanx.xps.intensity import integrate_xps_intensity as canonical
-    from swxps.xps import integrate_xps_intensity as legacy
+    from swanx.xps import integrate_xps_intensity as legacy
 
     assert canonical.__module__ == "swanx.xps.intensity"
     assert integrate_xps_intensity is canonical
@@ -26,10 +26,10 @@ def test_intensity_implementation_and_compatibility_paths_share_objects():
 
 
 def test_rocking_curve_implementation_and_compatibility_paths_share_objects():
-    from swanx import _xps
+    import swanx._xps as _xps
     from swanx.xps import RockingCurve
     from swanx.xps.rocking_curve import RockingCurve as canonical
-    from swxps.xps import RockingCurve as legacy
+    from swanx.xps import RockingCurve as legacy
 
     assert canonical.__module__ == "swanx.xps.rocking_curve"
     assert RockingCurve is canonical
@@ -48,7 +48,7 @@ def test_grid_xps_implementation_and_optics_compatibility_share_objects():
         cell_centered_attenuation as canonical_attenuation,
         integrate_xps_on_grid as canonical_integrate,
     )
-    from swxps.unified_grid import integrate_xps_on_grid as legacy
+    from swanx.unified_grid import integrate_xps_on_grid as legacy
 
     assert canonical_attenuation.__module__ == "swanx.xps.grid"
     assert canonical_integrate.__module__ == "swanx.xps.grid"

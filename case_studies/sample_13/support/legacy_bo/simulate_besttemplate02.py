@@ -18,16 +18,30 @@ if str(SRC_DIR) not in sys.path:
 if str(CASE_DIR) not in sys.path:
     sys.path.insert(0, str(CASE_DIR))
 
-from swxps import (  # noqa: E402
-    CoreLevelRequest,
-    ReflectivityRequest,
-    RockingCurveRequest,
+from swanx.imfp import imfp_from_file
+
+from swanx.optical_constants import constants_from_file
+
+from swanx.stack import (
+
     SimulationStack,
+
     StackLayer,
-    constants_from_file,
-    imfp_from_file,
+
+)
+
+from swanx.workflows.simulate import (
+
+    CoreLevelRequest,
+
+    ReflectivityRequest,
+
+    RockingCurveRequest,
+
     simulate_reflectivity,
+
     simulate_rocking_curves,
+
 )
 
 import fit_sample13_bo as sample13  # noqa: E402
@@ -121,9 +135,9 @@ def core_level_requests(stack: SimulationStack, emission_mode: str) -> tuple[Cor
     for core_name, binding_energy in sample13.BINDING_ENERGIES.items():
         kinetic_energy = sample13.PHOTON_ENERGY_EV - binding_energy
         imfp_by_core[core_name] = {
-            "C": imfp_from_file(REPO_ROOT / "IMFP" / "C.ANG", kinetic_energy),
-            "LNO": imfp_from_file(REPO_ROOT / "IMFP" / "LNO.ANG", kinetic_energy),
-            "STO": imfp_from_file(REPO_ROOT / "IMFP" / "STO.ANG", kinetic_energy),
+            "C": imfp_from_file(REPO_ROOT / "examples" / "data" / "IMFP" / "C.ANG", kinetic_energy),
+            "LNO": imfp_from_file(REPO_ROOT / "examples" / "data" / "IMFP" / "LNO.ANG", kinetic_energy),
+            "STO": imfp_from_file(REPO_ROOT / "examples" / "data" / "IMFP" / "STO.ANG", kinetic_energy),
         }
 
     c_layers = _layer_indices(stack, "C")

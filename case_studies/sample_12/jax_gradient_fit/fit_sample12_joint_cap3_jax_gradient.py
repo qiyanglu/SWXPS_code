@@ -29,10 +29,10 @@ if str(ARCHIVE_DIR) not in sys.path:
     sys.path.insert(0, str(ARCHIVE_DIR))
 
 import fit_sample12_joint_cap3_bo as joint  # noqa: E402
-from swxps import (  # noqa: E402
+from swanx.diagnostics import plot_stack_schematic
+from swanx.fitting import (
     JaxGradientOptimizerSettings,
     optimize_with_jax_gradient,
-    plot_stack_schematic,
 )
 
 

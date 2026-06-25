@@ -2,16 +2,18 @@ import numpy as np
 import pytest
 
 simulation_jax = pytest.importorskip(
-    "swxps.simulation_jax",
+    "swanx.simulation_jax",
     exc_type=ImportError,
 )
 
-from swxps import (
+from swanx.stack import (
+    SimulationStack,
+    StackLayer,
+)
+from swanx.workflows.simulate import (
     CoreLevelRequest,
     ReflectivityRequest,
     RockingCurveRequest,
-    SimulationStack,
-    StackLayer,
     simulate_reflectivity,
     simulate_rocking_curves,
 )

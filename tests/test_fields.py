@@ -1,7 +1,6 @@
 import numpy as np
 
-from swxps import (
-    Layer,
+from swanx.optics import (
     depth_grid,
     effective_layers_with_roughness,
     electric_field_profile,
@@ -11,7 +10,8 @@ from swxps import (
     transfer_matrix_electric_field_profile,
     transfer_matrix_reflectivity,
 )
-from swxps.fields import (
+from swanx.stack import Layer
+from swanx.fields import (
     transfer_matrix_electric_field_profiles,
     transfer_matrix_reflectivity_array,
 )

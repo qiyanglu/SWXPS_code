@@ -6,12 +6,14 @@ import pytest
 
 pytest.importorskip("jax")
 
-from swxps import (
+from swanx.stack import (
     LayerSlicingPolicy,
-    ReflectivityRequest,
-    RockingCurveRequest,
     fixed_layer_grid,
     fixed_layer_grid_plan,
+)
+from swanx.workflows.simulate import (
+    ReflectivityRequest,
+    RockingCurveRequest,
     simulate_reflectivity,
     simulate_rocking_curves,
 )

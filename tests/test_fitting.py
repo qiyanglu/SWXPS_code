@@ -1,8 +1,7 @@
 import numpy as np
 
-import swxps.fitting as fitting
-from swxps import (
-    CoreLevelRequest,
+import swanx._fitting as fitting
+from swanx.fitting import (
     FitContribution,
     FitEvaluation,
     FitParameter,
@@ -10,13 +9,7 @@ from swxps import (
     JointObjective,
     LayerUpdate,
     ReflectivityData,
-    ReflectivityResult,
-    RockingCurve,
     RockingCurveData,
-    RockingCurveResult,
-    CoreLevelResult,
-    SimulationStack,
-    StackLayer,
     evaluation_from_contributions,
     initial_vector,
     parameter_dict,
@@ -25,6 +18,17 @@ from swxps import (
     stack_with_updates,
     validate_finite_layer_roughness,
 )
+from swanx.stack import (
+    SimulationStack,
+    StackLayer,
+)
+from swanx.workflows.simulate import (
+    CoreLevelRequest,
+    CoreLevelResult,
+    ReflectivityResult,
+    RockingCurveResult,
+)
+from swanx.xps import RockingCurve
 
 
 def test_parameter_dict_preserves_names_and_bounds():
