@@ -15,5 +15,4 @@ python examples/fitting/jax_gradient_reflectivity_fit.py
 python examples/fitting/jax_least_squares_reflectivity_fit.py
 ```
 
-Experimental fitting lives in `case_studies/`; synthetic and timing studies
-live in `benchmarks/`; generated run output lives in `runs/`.
+Private experimental fitting may live in local ignored `case_studies/`; synthetic and timing studies live in `benchmarks/`; generated run output lives in local ignored `runs/`.

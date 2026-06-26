@@ -2,6 +2,9 @@
 
 ## Current cleanup
 
+- [x] Remove obsolete active tests that depend on ignored local `case_studies/`.
+- [x] Move optimizer-independent fitting implementation to `swanx.fitting.core` while keeping `swanx._fitting` as a shim.
+- [x] Full suite after fitting cleanup: `220 passed, 1 xfailed`.
 - [x] Propagate polarization through `FittingProblem` and require mixed weights to sum to 1.
 - [x] Keep `swanx` as the only supported namespace.
 - [x] Keep tutorial inputs under root-level `data/`.
@@ -17,8 +20,7 @@
 
 ## Near-term priorities
 
-1. Validate root `data/OPC`, `data/IMFP`, and `data/curves` on tutorial and
-   representative case-study inputs.
+1. Validate root `data/OPC`, `data/IMFP`, and `data/curves` on tutorial inputs and local representative case-study inputs when available.
 2. Keep README-linked examples executable and based on `swanx`.
 3. Improve fixed-shape JAX least-squares fitting documentation.
 4. Add richer experimental-data formats only when real lab conventions require

@@ -31,7 +31,7 @@ a baseline and robustness check.
 - export of fit results and best-fit curves;
 - uncertainty/sigma propagation in downstream diagnostics and exports;
 - optional adapters for additional optical-constant formats;
-- eventual fitting source migration into `swanx.fitting.*` submodules.
+- continue splitting fitting internals into focused `swanx.fitting.*` submodules after the initial `swanx.fitting.core` move.
 
 ## Deferred physics/features
 

@@ -9,7 +9,7 @@ import warnings
 
 import numpy as np
 
-from .._fitting import FitParameter
+from ..fitting.core import FitParameter
 
 if TYPE_CHECKING:
     from ..jax_least_squares import JaxLeastSquaresOptimizationResult

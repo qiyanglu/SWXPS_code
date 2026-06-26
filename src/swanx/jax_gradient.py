@@ -8,7 +8,7 @@ from time import perf_counter
 
 import numpy as np
 
-from ._fitting import FitParameter, initial_vector
+from .fitting.core import FitParameter, initial_vector
 
 
 ValueAndGradient = Callable[[np.ndarray], tuple[float, np.ndarray]]

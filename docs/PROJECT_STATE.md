@@ -46,8 +46,28 @@ Tutorial data live at:
 - JAX least-squares/autodiff is the recommended fitting path for fixed-shape
   workflows; BO remains a baseline.
 
+
+## Current cleanup update
+
+Fitting module cleanup completed:
+
+- obsolete active Sample 13 local case-study test removed;
+- optimizer-independent fitting implementation moved to `swanx.fitting.core`;
+- `swanx._fitting` remains a thin compatibility shim for old local scripts;
+- active docs now describe `case_studies/` as local/private and ignored by Git.
+
 ## Latest validation
 
+
+Fitting cleanup validation:
+
+```bash
+python -m pytest tests/test_fitting.py tests/test_unified_fitting.py tests/test_bo.py tests/test_jax_gradient.py tests/test_jax_least_squares.py tests/test_diagnostics.py tests/test_namespace_imports.py -q
+# 36 passed
+
+python -m pytest -q --basetemp runs/pytest_fitting_cleanup
+# 220 passed, 1 xfailed
+```
 Polarization fitting integration fix completed:
 
 ```bash

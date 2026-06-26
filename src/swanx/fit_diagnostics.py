@@ -8,7 +8,7 @@ from typing import Sequence
 import numpy as np
 
 from .bo import BayesianOptimizationResult, StagedFitResult
-from ._fitting import (
+from .fitting.core import (
     FitHistory,
     FitParameter,
     FitSimulation,

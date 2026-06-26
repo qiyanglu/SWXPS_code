@@ -11,7 +11,7 @@ Beginner users should use `import swanx as sx` for the compact top-level simulat
 - `swanx.stack`: layers, stacks, templates, slicing, and profiles.
 - `swanx.optics`: Parratt, transfer-matrix, fields, and unified-grid optics.
 - `swanx.xps`: attenuation, XPS intensity, and rocking curves.
-- `swanx.fitting`: parameters, objectives, and maintained fitting backends.
+- `swanx.fitting`: parameters, objectives, and maintained fitting backends; optimizer-independent fitting helpers live in `swanx.fitting.core`.
 - `swanx.diagnostics`: covariance, correlation, plots, reports, and result exports.
 - `swanx.io`: OPC readers, IMFP readers, material-table loaders, stack/core-level builders, and experimental reflectivity/rocking-curve readers.
 - `swanx.workflows`: high-level simulation, fitting, and reporting entry points.

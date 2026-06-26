@@ -9,7 +9,7 @@ from typing import Literal
 
 import numpy as np
 
-from ._fitting import (
+from .fitting.core import (
     FitParameter,
     ReflectivityData,
     RockingCurveData,

@@ -208,15 +208,13 @@ materials database.
 - `src/swanx/`: maintained package and only supported Python namespace.
 - `tests/`: regression tests.
 - `examples/`: compact tutorials.
-- `case_studies/`: experimental inputs, maintained runners, and canonical
-  results.
+- local `case_studies/`: private experimental inputs/runners kept on the working machine and ignored by Git.
 - `benchmarks/`: synthetic fitting and performance benchmarks.
 - `runs/`: local generated outputs, ignored by Git.
 - `archive/`: local superseded experiments, ignored by Git.
 - `docs/`: architecture, roadmap, plans, project state, TODO, and history.
 
-Generated attempts belong in `runs/`, not in `examples/`, `case_studies/`, or
-`benchmarks/`.
+Generated attempts belong in local `runs/`, not in tracked `examples/` or `benchmarks/`.
 
 The early development namespace `swxps` was retired before public release. New
 code should use `swanx`.

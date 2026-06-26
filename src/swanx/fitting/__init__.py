@@ -1,6 +1,6 @@
 """Fitting parameters, objectives, and maintained optimizer backends."""
 
-from .._fitting import (
+from .core import (
     FitContribution,
     FitEvaluation,
     FitHistory,

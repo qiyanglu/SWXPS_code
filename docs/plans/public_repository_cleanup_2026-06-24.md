@@ -2,6 +2,8 @@
 
 Status: Implemented and validated (2026-06-24).
 
+> Current note (2026-06-26): `case_studies/` was later made local/private and ignored by Git. The earlier decision to keep it tracked is historical, not current repository policy.
+
 ## Goal
 
 Reduce top-level clutter without removing the experimental `case_studies/`

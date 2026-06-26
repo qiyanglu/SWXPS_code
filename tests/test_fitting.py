@@ -1,6 +1,6 @@
 import numpy as np
 
-import swanx._fitting as fitting
+import swanx.fitting.core as fitting
 from swanx.fitting import (
     FitContribution,
     FitEvaluation,
