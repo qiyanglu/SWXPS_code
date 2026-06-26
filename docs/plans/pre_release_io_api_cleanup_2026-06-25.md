@@ -1,5 +1,6 @@
-> Current status (2026-06-25): Active implementation plan for the pre-release
-> SWANX API cleanup and realistic OPC/IMFP IO workflow.
+> Current namespace note (2026-06-26): This plan is historical. Maintained code now lives under `src/swanx`, and `import swxps` is expected to fail; any `swxps` paths below are old planning context, not current guidance.
+
+> Historical status (2026-06-25): Active implementation plan for the pre-release SWANX API cleanup and realistic OPC/IMFP IO workflow.
 
 # Pre-release API cleanup and OPC/IMFP IO workflow
 

@@ -1,6 +1,8 @@
 # Synthetic unified-grid JAX least-squares plan
 
-> Namespace note (2026-06-23): The implementation is now available under `swanx`; `swxps` references below are retained as historical compatibility paths.
+> Current namespace note (2026-06-26): This plan is historical. Maintained code now lives under `src/swanx`, and `import swxps` is expected to fail; any `swxps` paths below are old planning context, not current guidance.
+
+> Namespace note (2026-06-23): The implementation is now available under `swanx`; `swxps` references below are historical only, not current import paths.
 
 ## Goal
 

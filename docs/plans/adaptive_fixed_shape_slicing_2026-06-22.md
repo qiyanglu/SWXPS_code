@@ -1,10 +1,12 @@
 # Adaptive unified-grid and fixed-shape slicing plan
 
+> Current namespace note (2026-06-26): This plan is historical. Maintained code now lives under `src/swanx`, and `import swxps` is expected to fail; any `swxps` paths below are old planning context, not current guidance.
+
 > Stage 3 namespace status (2026-06-23): Roughness fields and unified-grid optics now live in `swanx.optics.fields` and `swanx.optics.unified_grid`; flat and legacy paths remain shims.
 
-> Stage 2 namespace status (2026-06-23): The maintained slicing implementation now lives in `swanx.stack.slicing`; flat `swanx.slicing` and `swxps.slicing` imports are compatibility shims.
+> Stage 2 namespace status (2026-06-23): The maintained slicing implementation now lives in `swanx.stack.slicing`; flat `swanx.slicing` remains a compatibility shim; `swxps.slicing` is historical only.
 
-> Current status (2026-06-23): Implemented. Unified slicing is now the default high-level path; `slicing=None` selects the legacy fixed-step path. The primary namespace is `swanx`, with `swxps` retained as a compatibility alias.
+> Current status (2026-06-23): Implemented. Unified slicing is now the default high-level path; `slicing=None` selects the legacy fixed-step path. The primary and only supported namespace is `swanx`; `swxps` is historical only.
 
 ## Status
 

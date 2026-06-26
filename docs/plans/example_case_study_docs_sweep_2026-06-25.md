@@ -1,5 +1,7 @@
 # Example, case-study, and docs consistency sweep
 
+> Current namespace note (2026-06-26): This plan is historical. Maintained code now lives under `src/swanx`, and `import swxps` is expected to fail; any `swxps` paths below are old planning context, not current guidance.
+
 ## Goal
 
 Check active examples, case-study runners, and documentation for stale package

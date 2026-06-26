@@ -1,5 +1,7 @@
 # swanx namespace migration
 
+> Current namespace note (2026-06-26): This plan is historical. Maintained code now lives under `src/swanx`, and `import swxps` is expected to fail; any `swxps` paths below are old planning context, not current guidance.
+
 Status: Implemented and validated (2026-06-23).
 
 ## Goal
@@ -18,7 +20,7 @@ and fitting algorithms and conventions must remain unchanged.
 
 - Move maintained modules from `src/swxps/` to `src/swanx/`.
 - Add beginner-facing `swanx` subpackage facades and top-level exports.
-- Retain `src/swxps/` as a thin module-alias compatibility package.
+- Historical migration step: retain `src/swxps/` temporarily as a thin module-alias compatibility package. Current maintained imports use `swanx` only.
 - Update `pyproject.toml`, `README.md`, architecture/roadmap/handoff docs, and
   relevant plan status notes.
 - Add `tests/test_namespace_imports.py`.

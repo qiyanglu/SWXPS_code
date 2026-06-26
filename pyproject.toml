@@ -15,6 +15,10 @@ fit = ["scikit-optimize"]
 jax = ["jax"]
 gradient = ["jax", "scipy"]
 least-squares = ["jax", "scipy"]
+project = ["PyYAML>=6"]
+
+[project.scripts]
+swanx = "swanx.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

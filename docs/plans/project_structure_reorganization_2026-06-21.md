@@ -1,6 +1,10 @@
 # Project structure reorganization plan
 
-> Namespace note (2026-06-23): This completed repository plan predates the `swanx` rename. Maintained code now lives under `src/swanx`; `src/swxps` is a compatibility shim.
+> Current namespace note (2026-06-26): This plan is historical. Maintained code now lives under `src/swanx`, and `import swxps` is expected to fail; any `swxps` paths below are old planning context, not current guidance.
+
+> Current repository note (2026-06-26): `case_studies/` is local/private experimental space ignored by Git; any older wording about tracked case studies is historical context, not current policy.
+
+> Namespace note (2026-06-23): This completed repository plan predates the `swanx` rename. Maintained code now lives under `src/swanx`; `src/swxps` is not part of the current maintained tree.
 
 ## Goal
 

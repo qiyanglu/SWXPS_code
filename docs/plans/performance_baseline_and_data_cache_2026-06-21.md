@@ -1,6 +1,8 @@
 # Performance baseline and scientific-table cache plan
 
-> Namespace note (2026-06-23): This completed plan predates the `swanx` rename. Its `swxps` paths are historical and remain valid through compatibility aliases.
+> Current namespace note (2026-06-26): This plan is historical. Maintained code now lives under `src/swanx`, and `import swxps` is expected to fail; any `swxps` paths below are old planning context, not current guidance.
+
+> Namespace note (2026-06-23): This completed plan predates the `swanx` rename. Its `swxps` paths are historical only; current imports must use `swanx`.
 
 ## Goal
 

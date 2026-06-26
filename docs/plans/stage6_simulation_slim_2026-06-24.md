@@ -1,5 +1,7 @@
 # Stage 6 slim simulation compatibility layer
 
+> Current namespace note (2026-06-26): This plan is historical. Maintained code now lives under `src/swanx`, and `import swxps` is expected to fail; any `swxps` paths below are old planning context, not current guidance.
+
 Status: Complete (2026-06-24).
 
 ## Goal

@@ -1,6 +1,8 @@
 # Repository cleanup plan
 
-> Namespace note (2026-06-23): This completed cleanup plan predates the `swanx` rename. Maintained code now lives under `src/swanx`; `src/swxps` is a compatibility shim.
+> Current namespace note (2026-06-26): This plan is historical. Maintained code now lives under `src/swanx`, and `import swxps` is expected to fail; any `swxps` paths below are old planning context, not current guidance.
+
+> Namespace note (2026-06-23): This completed cleanup plan predates the `swanx` rename. Maintained code now lives under `src/swanx`; `src/swxps` is not part of the current maintained tree.
 
 ## Goal
 

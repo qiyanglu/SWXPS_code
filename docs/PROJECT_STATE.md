@@ -2,8 +2,19 @@
 
 ## Current state
 
-SWANX uses `swanx` as the only supported Python namespace. The beginner
-workflow is:
+SWANX uses `swanx` as the only supported Python namespace. The early `swxps`
+namespace was removed before public release and is not an active compatibility
+surface.
+
+The primary human-editable project workflow is:
+
+```text
+project.yaml
+        -> swanx.project.validate_project / run_project
+        -> runs/<project_name>_<timestamp>/ report folder
+```
+
+For custom Python workflows, the maintained object flow is:
 
 ```text
 data/OPC + data/IMFP + data/curves
@@ -20,6 +31,11 @@ Tutorial data live at:
 
 ## Implemented workflow
 
+- `swanx.project` validates and runs YAML ProjectSpec v1 files.
+- `templates/project_minimal.yaml` and `templates/run_project.py` provide the
+  minimal editable project entry.
+- `swanx validate ...` and `swanx run ...` are thin CLI wrappers for automation.
+- PyYAML is optional via `python -m pip install -e ".[project]"`.
 - `swanx.io` reads OPC, IMFP, reflectivity, and rocking-curve files.
 - `swanx.io` builds `SimulationStack` and `CoreLevelRequest` objects from
   material tables.
@@ -27,107 +43,69 @@ Tutorial data live at:
 - `swanx.fitting` consumes `ReflectivityData` and `RockingCurveData`.
 - `swanx.io.__all__` is narrow and explicit; it does not export preprocessing
   functions or legacy flat helpers.
-- `read_imfp(...)` raises on malformed rows after numeric data begins while
-  preserving `.ANG` support.
-- OPC validation rejects negative `beta`, allows negative `delta`, rejects
-  duplicate photon energies, and requires finite positive photon energies.
+
+## ProjectSpec v1 notes
+
+ProjectSpec v1 supports sections for `project`, `settings`, `materials`,
+`parameters`, `stack`, `core_levels`, `datasets`, and `report`.
+
+Supported YAML workflow features include:
+
+- stable concrete stack layer IDs;
+- layer tags and core-level selection by `layer_ids` or `tags`;
+- compact repeat blocks for multilayers;
+- inline parameter references and AST-whitelisted arithmetic expressions;
+- polarization strings `"s"`, `"p"`, and `"unpolarized"`;
+- complete `simulate_only` report output;
+- method-specific report writers for least-squares, gradient, and BO result
+  objects.
+
+All thickness, roughness, depth, and IMFP values are in Angstrom. In YAML,
+`roughness_A` on layer j means roughness/interdiffusion at the upper interface
+of layer j, i.e. the interface between layer j-1 and layer j.
 
 ## API notes
 
-- User simulations should start with `import swanx as sx`.
+- User project runs should start with `from swanx.project import run_project`.
+- Custom simulations can start with `import swanx as sx`.
 - OPC files are interpolated at photon energy.
 - IMFP files are interpolated at `E_kin = h nu - E_B`.
 - `RockingCurveRequest` does not read files directly.
 - Unified slicing is the default high-level simulation path.
-- `ReflectivityRequest` and `RockingCurveRequest` support `polarization="s"`
-  by default, `polarization="p"`, and mixed dictionaries such as
-  `{"s": 0.7, "p": 0.3}`. Mixed reflectivity and SW-XPS raw intensity are
-  combined before normalization.
+- `ReflectivityRequest`, `RockingCurveRequest`, and `FittingProblem` support
+  `polarization="s"` by default, `polarization="p"`, and mixed dictionaries
+  such as `{"s": 0.7, "p": 0.3}`.
 - JAX least-squares/autodiff is the recommended fitting path for fixed-shape
   workflows; BO remains a baseline.
 
+## Repository policy
 
-## Current cleanup update
-
-Fitting module cleanup completed:
-
-- obsolete active Sample 13 local case-study test removed;
-- optimizer-independent fitting implementation moved to `swanx.fitting.core`;
-- `swanx._fitting` remains a thin compatibility shim for old local scripts;
-- active docs now describe `case_studies/` as local/private and ignored by Git.
+- `src/swanx/` is the maintained package and only supported Python namespace.
+- `tests/` contains regression tests.
+- `examples/` contains compact tutorials.
+- `templates/` contains editable ProjectSpec starter files.
+- `case_studies/` is local/private experimental input and runner space ignored
+  by Git.
+- `benchmarks/` contains synthetic fitting and performance benchmarks.
+- `runs/` and `archive/` are local generated/superseded outputs ignored by Git.
+- `docs/history/` contains archived historical handoffs and may intentionally
+  mention old paths or retired namespaces.
 
 ## Latest validation
 
-
-Fitting cleanup validation:
-
 ```bash
-python -m pytest tests/test_fitting.py tests/test_unified_fitting.py tests/test_bo.py tests/test_jax_gradient.py tests/test_jax_least_squares.py tests/test_diagnostics.py tests/test_namespace_imports.py -q
-# 36 passed
+python templates/run_project.py
+# completed and wrote a minimal_yaml_project run folder
 
-python -m pytest -q --basetemp runs/pytest_fitting_cleanup
-# 220 passed, 1 xfailed
-```
-Polarization fitting integration fix completed:
+python -m swanx.cli validate templates/project_minimal.yaml
+# Validated templates\project_minimal.yaml
 
-```bash
-python -m pytest tests/test_polarization.py tests/test_fitting.py tests/test_unified_fitting.py tests/test_reflectivity_jax.py tests/test_jax_gradient.py -q
-# 36 passed
-```
+python -m swanx.cli run templates/project_minimal.yaml
+# Wrote runs\minimal_yaml_project_<timestamp>
 
-- `FittingProblem` now accepts and validates `polarization`.
-- Fitting `evaluate(...)` and `simulate(...)` propagate polarization into reflectivity and rocking-curve requests.
-- Mixed polarization weights must sum to 1.
+python -m pytest tests/test_project_workflow.py -q --basetemp runs/pytest_project_workflow
+# 9 passed
 
-
-Pre-commit consistency sweep completed:
-
-```bash
-python -m pytest tests/test_polarization.py tests/test_namespace_imports.py tests/test_io_curves.py -q --basetemp runs/pytest_sweep_targeted
-# 30 passed
-
-python examples/io/opc_imfp_rocking_curve_quickstart.py
-# reflectivity points: 201
-# La 4d: kinetic energy 795.0 eV, normalized RC mean 1.000
-
-python examples/io/experimental_curve_loading.py
-# FittingProblem datasets: reflectivity=tutorial reflectivity, rocking_curves=1
-
-python examples/reflectivity/plot_lno_sto_reflectivity.py
-# saved examples/reflectivity/lno_sto_reflectivity.png
-
-python examples/xps/plot_lno_la4d_rocking_curve.py
-# saved examples/xps/lno_la4d_o1s_ti2p_rocking_curves.png
-
-python examples/fitting/jax_least_squares_reflectivity_fit.py
-# final cost: 4.667158e-21
-
-python -m pytest -q --basetemp runs/pytest_sweep_full
-# 218 passed, 1 xfailed, 1 warning
-```
-
-Step 10 validation completed:
-
-```bash
-python -m pytest -q --basetemp runs/pytest_step10_full
-# 210 passed, 1 xfailed, 1 warning
-
-python examples/io/opc_imfp_rocking_curve_quickstart.py
-# reflectivity points: 201
-# La 4d: kinetic energy 795.0 eV, normalized RC mean 1.000
-
-python examples/io/experimental_curve_loading.py
-# FittingProblem datasets: reflectivity=tutorial reflectivity, rocking_curves=1
-
-python examples/reflectivity/plot_lno_sto_reflectivity.py
-# saved examples/reflectivity/lno_sto_reflectivity.png
-
-python examples/xps/plot_lno_la4d_rocking_curve.py
-# saved examples/xps/lno_la4d_o1s_ti2p_rocking_curves.png
-
-python examples/fitting/jax_least_squares_reflectivity_fit.py
-# final cost: 4.667158e-21
-
-python -m pytest -q --basetemp runs/pytest_polarization_full
-# 217 passed, 1 xfailed, 1 warning
+python -m pytest -q --basetemp runs/pytest_project_full
+# 229 passed, 1 xfailed
 ```

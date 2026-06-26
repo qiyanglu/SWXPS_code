@@ -1,4 +1,4 @@
-﻿# Python caches
+# Python caches
 __pycache__/
 *.py[cod]
 .pytest_cache/
@@ -35,3 +35,6 @@ examples/**/*.pdf
 # Local reference paper copy; avoid uploading copyrighted PDFs by accident.
 references/*.pdf
 
+
+# Local cross-section database copy; cross-section support is future work.
+/Yeh_Lindau_1985_Xsection_CSV_Database/

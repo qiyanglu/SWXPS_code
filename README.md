@@ -10,7 +10,16 @@ standing-wave XPS simulation, fitting, and diagnostics.
 
 ## What problem does SWANX solve?
 
-SWANX turns local data files into explicit simulation and fitting inputs:
+SWANX has two supported user paths:
+
+```text
+project.yaml
+        -> swanx.project.run_project(...)
+        -> runs/<project_name>_<timestamp>/ report folder
+```
+
+For custom Python workflows, SWANX turns local data files into explicit
+simulation and fitting inputs:
 
 ```text
 data/OPC + data/IMFP + data/curves
@@ -19,7 +28,7 @@ data/OPC + data/IMFP + data/curves
         -> simulation + fitting + diagnostics
 ```
 
-The recommended simulation entry pattern is:
+The compact simulation API is still available for scripts:
 
 ```python
 import swanx as sx
@@ -46,6 +55,32 @@ Bayesian-optimization baseline:
 ```bash
 python -m pip install -e ".[fit]"
 ```
+
+## YAML project workflow
+
+The YAML `ProjectSpec` is the new human-editable project input for running a
+SW-XPS project without writing a full custom fitting script. YAML support is
+optional and installed with:
+
+```bash
+python -m pip install -e ".[project]"
+```
+
+The easiest entry is to copy or edit `templates/project_minimal.yaml` as your
+`project.yaml`, then run a tiny Python script:
+
+```bash
+python templates/run_project.py
+```
+
+The same workflow is available through the thin CLI for automation:
+
+```bash
+swanx validate templates/project_minimal.yaml
+swanx run templates/project_minimal.yaml
+```
+
+Excel and GUI frontends are not implemented here; they remain deferred frontend ideas.
 
 Run tests with:
 
@@ -162,6 +197,7 @@ Headerless curve files are supported when explicit column indices are supplied.
 ## Public API map
 
 - `import swanx as sx`: recommended simulation entry point.
+- `swanx.project`: YAML ProjectSpec validation, execution, and report output.
 - `swanx.io`: OPC, IMFP, material-table, stack/core-level, and experimental
   curve readers.
 - `swanx.preprocessing`: rocking-curve normalization.
@@ -188,7 +224,9 @@ comparison. It is generally slower for the current differentiable SWANX
 workflows.
 
 File IO is outside JAX-traced residual functions; fitting receives fixed arrays
-or fixed-shape model inputs.
+or fixed-shape model inputs. The YAML ProjectSpec workflow is the preferred
+human-editable project entry; direct fitting APIs remain available for custom
+fixed-shape JAX or BO workflows.
 
 ## Examples
 

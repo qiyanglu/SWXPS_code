@@ -1,14 +1,16 @@
 # Public repository cleanup
 
-Status: Implemented and validated (2026-06-24).
+> Current repository note (2026-06-26): `case_studies/` is local/private experimental space ignored by Git; any older wording about tracked case studies is historical context, not current policy.
 
-> Current note (2026-06-26): `case_studies/` was later made local/private and ignored by Git. The earlier decision to keep it tracked is historical, not current repository policy.
+Status: Implemented and validated (2026-06-24).
 
 ## Goal
 
-Reduce top-level clutter without removing the experimental `case_studies/`
-tree or rewriting Git history. Keep generated runs and archives local, and
-move useful standalone fitting demonstrations into the maintained examples.
+Historical goal: reduce top-level clutter without removing the experimental
+`case_studies/` tree or rewriting Git history. Current policy is different:
+`case_studies/` is local/private and ignored by Git. Generated runs and
+archives remain local, and useful standalone fitting demonstrations belong in
+the maintained examples.
 
 ## Physics background
 
@@ -23,7 +25,7 @@ diagnostics behavior changes.
 
 ## Implementation steps
 
-1. Preserve `case_studies/` as requested.
+1. Historical scope preserved `case_studies/` as requested at that time; current policy keeps it local/private and ignored.
 2. Confirm `runs/` and `archive/` remain ignored except contributor guidance.
 3. Move and modernize the two useful scripts.
 4. Run both examples and the complete test suite.
@@ -41,6 +43,6 @@ losses as before. No package numerical code is modified.
 
 ## Progress log
 
-- 2026-06-24: Scope confirmed; `case_studies/` will remain tracked and no
-  history rewrite will be performed.
-- 2026-06-24: Moved and modernized both fitting examples; each recovered the 24 Angstrom synthetic truth. Case studies remain tracked and runs/archive remain ignored.
+- 2026-06-24 historical result: scope kept `case_studies/` tracked at that time and no
+  history rewrite was performed.
+- 2026-06-24: Moved and modernized both fitting examples; each recovered the 24 Angstrom synthetic truth. Case studies were tracked at that time; current policy keeps them local/private and ignored. Runs/archive remain ignored.

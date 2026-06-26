@@ -1,5 +1,7 @@
 # Step 9 experimental data IO and workflow cleanup
 
+> Current namespace note (2026-06-26): This plan is historical. Maintained code now lives under `src/swanx`, and `import swxps` is expected to fail; any `swxps` paths below are old planning context, not current guidance.
+
 ## Goal
 
 Complete the practical SWANX workflow from external OPC/IMFP/experimental curve files into simulation, fitting, and diagnostics without changing optics, XPS, reflectivity, or fitting physics algorithms.

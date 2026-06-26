@@ -1,5 +1,7 @@
 # Fitting module cleanup
 
+> Current repository note (2026-06-26): `case_studies/` is local/private experimental space ignored by Git; any older wording about tracked case studies is historical context, not current policy.
+
 Status: Implemented in this cleanup pass.
 
 ## Goal

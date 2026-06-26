@@ -1,5 +1,7 @@
 # Final API freeze and user-experience consolidation
 
+> Current namespace note (2026-06-26): This plan is historical. Maintained code now lives under `src/swanx`, and `import swxps` is expected to fail; any `swxps` paths below are old planning context, not current guidance.
+
 Status: Complete (2026-06-24).
 
 ## Goal
@@ -43,7 +45,7 @@ Bayesian optimization as a baseline comparison.
 - `swanx.__all__` is exactly the requested ten-name surface.
 - README contains one official `import swanx as sx` workflow and explicitly
   presents JAX as primary and BO as baseline.
-- Broad compatibility remains available only through temporary `swxps`.
+- Historical acceptance criterion: broad compatibility was temporarily routed through `swxps`; current imports must use `swanx`.
 - Four maintained advanced scripts compile with canonical internal imports.
 - Focused API/namespace verification: 28 passed.
 - Full verification: 173 passed and 1 expected failure.

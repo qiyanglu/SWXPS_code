@@ -1,12 +1,15 @@
-# swanx active milestone plan
+# SWANX active milestone plan
 
-> Current status (2026-06-23): `swanx` is the primary namespace, unified slicing is the default high-level path, fitting diagnostics are implemented, and near-term work focuses on workflows, examples, and validation rather than additional core physics.
+> Current status (2026-06-26): `swanx` is the only supported namespace, unified
+> slicing is the default high-level path, polarization support is implemented,
+> fitting diagnostics are implemented, and the first YAML ProjectSpec workflow
+> is available through `swanx.project`.
 
 ## Goal
 
-Maintain the validated reflectivity, field, SW-XPS, and fitting platform while
-improving physical validation, runtime evidence, and reproducibility of
-experimental case studies.
+Maintain the validated reflectivity, field, SW-XPS, fitting, and ProjectSpec
+workflow platform while improving physical validation, runtime evidence, and
+reproducibility of representative workflows.
 
 ## Physics background
 
@@ -14,42 +17,57 @@ Stable conventions are documented in `AGENTS.md` and `docs/architecture.md`.
 The complete derivations and chronological record are preserved in
 `docs/history/XR_REFLECTIVITY_DEVELOPMENT_LOG.md`.
 
-## Files to create or modify
+## Current workflow surfaces
+
+- Human-editable projects: `project.yaml` via `swanx.project.validate_project`
+  and `swanx.project.run_project`.
+- Custom Python workflows: `swanx.io` builds explicit simulation/fitting objects
+  consumed by `swanx` requests and `swanx.fitting`.
+- Generated outputs belong in `runs/`.
+- Local/private experimental runners and inputs belong in ignored
+  `case_studies/`.
+
+## Implementation rules
 
 Future milestones must name their scoped package, test, example, benchmark, or
-case-study files. Generated fit output goes to `runs/`.
+case-study files. Generated fit output goes to `runs/`; superseded experiments
+go to `archive/`. No core physics, optimizer, or backend behavior should change
+without a focused validation plan.
 
-## Implementation steps
+## Near-term steps
 
-1. Preserve NumPy/JAX numerical parity and reflectivity tests.
-2. Design and validate adaptive/fixed-shape slicing through the scoped plan at
-   `docs/plans/adaptive_fixed_shape_slicing_2026-06-22.md`.
-3. Review experimental rocking-curve preprocessing and normalization.
-4. Validate fitted structures against independent physical expectations.
-5. Profile representative workflows before restructuring performance-critical code.
-6. Add cross sections or polarization only through separate planned milestones.
-7. Keep canonical case-study results compact and reproducible.
+1. Preserve NumPy/JAX numerical parity and reflectivity regression tests.
+2. Keep ProjectSpec examples small, editable, and routed through existing IO,
+   simulation, fitting, and report APIs.
+3. Improve documentation for fixed-shape JAX least-squares and ProjectSpec
+   optimizer callback factories.
+4. Review experimental rocking-curve preprocessing and normalization on
+   representative local inputs when available.
+5. Validate fitted structures against independent physical expectations.
+6. Profile representative workflows before restructuring performance-critical
+   code.
+7. Add cross sections, new optimizers, or new report frontends only through
+   separate planned milestones.
 
 ## Tests
 
-- Run the full test suite for every package change.
+- Run the full test suite for every package behavior change.
 - Add parity tests for new backend behavior.
-- Retain the four reflectivity validations from `AGENTS.md`.
-- Preserve legacy step-based slicing APIs and results while testing new slicing modes.
+- Retain the reflectivity validations from `AGENTS.md`.
+- Preserve explicit `slicing=None` step-based behavior while testing unified
+  slicing defaults.
+- Add focused ProjectSpec tests for any new YAML schema behavior.
 
 ## Validation
 
 Experimental results are not quantitative until bounds, weights, optical
-constants, IMFPs, chemistry, and optimizer sensitivity have been reviewed.
-New discretization is not accepted until thin-layer convergence, thick-layer
-cost, fixed JAX shapes, and NumPy/JAX parity are demonstrated.
+constants, IMFPs, chemistry, and optimizer sensitivity have been reviewed. New
+discretization is not accepted until thin-layer convergence, thick-layer cost,
+fixed JAX shapes, and NumPy/JAX parity are demonstrated.
 
-## Progress log
+Latest full validation recorded in `docs/PROJECT_STATE.md`:
 
-- 2026-06-21: Tutorials, case studies, benchmarks, runs, and archives were
-  separated into dedicated top-level folders.
-- 2026-06-21: Added a representative stage-by-stage performance benchmark and
-  bounded caches for optical-constant and IMFP tables.
-- 2026-06-21: Full validated suite contains 91 passing tests.
-- 2026-06-22: Implemented and validated optional adaptive/fixed-shape unified slicing. Full suite: 113 passed; fixed JAX thickness sweep compiled one shape.
-- Remaining: migrate one maintained case-study runner for comparison and physically review experimental RC normalization and fit robustness.
+```bash
+python -m pytest -q --basetemp runs/pytest_project_full
+# 229 passed, 1 xfailed
+```
