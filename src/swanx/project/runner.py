@@ -63,7 +63,7 @@ def run_project(path: str | Path) -> Path:
     write_experimental_files(output, final_built)
     write_fit_files(output, final_built, simulation, evaluation, result)
     write_fit_summary(output, final_built, timestamp=timestamp, result=result, evaluation=evaluation)
-    write_method_outputs(output, spec.fit_method, result)
+    write_method_outputs(output, spec.fit_method, result, final_built)
     write_plots(output, final_built, simulation)
     return output
 
@@ -92,8 +92,11 @@ def _run_backend(built: BuiltProject) -> Any:
         if not factory_path:
             raise ProjectValidationError(
                 "settings.fit_method='jax_least_squares' requires "
-                "settings.optimizer.residual_function_factory pointing to a fixed-shape "
-                "factory callback; ProjectSpec v1 does not synthesize one automatically."
+                "settings.optimizer.residual_function_factory='module:function' for the "
+                "fixed-shape JAX residual. Install with python -m pip install -e "
+                "\".[project,least-squares]\" and provide a factory, or use "
+                "fit_method: \"simulate_only\" for simulation-only projects. "
+                "Bayesian optimization is not used as a fallback."
             )
         from swanx.fitting import JaxLeastSquaresOptimizerSettings, optimize_with_jax_least_squares
 
@@ -141,13 +144,17 @@ def _best_values(built: BuiltProject, result: Any) -> dict[str, float]:
         values.update({name: float(value) for name, value in result.best_parameters.items()})
         return values
     if built.fitting_problem is not None:
-        return {
-            parameter.name: float(value)
-            for parameter, value in zip(
-                built.fitting_problem.parameters,
-                initial_vector(built.fitting_problem.parameters),
-            )
-        }
+        values = dict(built.values)
+        values.update(
+            {
+                parameter.name: float(value)
+                for parameter, value in zip(
+                    built.fitting_problem.parameters,
+                    initial_vector(built.fitting_problem.parameters),
+                )
+            }
+        )
+        return values
     return dict(built.values)
 
 

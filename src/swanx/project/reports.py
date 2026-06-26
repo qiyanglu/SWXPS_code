@@ -24,7 +24,7 @@ def prepare_output_dir(spec) -> Path:
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         output = Path("runs") / f"{spec.name}_{timestamp}"
     output.mkdir(parents=True, exist_ok=True)
-    for name in ("input", "resolved", "simulation", "data", "fit", "plots", "optimizer"):
+    for name in ("input", "resolved", "simulation", "fit"):
         (output / name).mkdir(exist_ok=True)
     return output
 
@@ -45,6 +45,7 @@ def write_input_files(output: Path, built: BuiltProject, timestamp: str) -> None
                 "roughness_A on layer j means roughness/interdiffusion at the upper "
                 "interface of layer j, i.e. interface between layer j-1 and layer j."
             ),
+            "repeat_index_convention": "repeat_index is 1-based inside repeat blocks.",
         },
     )
 
@@ -89,14 +90,16 @@ def write_resolved_files(output: Path, built: BuiltProject) -> None:
         ],
     ])
     _write_csv(output / "resolved" / "parameters_resolved.csv", [
-        ["name", "initial", "lower", "upper", "resolved_value"],
+        ["name", "value", "vary", "initial", "lower", "upper", "resolved_value"],
         *[
             [
                 name,
-                parameter.initial,
-                parameter.lower,
-                parameter.upper,
-                built.values.get(name, parameter.initial),
+                parameter.value,
+                parameter.vary,
+                "" if parameter.initial is None else parameter.initial,
+                "" if parameter.lower is None else parameter.lower,
+                "" if parameter.upper is None else parameter.upper,
+                built.values.get(name, parameter.value),
             ]
             for name, parameter in built.spec.parameters.items()
         ],
@@ -136,6 +139,8 @@ def write_simulation_files(output: Path, simulation) -> None:
 
 
 def write_experimental_files(output: Path, built: BuiltProject) -> None:
+    if built.reflectivity_data is not None or built.rocking_curve_data:
+        (output / "data").mkdir(exist_ok=True)
     if built.reflectivity_data is not None:
         rows = [["angle_deg", "reflectivity", "sigma"]]
         sigma = _sigma_or_empty(built.reflectivity_data.sigma, len(built.reflectivity_data.angles))
@@ -160,6 +165,9 @@ def write_experimental_files(output: Path, built: BuiltProject) -> None:
 
 
 def write_fit_files(output: Path, built: BuiltProject, simulation, evaluation, result: Any) -> None:
+    if built.spec.fit_method == "simulate_only":
+        _write_residuals(output, built, simulation)
+        return
     if evaluation is not None:
         _write_csv(output / "fit" / "fit_contributions.csv", [
             ["name", "raw", "weight", "weighted"],
@@ -168,10 +176,21 @@ def write_fit_files(output: Path, built: BuiltProject, simulation, evaluation, r
                 for contribution in evaluation.contributions
             ],
         ])
-    best = getattr(result, "best_parameters", built.values)
+    best = dict(built.values)
+    if result is not None and hasattr(result, "best_parameters"):
+        best.update({name: float(value) for name, value in result.best_parameters.items()})
     _write_csv(output / "fit" / "best_parameters.csv", [
-        ["name", "value"],
-        *[[name, value] for name, value in sorted(best.items())],
+        ["name", "initial", "lower", "upper", "best_value"],
+        *[
+            [
+                parameter.name,
+                parameter.initial,
+                parameter.lower,
+                parameter.upper,
+                best.get(parameter.name, parameter.value),
+            ]
+            for parameter in built.spec.varying_parameters()
+        ],
     ])
     _write_residuals(output, built, simulation)
 
@@ -206,11 +225,11 @@ def write_fit_summary(
     )
 
 
-def write_method_outputs(output: Path, method: str, result: Any) -> None:
+def write_method_outputs(output: Path, method: str, result: Any, built: BuiltProject | None = None) -> None:
     if result is None:
         return
     if method == "jax_least_squares":
-        _write_least_squares_outputs(output / "optimizer" / "least_squares", result)
+        _write_least_squares_outputs(output / "optimizer" / "least_squares", result, built)
     elif method == "jax_gradient":
         _write_gradient_outputs(output / "optimizer" / "gradient", result)
     elif method == "bayesian_optimization":
@@ -224,11 +243,17 @@ def write_plots(output: Path, built: BuiltProject, simulation) -> None:
         import matplotlib.pyplot as plt
     except ImportError:
         return
+    (output / "plots").mkdir(exist_ok=True)
     if simulation.reflectivity is not None:
         fig, ax = plt.subplots()
         ax.semilogy(simulation.reflectivity.angle, simulation.reflectivity.reflectivity, label="simulated")
         if built.reflectivity_data is not None:
-            ax.semilogy(built.reflectivity_data.angles, built.reflectivity_data.reflectivity, "o", label="experimental")
+            ax.semilogy(
+                built.reflectivity_data.angles,
+                built.reflectivity_data.reflectivity,
+                "o",
+                label="experimental",
+            )
         ax.set_xlabel("Grazing angle (deg)")
         ax.set_ylabel("Reflectivity")
         ax.legend()
@@ -236,16 +261,37 @@ def write_plots(output: Path, built: BuiltProject, simulation) -> None:
         plt.close(fig)
     if simulation.rocking_curves is not None:
         fig, ax = plt.subplots()
+        simulated_by_name = {
+            core.name: core.curve.intensity for core in simulation.rocking_curves.core_levels
+        }
         for core in simulation.rocking_curves.core_levels:
-            ax.plot(simulation.rocking_curves.angle, core.curve.intensity, label=core.name)
+            ax.plot(simulation.rocking_curves.angle, core.curve.intensity, label=f"{core.name} simulated")
+        for data in built.rocking_curve_data:
+            if data.name in simulated_by_name:
+                ax.plot(data.angles, data.intensity, "o", label=f"{data.name} experimental")
         ax.set_xlabel("Grazing angle (deg)")
         ax.set_ylabel("Normalized intensity")
         ax.legend()
         fig.savefig(output / "plots" / "rocking_curves_fit.png", dpi=150)
         plt.close(fig)
+    residual_rows = _residual_rows(built, simulation)
+    if len(residual_rows) > 1:
+        fig, ax = plt.subplots()
+        by_dataset: dict[str, list[tuple[float, float]]] = {}
+        for dataset, angle, _observed, _simulated, residual in residual_rows[1:]:
+            by_dataset.setdefault(str(dataset), []).append((float(angle), float(residual)))
+        for name, points in by_dataset.items():
+            points.sort(key=lambda item: item[0])
+            ax.plot([item[0] for item in points], [item[1] for item in points], "o-", label=name)
+        ax.axhline(0.0, color="0.4", linewidth=0.8)
+        ax.set_xlabel("Grazing angle (deg)")
+        ax.set_ylabel("Experimental - simulated")
+        ax.legend()
+        fig.savefig(output / "plots" / "residuals.png", dpi=150)
+        plt.close(fig)
 
 
-def _write_least_squares_outputs(directory: Path, result: Any) -> None:
+def _write_least_squares_outputs(directory: Path, result: Any, built: BuiltProject | None) -> None:
     directory.mkdir(parents=True, exist_ok=True)
     _write_json(directory / "status.json", _status_dict(result, objective_attr="final_cost"))
     _write_array(directory / "residual_vector.csv", getattr(result, "final_residuals", None), "residual")
@@ -258,7 +304,7 @@ def _write_least_squares_outputs(directory: Path, result: Any) -> None:
         denom = np.outer(sigma, sigma)
         correlation = np.divide(covariance, denom, out=np.zeros_like(covariance), where=denom != 0)
         _write_array(directory / "correlation.csv", correlation, "value")
-        _write_array(directory / "parameter_uncertainty.csv", sigma, "uncertainty")
+        _write_csv(directory / "parameter_uncertainty.csv", _least_squares_uncertainty_rows(result, built, sigma))
     history = getattr(result, "history", ())
     _write_csv(directory / "convergence_history.csv", [
         ["iteration", "cost", "gradient_norm", "parameters_json"],
@@ -267,7 +313,41 @@ def _write_least_squares_outputs(directory: Path, result: Any) -> None:
             for record in history
         ],
     ])
-    _write_csv(directory / "active_bounds.csv", [["parameter", "active_bound"]])
+    active_bounds = [["parameter", "active_bound"]]
+    if built is not None:
+        best = getattr(result, "best_parameters", {})
+        for parameter in built.spec.varying_parameters():
+            value = float(best.get(parameter.name, parameter.value))
+            bound = ""
+            if parameter.lower is not None and np.isclose(value, parameter.lower):
+                bound = "lower"
+            elif parameter.upper is not None and np.isclose(value, parameter.upper):
+                bound = "upper"
+            active_bounds.append([parameter.name, bound])
+    _write_csv(directory / "active_bounds.csv", active_bounds)
+
+
+def _least_squares_uncertainty_rows(result: Any, built: BuiltProject | None, sigma: np.ndarray) -> list[list[Any]]:
+    rows: list[list[Any]] = [["parameter", "best_value", "stderr", "ci95_low", "ci95_high", "lower", "upper"]]
+    if built is None:
+        for index, stderr in enumerate(sigma):
+            best = np.nan
+            rows.append([f"parameter_{index}", best, stderr, best, best, "", ""])
+        return rows
+    best_parameters = getattr(result, "best_parameters", {})
+    for parameter, stderr in zip(built.spec.varying_parameters(), sigma):
+        best_value = float(best_parameters.get(parameter.name, parameter.value))
+        ci = 1.96 * float(stderr)
+        rows.append([
+            parameter.name,
+            best_value,
+            float(stderr),
+            best_value - ci,
+            best_value + ci,
+            parameter.lower,
+            parameter.upper,
+        ])
+    return rows
 
 
 def _write_gradient_outputs(directory: Path, result: Any) -> None:
@@ -293,21 +373,34 @@ def _write_bayesian_outputs(directory: Path, result: Any) -> None:
     directory.mkdir(parents=True, exist_ok=True)
     _write_json(directory / "status.json", _status_dict(result, objective_attr="best_objective"))
     history = getattr(getattr(result, "history", None), "evaluations", ())
-    best = float("inf")
-    rows = [["evaluation", "objective", "best_so_far", "parameters_json"]]
+    best_objective = float("inf")
+    best_parameters: dict[str, float] = {}
+    evaluations = [["evaluation", "objective", "parameters_json"]]
+    best_so_far = [["evaluation", "best_objective", "best_parameters_json"]]
     samples = [["evaluation", "parameters_json"]]
     for index, evaluation in enumerate(history, start=1):
-        best = min(best, float(evaluation.objective))
-        rows.append([index, evaluation.objective, best, json.dumps(evaluation.parameters, sort_keys=True)])
-        samples.append([index, json.dumps(evaluation.parameters, sort_keys=True)])
-    _write_csv(directory / "evaluations.csv", rows)
-    _write_csv(directory / "best_so_far.csv", rows)
+        parameters_json = json.dumps(evaluation.parameters, sort_keys=True)
+        objective = float(evaluation.objective)
+        evaluations.append([index, objective, parameters_json])
+        samples.append([index, parameters_json])
+        if objective <= best_objective:
+            best_objective = objective
+            best_parameters = dict(evaluation.parameters)
+        best_so_far.append([index, best_objective, json.dumps(best_parameters, sort_keys=True)])
+    _write_csv(directory / "evaluations.csv", evaluations)
+    _write_csv(directory / "best_so_far.csv", best_so_far)
     _write_csv(directory / "parameter_samples.csv", samples)
     _write_json(directory / "stage_summary.json", {"stages": []})
 
 
 def _write_residuals(output: Path, built: BuiltProject, simulation) -> None:
-    rows = [["dataset", "angle_deg", "experimental", "simulated", "residual"]]
+    rows = _residual_rows(built, simulation)
+    if len(rows) > 1:
+        _write_csv(output / "fit" / "residuals.csv", rows)
+
+
+def _residual_rows(built: BuiltProject, simulation) -> list[list[Any]]:
+    rows: list[list[Any]] = [["dataset", "angle_deg", "experimental", "simulated", "residual"]]
     if built.reflectivity_data is not None and simulation.reflectivity is not None:
         for angle, observed, simulated in zip(
             built.reflectivity_data.angles,
@@ -324,8 +417,7 @@ def _write_residuals(output: Path, built: BuiltProject, simulation) -> None:
                 continue
             for angle, observed, simulated in zip(data.angles, data.intensity, simulated_by_name[data.name]):
                 rows.append([data.name, angle, observed, simulated, observed - simulated])
-    if len(rows) > 1:
-        _write_csv(output / "fit" / "residuals.csv", rows)
+    return rows
 
 
 def _status_dict(result: Any, *, objective_attr: str) -> dict[str, Any]:

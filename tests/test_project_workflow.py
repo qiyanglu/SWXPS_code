@@ -1,15 +1,19 @@
 from __future__ import annotations
 
+import csv
 from dataclasses import dataclass
 import importlib
 from pathlib import Path
+import subprocess
+import sys
 
 import numpy as np
 import pytest
 
 from swanx.fitting import FitContribution, JointObjective, FitParameter, evaluation_from_contributions
+from swanx.project import init_project
 from swanx.project.builder import build_project, project_polarization
-from swanx.project.reports import write_method_outputs
+from swanx.project.reports import write_fit_files, write_method_outputs
 from swanx.project.runner import run_project, validate_project
 from swanx.project.spec import ProjectValidationError, load_project_spec
 from swanx.project.yaml_io import YAML_INSTALL_MESSAGE, read_yaml
@@ -44,7 +48,16 @@ def _write_curve(path: Path, column: str = "reflectivity") -> None:
     )
 
 
-def _project_yaml(tmp_path: Path, *, extra_stack: str = "", datasets: str = "{}", output_dir: str | None = None) -> Path:
+def _project_yaml(
+    tmp_path: Path,
+    *,
+    extra_stack: str = "",
+    datasets: str = "{}",
+    output_dir: str | None = None,
+    fit_method: str = "simulate_only",
+    report: str = "  save_plots: false\n",
+) -> Path:
+    tmp_path.mkdir(parents=True, exist_ok=True)
     _write_opc(tmp_path / "LNO.dat", 0.1)
     _write_opc(tmp_path / "STO.dat", 0.2)
     _write_imfp(tmp_path / "LNO.ANG")
@@ -61,7 +74,7 @@ settings:
   angle_count: 2
   polarization: "unpolarized"
   normalization: "mean"
-  fit_method: "simulate_only"
+  fit_method: "{fit_method}"
 materials:
   LNO:
     opc_file: "LNO.dat"
@@ -82,6 +95,9 @@ parameters:
     initial: 3.0
     lower: 0.0
     upper: 8.0
+  repeat_center:
+    value: 20.0
+    vary: false
 stack:
   - id: "vacuum"
     material: "vacuum"
@@ -98,7 +114,7 @@ stack:
         - id: "sto_{repeat_index}"
           material: "STO"
           tags: ["sto_layers"]
-          thickness_A: "sto_thickness + repeat_index"
+          thickness_A: "sto_thickness + repeat_index - repeat_center / 20"
           roughness_A: "interface_roughness / 2"
 '''}  - id: "sto_substrate"
     material: "STO"
@@ -113,11 +129,15 @@ core_levels:
     emission_angle_deg: 0.0
 datasets: {datasets}
 report:
-  save_plots: false
-"""
+{report}"""
     path = tmp_path / "project.yaml"
     path.write_text(text, encoding="utf-8")
     return path
+
+
+def _read_csv(path: Path) -> list[list[str]]:
+    with path.open(newline="", encoding="utf-8") as handle:
+        return list(csv.reader(handle))
 
 
 def test_lazy_pyyaml_import_missing_message(monkeypatch, tmp_path):
@@ -151,14 +171,74 @@ def test_yaml_parsing_validation_repeat_and_expressions(tmp_path):
     )
     layers = spec.layer_specs_for_values(spec.default_parameter_values())
     assert layers[1]["thickness"] == pytest.approx(40.0)
-    assert layers[2]["thickness"] == pytest.approx(11.0)
-    assert layers[4]["thickness"] == pytest.approx(12.0)
+    assert layers[2]["thickness"] == pytest.approx(10.0)
+    assert layers[4]["thickness"] == pytest.approx(11.0)
     assert layers[2]["roughness"] == pytest.approx(1.5)
+
+
+def test_optional_sections_default_correctly(tmp_path):
+    _write_opc(tmp_path / "LNO.dat")
+    _write_imfp(tmp_path / "LNO.ANG")
+    path = tmp_path / "minimal_optional.yaml"
+    path.write_text(
+        """
+project:
+  name: "optional_defaults"
+settings:
+  photon_energy_ev: 900.0
+  angles_deg: [5.0, 6.0]
+  polarization: "s"
+  fit_method: "simulate_only"
+materials:
+  LNO:
+    opc_file: "LNO.dat"
+    imfp_file: "LNO.ANG"
+stack:
+  - id: "vacuum"
+    material: "vacuum"
+  - id: "film"
+    material: "LNO"
+    tags: ["film"]
+    thickness_A: 10.0
+    roughness_A: 1.0
+core_levels:
+  - name: "La 4d"
+    binding_energy_ev: 105.0
+    emit_from:
+      tags: ["film"]
+""",
+        encoding="utf-8",
+    )
+
+    spec = load_project_spec(path)
+
+    assert spec.parameters == {}
+    assert spec.datasets == {}
+    assert spec.report == {}
 
 
 def test_template_project_minimal_validates():
     spec = validate_project(Path("templates/project_minimal.yaml"))
     assert spec.name == "minimal_yaml_project"
+
+
+def test_swanx_init_generated_project_validates_and_runs(tmp_path):
+    project_dir = tmp_path / "my_project"
+    assert cli_main(["init", str(project_dir)]) == 0
+
+    assert (project_dir / "project.yaml").exists()
+    assert (project_dir / "run_project.py").exists()
+    assert (project_dir / "README.md").exists()
+    assert validate_project(project_dir / "project.yaml").name == "my_project"
+
+    completed = subprocess.run(
+        [sys.executable, str(project_dir / "run_project.py")],
+        cwd=Path.cwd(),
+        text=True,
+        capture_output=True,
+        check=True,
+    )
+    assert "SWANX results written to:" in completed.stdout
 
 
 def test_duplicate_layer_id_error(tmp_path):
@@ -182,6 +262,7 @@ def test_unknown_parameter_layer_tag_and_missing_file_errors(tmp_path):
         tmp_path,
         extra_stack='''  - id: "film"
     material: "LNO"
+    tags: ["lno_layers"]
     thickness_A: "$missing_parameter"
     roughness_A: 1.0
 ''',
@@ -190,7 +271,7 @@ def test_unknown_parameter_layer_tag_and_missing_file_errors(tmp_path):
         load_project_spec(path)
 
     path = _project_yaml(tmp_path)
-    text = path.read_text(encoding="utf-8").replace('emit_from:\n      tags: ["lno_layers"]', 'emit_from:\n      tags: ["missing_tag"]')
+    text = path.read_text(encoding="utf-8").replace('tags: ["lno_layers"]', 'tags: ["missing_tag"]', 1)
     path.write_text(text, encoding="utf-8")
     with pytest.raises(ProjectValidationError, match="unknown tag"):
         load_project_spec(path)
@@ -201,6 +282,49 @@ def test_unknown_parameter_layer_tag_and_missing_file_errors(tmp_path):
         load_project_spec(path)
 
 
+def test_emit_from_required_unless_all_true(tmp_path):
+    path = _project_yaml(tmp_path)
+    text = path.read_text(encoding="utf-8").replace('    emit_from:\n      tags: ["lno_layers"]\n', "")
+    path.write_text(text, encoding="utf-8")
+    with pytest.raises(ProjectValidationError, match="requires emit_from"):
+        load_project_spec(path)
+
+    path = _project_yaml(tmp_path)
+    text = path.read_text(encoding="utf-8").replace('tags: ["lno_layers"]', 'all: true')
+    path.write_text(text, encoding="utf-8")
+    built = build_project(load_project_spec(path))
+    assert built.core_levels[0].emitting_layer_indices is None
+
+
+def test_emitting_material_missing_imfp_and_stack_material_missing_opc_fail(tmp_path):
+    path = _project_yaml(tmp_path)
+    text = path.read_text(encoding="utf-8").replace('    imfp_file: "LNO.ANG"\n', "", 1)
+    path.write_text(text, encoding="utf-8")
+    with pytest.raises(ProjectValidationError, match="emitting material 'LNO'.*imfp_file"):
+        load_project_spec(path)
+
+    path = _project_yaml(tmp_path)
+    text = path.read_text(encoding="utf-8").replace('    opc_file: "LNO.dat"\n', "", 1)
+    path.write_text(text, encoding="utf-8")
+    with pytest.raises(ProjectValidationError, match="non-vacuum stack material 'LNO'.*opc_file"):
+        load_project_spec(path)
+
+
+def test_vary_false_parameters_are_constants_not_fit_parameters(tmp_path):
+    _write_curve(tmp_path / "reflectivity.csv", "reflectivity")
+    datasets = '''
+  reflectivity:
+    path: "reflectivity.csv"
+    name: "R"
+'''
+    path = _project_yaml(tmp_path, datasets=datasets, fit_method="bayesian_optimization")
+    built = build_project(load_project_spec(path))
+
+    assert built.values["repeat_center"] == 20.0
+    assert built.fitting_problem is not None
+    assert "repeat_center" not in [parameter.name for parameter in built.fitting_problem.parameters]
+
+
 def test_core_level_layer_tag_resolution_and_polarization(tmp_path):
     path = _project_yaml(tmp_path)
     built = build_project(load_project_spec(path))
@@ -209,6 +333,19 @@ def test_core_level_layer_tag_resolution_and_polarization(tmp_path):
     assert project_polarization("s") == "s"
     assert project_polarization("p") == "p"
     assert project_polarization("unpolarized") == {"s": 0.5, "p": 0.5}
+
+
+def test_jax_least_squares_requires_factory_without_bo_fallback(tmp_path):
+    _write_curve(tmp_path / "reflectivity.csv", "reflectivity")
+    datasets = '''
+  reflectivity:
+    path: "reflectivity.csv"
+    name: "R"
+'''
+    path = _project_yaml(tmp_path, datasets=datasets, fit_method="jax_least_squares")
+
+    with pytest.raises(ProjectValidationError, match="residual_function_factory.*Bayesian optimization is not used as a fallback"):
+        load_project_spec(path)
 
 
 def test_validate_run_cli_and_simulate_only_outputs(tmp_path):
@@ -233,11 +370,11 @@ def test_validate_run_cli_and_simulate_only_outputs(tmp_path):
         "simulation/reflectivity_simulated.csv",
         "simulation/rocking_curves_simulated.csv",
         "fit/fit_summary.json",
-        "fit/best_parameters.csv",
     ]
     for relative in expected:
         assert (output / relative).exists()
-    assert not any((output / "optimizer").rglob("*.csv"))
+    assert not (output / "fit" / "best_parameters.csv").exists()
+    assert not any((output / "optimizer").rglob("*.csv")) if (output / "optimizer").exists() else True
 
 
 def test_run_project_writes_experimental_data_and_residuals(tmp_path):
@@ -258,6 +395,33 @@ def test_run_project_writes_experimental_data_and_residuals(tmp_path):
     assert (output / "data" / "reflectivity_experimental.csv").exists()
     assert (output / "data" / "rocking_curves_experimental.csv").exists()
     assert (output / "fit" / "residuals.csv").exists()
+    assert not (output / "fit" / "best_parameters.csv").exists()
+
+
+def test_plots_overlay_experimental_data_when_matplotlib_exists(tmp_path):
+    pytest.importorskip("matplotlib")
+    _write_curve(tmp_path / "reflectivity.csv", "reflectivity")
+    _write_curve(tmp_path / "la4d.csv", "intensity")
+    datasets = '''
+  reflectivity:
+    path: "reflectivity.csv"
+    name: "R"
+  rocking_curves:
+    - path: "la4d.csv"
+      name: "La 4d"
+'''
+    path = _project_yaml(
+        tmp_path,
+        datasets=datasets,
+        output_dir=(tmp_path / "out_plots").as_posix(),
+        report="  save_plots: true\n",
+    )
+
+    output = run_project(path)
+
+    assert (output / "plots" / "reflectivity_fit.png").exists()
+    assert (output / "plots" / "rocking_curves_fit.png").exists()
+    assert (output / "plots" / "residuals.png").exists()
 
 
 @dataclass(frozen=True)
@@ -278,7 +442,7 @@ class _Result:
     status = 1
     message = "ok"
     success = True
-    best_parameters = {"x": 1.0}
+    best_parameters = {"lno_thickness": 41.0, "interface_roughness": 2.5}
     final_cost = 0.5
     best_loss = 0.4
     best_objective = 0.3
@@ -286,13 +450,39 @@ class _Result:
     final_jacobian = np.eye(2)
     covariance = np.eye(2)
     final_gradient = np.array([0.1, 0.2])
-    history = (_Record(1, parameters={"x": 1.0}),)
+    history = (_Record(1, parameters={"lno_thickness": 41.0}),)
+
+
+def test_fitting_report_writes_best_parameters_with_bounds(tmp_path):
+    _write_curve(tmp_path / "reflectivity.csv", "reflectivity")
+    datasets = '''
+  reflectivity:
+    path: "reflectivity.csv"
+    name: "R"
+'''
+    path = _project_yaml(tmp_path, datasets=datasets, fit_method="bayesian_optimization")
+    built = build_project(load_project_spec(path))
+    assert built.fitting_problem is not None
+    simulation = built.fitting_problem.simulate(built.values)
+    evaluation = built.fitting_problem.evaluate(built.values)
+
+    write_fit_files(tmp_path, built, simulation, evaluation, _Result())
+
+    rows = _read_csv(tmp_path / "fit" / "best_parameters.csv")
+    assert rows[0] == ["name", "initial", "lower", "upper", "best_value"]
+    assert ["lno_thickness", "40.0", "30.0", "50.0", "41.0"] in rows
+    assert not any(row and row[0] == "repeat_center" for row in rows[1:])
 
 
 def test_method_specific_report_writers(tmp_path):
-    write_method_outputs(tmp_path, "jax_least_squares", _Result())
-    assert (tmp_path / "optimizer" / "least_squares" / "covariance.csv").exists()
-    assert (tmp_path / "optimizer" / "least_squares" / "correlation.csv").exists()
+    built = build_project(load_project_spec(_project_yaml(tmp_path / "project", output_dir=(tmp_path / "unused").as_posix())))
+    write_method_outputs(tmp_path, "jax_least_squares", _Result(), built)
+    ls_dir = tmp_path / "optimizer" / "least_squares"
+    assert (ls_dir / "covariance.csv").exists()
+    assert (ls_dir / "correlation.csv").exists()
+    uncertainty = _read_csv(ls_dir / "parameter_uncertainty.csv")
+    assert uncertainty[0] == ["parameter", "best_value", "stderr", "ci95_low", "ci95_high", "lower", "upper"]
+    assert uncertainty[1][0] == "lno_thickness"
 
     write_method_outputs(tmp_path, "jax_gradient", _Result())
     gradient_dir = tmp_path / "optimizer" / "gradient"
@@ -300,23 +490,28 @@ def test_method_specific_report_writers(tmp_path):
     assert (gradient_dir / "final_gradient.csv").exists()
     assert not (gradient_dir / "covariance.csv").exists()
 
-    evaluation = evaluation_from_contributions(
+    evaluation1 = evaluation_from_contributions(
+        {"x": 2.0},
+        (FitContribution("synthetic", raw=2.0, weight=1.0),),
+    )
+    evaluation2 = evaluation_from_contributions(
         {"x": 1.0},
         (FitContribution("synthetic", raw=1.0, weight=1.0),),
     )
-    objective = JointObjective((FitParameter("x", 0.0, 2.0),), lambda _: evaluation)
+    objective = JointObjective((FitParameter("x", 0.0, 2.0),), lambda _: evaluation1)
+    history = objective.history.append(evaluation1).append(evaluation2)
     bo_result = type(
         "BOResult",
         (),
         {
             "best_parameters": {"x": 1.0},
             "best_objective": 1.0,
-            "history": _History((objective.history.append(evaluation).evaluations[0],)),
+            "history": _History(history.evaluations),
         },
     )()
     write_method_outputs(tmp_path, "bayesian_optimization", bo_result)
     bayes_dir = tmp_path / "optimizer" / "bayesian"
-    assert (bayes_dir / "evaluations.csv").exists()
-    assert (bayes_dir / "best_so_far.csv").exists()
+    assert _read_csv(bayes_dir / "evaluations.csv")[0] == ["evaluation", "objective", "parameters_json"]
+    assert _read_csv(bayes_dir / "best_so_far.csv")[0] == ["evaluation", "best_objective", "best_parameters_json"]
     assert (bayes_dir / "parameter_samples.csv").exists()
     assert not (bayes_dir / "correlation.csv").exists()

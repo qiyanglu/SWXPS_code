@@ -4,7 +4,7 @@ SWANX means **S**tanding-**W**ave **A**nalysis for **N**anoscale **X**-ray spect
 
 ## Public API
 
-Beginner users who want a whole project run should start with `swanx.project.run_project("project.yaml")`. Users writing custom simulation scripts should use `import swanx as sx` for the compact top-level simulation API. Focused subpackages support explicit IO, fitting, diagnostics, and internal development.
+Beginner users who want a whole project run should start with `swanx init my_project` and `python my_project/run_project.py`. Advanced project scripts can call `swanx.project.run_project("project.yaml")`. Users writing custom simulation scripts should use `import swanx as sx` for the compact top-level simulation API. Focused subpackages support explicit IO, fitting, diagnostics, and internal development.
 
 ## Maintained namespaces
 
@@ -26,7 +26,7 @@ interpolated at core-level kinetic energy, and the resulting numbers are used
 to construct explicit `SimulationStack`, `CoreLevelRequest`,
 `ReflectivityData`, and `RockingCurveData` objects.
 
-The YAML ProjectSpec workflow is a human-editable wrapper over the same IO and simulation/fitting objects. It resolves materials, stack layers, core-level emitting layers, datasets, and report output before calling existing SWANX APIs.
+The YAML ProjectSpec workflow is the main human-editable wrapper over the same IO and simulation/fitting objects. It resolves materials, stack layers, explicit core-level emitting layers, datasets, and report output before calling existing SWANX APIs. Thickness and roughness values are Angstrom; `roughness_A` is the upper-interface roughness of that layer, and `repeat_index` is 1-based in repeat blocks.
 
 `RockingCurveRequest` does not read files internally. JAX-traced fitting functions receive fixed numerical arrays or fixed-shape model inputs, not file paths.
 
@@ -51,4 +51,4 @@ The core uses grazing angles in degrees, photon energy in eV, lengths in Angstro
 
 ## Fitting
 
-Unified slicing is the default for high-level simulation and fitting. `slicing=None` explicitly selects the legacy fixed-step path. `simulate_only` is fully supported by YAML ProjectSpec v1. JAX-based least-squares/autodiff is the recommended fitting path for differentiable fixed-shape workflows; Bayesian optimization remains available as a baseline and robustness check.
+Unified slicing is the default for high-level simulation and fitting. `slicing=None` explicitly selects the legacy fixed-step path. `simulate_only` is fully supported by YAML ProjectSpec v1. JAX-based least-squares/autodiff is the recommended fitting path for differentiable fixed-shape workflows; Bayesian optimization remains available as an optional global black-box baseline/robustness check, not the default.

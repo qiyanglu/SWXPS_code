@@ -9,8 +9,9 @@ surface.
 The primary human-editable project workflow is:
 
 ```text
-project.yaml
-        -> swanx.project.validate_project / run_project
+swanx init my_project
+        -> edit my_project/project.yaml
+        -> python my_project/run_project.py
         -> runs/<project_name>_<timestamp>/ report folder
 ```
 
@@ -32,8 +33,10 @@ Tutorial data live at:
 ## Implemented workflow
 
 - `swanx.project` validates and runs YAML ProjectSpec v1 files.
-- `templates/project_minimal.yaml` and `templates/run_project.py` provide the
-  minimal editable project entry.
+- `swanx init my_project` creates `project.yaml`, `run_project.py`, and a
+  project README for the beginner workflow.
+- `templates/project_minimal.yaml` and `templates/run_project.py` provide a
+  repository-local simulation-only starter.
 - `swanx validate ...` and `swanx run ...` are thin CLI wrappers for automation.
 - PyYAML is optional via `python -m pip install -e ".[project]"`.
 - `swanx.io` reads OPC, IMFP, reflectivity, and rocking-curve files.
@@ -47,12 +50,15 @@ Tutorial data live at:
 ## ProjectSpec v1 notes
 
 ProjectSpec v1 supports sections for `project`, `settings`, `materials`,
-`parameters`, `stack`, `core_levels`, `datasets`, and `report`.
+`parameters`, `stack`, `core_levels`, `datasets`, and `report`. The required
+sections are `project`, `settings`, `materials`, `stack`, and `core_levels`;
+`parameters`, `datasets`, and `report` default to empty mappings.
 
 Supported YAML workflow features include:
 
 - stable concrete stack layer IDs;
-- layer tags and core-level selection by `layer_ids` or `tags`;
+- layer tags and explicit core-level selection by `layer_ids`, `tags`, or
+  `all: true`;
 - compact repeat blocks for multilayers;
 - inline parameter references and AST-whitelisted arithmetic expressions;
 - polarization strings `"s"`, `"p"`, and `"unpolarized"`;
@@ -62,11 +68,14 @@ Supported YAML workflow features include:
 
 All thickness, roughness, depth, and IMFP values are in Angstrom. In YAML,
 `roughness_A` on layer j means roughness/interdiffusion at the upper interface
-of layer j, i.e. the interface between layer j-1 and layer j.
+of layer j, i.e. the interface between layer j-1 and layer j. `repeat_index`
+is 1-based inside repeat blocks.
 
 ## API notes
 
-- User project runs should start with `from swanx.project import run_project`.
+- Beginner project runs should start with `swanx init my_project` followed by
+  `python my_project/run_project.py`; advanced scripts can call
+  `from swanx.project import run_project`.
 - Custom simulations can start with `import swanx as sx`.
 - OPC files are interpolated at photon energy.
 - IMFP files are interpolated at `E_kin = h nu - E_B`.
@@ -76,7 +85,7 @@ of layer j, i.e. the interface between layer j-1 and layer j.
   `polarization="s"` by default, `polarization="p"`, and mixed dictionaries
   such as `{"s": 0.7, "p": 0.3}`.
 - JAX least-squares/autodiff is the recommended fitting path for fixed-shape
-  workflows; BO remains a baseline.
+  workflows; BO remains an optional global black-box baseline/robustness check.
 
 ## Repository policy
 
@@ -95,17 +104,30 @@ of layer j, i.e. the interface between layer j-1 and layer j.
 
 ```bash
 python templates/run_project.py
-# completed and wrote a minimal_yaml_project run folder
+# SWANX results written to: runs\minimal_yaml_project_20260626_222809
 
 python -m swanx.cli validate templates/project_minimal.yaml
 # Validated templates\project_minimal.yaml
 
 python -m swanx.cli run templates/project_minimal.yaml
-# Wrote runs\minimal_yaml_project_<timestamp>
+# Wrote runs\minimal_yaml_project_20260626_222826
 
-python -m pytest tests/test_project_workflow.py -q --basetemp runs/pytest_project_workflow
-# 9 passed
+python -m pip install -e ".[project]"
+# installed editable package and refreshed the swanx console script
 
-python -m pytest -q --basetemp runs/pytest_project_full
-# 229 passed, 1 xfailed
+swanx validate templates/project_minimal.yaml
+# Validated templates\project_minimal.yaml
+
+swanx run templates/project_minimal.yaml
+# Wrote runs\minimal_yaml_project_20260626_223107
+
+swanx init runs/init_smoke_20260626_2229
+python runs/init_smoke_20260626_2229/run_project.py
+# SWANX results written to: runs\init_smoke_20260626_2229_20260626_223122
+
+python -m pytest tests/test_project_workflow.py -q
+# 17 passed
+
+python -m pytest -q
+# 237 passed, 1 xfailed
 ```

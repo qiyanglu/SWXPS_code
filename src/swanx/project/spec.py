@@ -18,9 +18,16 @@ class ProjectValidationError(ValueError):
 @dataclass(frozen=True)
 class ParameterSpec:
     name: str
-    initial: float
-    lower: float
-    upper: float
+    value: float
+    vary: bool
+    initial: float | None = None
+    lower: float | None = None
+    upper: float | None = None
+
+    def require_bounds(self) -> tuple[float, float, float]:
+        if self.initial is None or self.lower is None or self.upper is None:
+            raise ProjectValidationError(f"varying parameter {self.name!r} requires initial, lower, and upper")
+        return self.initial, self.lower, self.upper
 
 
 @dataclass(frozen=True)
@@ -73,7 +80,10 @@ class ProjectSpec:
         return str(self.settings.get("fit_method", "simulate_only"))
 
     def default_parameter_values(self) -> dict[str, float]:
-        return {name: parameter.initial for name, parameter in self.parameters.items()}
+        return {name: parameter.value for name, parameter in self.parameters.items()}
+
+    def varying_parameters(self) -> tuple[ParameterSpec, ...]:
+        return tuple(parameter for parameter in self.parameters.values() if parameter.vary)
 
     def expanded_layer_ids(self) -> tuple[str, ...]:
         return tuple(layer.id for layer in self.stack)
@@ -117,10 +127,12 @@ class ProjectSpec:
         ]
         resolved["parameters"] = {
             name: {
+                "value": parameter.value,
+                "vary": parameter.vary,
                 "initial": parameter.initial,
                 "lower": parameter.lower,
                 "upper": parameter.upper,
-                "resolved_value": float(values.get(name, parameter.initial)),
+                "resolved_value": float(values.get(name, parameter.value)),
             }
             for name, parameter in self.parameters.items()
         }
@@ -147,30 +159,31 @@ class ProjectSpecFactory:
                 "project",
                 "settings",
                 "materials",
-                "parameters",
                 "stack",
                 "core_levels",
-                "datasets",
-                "report",
             ),
         )
-        project = _as_mapping(self.raw["project"], "project")
-        settings = _as_mapping(self.raw["settings"], "settings")
-        materials = _as_mapping(self.raw["materials"], "materials")
-        parameters = _parse_parameters(_as_mapping(self.raw["parameters"], "parameters"))
+        raw_with_defaults = dict(self.raw)
+        raw_with_defaults.setdefault("parameters", {})
+        raw_with_defaults.setdefault("datasets", {})
+        raw_with_defaults.setdefault("report", {})
+        project = _as_mapping(raw_with_defaults["project"], "project")
+        settings = _as_mapping(raw_with_defaults["settings"], "settings")
+        materials = _as_mapping(raw_with_defaults["materials"], "materials")
+        parameters = _parse_parameters(_as_mapping(raw_with_defaults["parameters"], "parameters"))
         stack = _expand_stack(
-            _as_sequence(self.raw["stack"], "stack"),
+            _as_sequence(raw_with_defaults["stack"], "stack"),
             parameter_names=set(parameters),
         )
         core_levels = tuple(
             dict(_as_mapping(item, "core_levels item"))
-            for item in _as_sequence(self.raw["core_levels"], "core_levels")
+            for item in _as_sequence(raw_with_defaults["core_levels"], "core_levels")
         )
-        datasets = _as_mapping(self.raw["datasets"], "datasets")
-        report = _as_mapping(self.raw["report"], "report")
+        datasets = _as_mapping(raw_with_defaults["datasets"], "datasets")
+        report = _as_mapping(raw_with_defaults["report"], "report")
         spec = ProjectSpec(
             path=self.path,
-            raw=dict(self.raw),
+            raw=raw_with_defaults,
             project=dict(project),
             settings=dict(settings),
             materials=dict(materials),
@@ -210,21 +223,46 @@ def _parse_parameters(raw: Mapping[str, Any]) -> dict[str, ParameterSpec]:
     parsed: dict[str, ParameterSpec] = {}
     for name, value in raw.items():
         fields = _as_mapping(value, f"parameters.{name}")
-        try:
+        has_bounds = any(key in fields for key in ("initial", "lower", "upper"))
+        vary = bool(fields.get("vary", True if has_bounds else False))
+        if vary:
+            missing = [key for key in ("initial", "lower", "upper") if key not in fields]
+            if missing:
+                raise ProjectValidationError(
+                    f"parameters.{name} with vary: true requires initial, lower, and upper"
+                )
+            initial = float(fields["initial"])
+            lower = float(fields["lower"])
+            upper = float(fields["upper"])
+            if lower >= upper:
+                raise ProjectValidationError(f"parameter {name!r} lower must be smaller than upper")
+            if not lower <= initial <= upper:
+                raise ProjectValidationError(f"parameter {name!r} initial must be inside bounds")
             parameter = ParameterSpec(
                 name=str(name),
-                initial=float(fields["initial"]),
-                lower=float(fields["lower"]),
-                upper=float(fields["upper"]),
+                value=initial,
+                vary=True,
+                initial=initial,
+                lower=lower,
+                upper=upper,
             )
-        except KeyError as error:
-            raise ProjectValidationError(
-                f"parameters.{name} requires initial, lower, and upper"
-            ) from error
-        if parameter.lower >= parameter.upper:
-            raise ProjectValidationError(f"parameter {name!r} lower must be smaller than upper")
-        if not parameter.lower <= parameter.initial <= parameter.upper:
-            raise ProjectValidationError(f"parameter {name!r} initial must be inside bounds")
+        else:
+            if "value" in fields:
+                value_float = float(fields["value"])
+            elif "initial" in fields:
+                value_float = float(fields["initial"])
+            else:
+                raise ProjectValidationError(
+                    f"parameters.{name} with vary: false requires value or initial"
+                )
+            parameter = ParameterSpec(
+                name=str(name),
+                value=value_float,
+                vary=False,
+                initial=float(fields["initial"]) if "initial" in fields else None,
+                lower=float(fields["lower"]) if "lower" in fields else None,
+                upper=float(fields["upper"]) if "upper" in fields else None,
+            )
         parsed[parameter.name] = parameter
     return parsed
 
@@ -331,6 +369,18 @@ def _validate_settings(spec: ProjectSpec) -> None:
     polarization = spec.settings.get("polarization", "s")
     if polarization not in {"s", "p", "unpolarized"}:
         raise ProjectValidationError("settings.polarization must be 's', 'p', or 'unpolarized'")
+    if method == "jax_least_squares":
+        optimizer = spec.settings.get("optimizer", {}) or {}
+        has_datasets = bool(spec.datasets.get("reflectivity") or spec.datasets.get("rocking_curves"))
+        if has_datasets and not optimizer.get("residual_function_factory"):
+            raise ProjectValidationError(
+                "settings.fit_method='jax_least_squares' requires "
+                "settings.optimizer.residual_function_factory='module:function' for the "
+                "fixed-shape JAX residual. Install with python -m pip install -e "
+                "\".[project,least-squares]\" and provide a factory, or use "
+                "fit_method: \"simulate_only\" for simulation-only "
+                "projects. Bayesian optimization is not used as a fallback."
+            )
 
 
 def _validate_materials(spec: ProjectSpec) -> None:
@@ -340,29 +390,81 @@ def _validate_materials(spec: ProjectSpec) -> None:
             continue
         if layer.material not in material_names:
             raise ProjectValidationError(f"missing material definition for {layer.material!r}")
+        material_fields = _as_mapping(spec.materials[layer.material], f"materials.{layer.material}")
+        if "opc_file" not in material_fields:
+            raise ProjectValidationError(
+                f"non-vacuum stack material {layer.material!r} requires materials.{layer.material}.opc_file"
+            )
     for material, fields in spec.materials.items():
         material_fields = _as_mapping(fields, f"materials.{material}")
         for key in ("opc_file", "imfp_file"):
             if key in material_fields:
                 _resolve_existing_path(spec, material_fields[key], f"materials.{material}.{key}")
+    emitting_materials = _emitting_materials(spec)
+    for material in sorted(emitting_materials):
+        if material.lower() == "vacuum":
+            continue
+        material_fields = _as_mapping(spec.materials.get(material, {}), f"materials.{material}")
+        if "imfp_file" not in material_fields:
+            raise ProjectValidationError(
+                f"emitting material {material!r} requires materials.{material}.imfp_file"
+            )
 
 
 def _validate_core_levels(spec: ProjectSpec) -> None:
-    layer_ids = set(spec.expanded_layer_ids())
-    tags = {tag for layer in spec.stack for tag in layer.tags}
     for core in spec.core_levels:
         name = str(core.get("name", "<unnamed>"))
-        emit_from = _as_mapping(core.get("emit_from", {}), f"core_levels.{name}.emit_from")
-        unknown_layers = sorted(set(emit_from.get("layer_ids", ()) or ()) - layer_ids)
-        if unknown_layers:
-            raise ProjectValidationError(
-                f"unknown layer id(s) for core level {name!r}: {', '.join(unknown_layers)}"
+        _validate_emit_from(spec, core.get("emit_from"), name)
+
+
+def _validate_emit_from(spec: ProjectSpec, raw_emit_from: Any, core_name: str) -> Mapping[str, Any]:
+    if raw_emit_from is None:
+        raise ProjectValidationError(
+            f"core level {core_name!r} requires emit_from.layer_ids, emit_from.tags, or emit_from.all: true"
+        )
+    emit_from = _as_mapping(raw_emit_from, f"core_levels.{core_name}.emit_from")
+    layer_ids = set(spec.expanded_layer_ids())
+    tags = {tag for layer in spec.stack for tag in layer.tags}
+    all_layers = bool(emit_from.get("all", False))
+    has_layer_ids = bool(emit_from.get("layer_ids"))
+    has_tags = bool(emit_from.get("tags"))
+    if all_layers and (has_layer_ids or has_tags):
+        raise ProjectValidationError(
+            f"core level {core_name!r} emit_from.all cannot be combined with layer_ids or tags"
+        )
+    if not all_layers and not (has_layer_ids or has_tags):
+        raise ProjectValidationError(
+            f"core level {core_name!r} requires emit_from.layer_ids, emit_from.tags, or emit_from.all: true"
+        )
+    unknown_layers = sorted(set(emit_from.get("layer_ids", ()) or ()) - layer_ids)
+    if unknown_layers:
+        raise ProjectValidationError(
+            f"unknown layer id(s) for core level {core_name!r}: {', '.join(unknown_layers)}"
+        )
+    unknown_tags = sorted(set(emit_from.get("tags", ()) or ()) - tags)
+    if unknown_tags:
+        raise ProjectValidationError(
+            f"unknown tag(s) for core level {core_name!r}: {', '.join(unknown_tags)}"
+        )
+    return emit_from
+
+
+def _emitting_materials(spec: ProjectSpec) -> set[str]:
+    materials: set[str] = set()
+    for core in spec.core_levels:
+        name = str(core.get("name", "<unnamed>"))
+        emit_from = _validate_emit_from(spec, core.get("emit_from"), name)
+        if bool(emit_from.get("all", False)):
+            selected = spec.stack
+        else:
+            layer_ids = set(emit_from.get("layer_ids", ()) or ())
+            tags = set(emit_from.get("tags", ()) or ())
+            selected = tuple(
+                layer for layer in spec.stack
+                if layer.id in layer_ids or tags.intersection(layer.tags)
             )
-        unknown_tags = sorted(set(emit_from.get("tags", ()) or ()) - tags)
-        if unknown_tags:
-            raise ProjectValidationError(
-                f"unknown tag(s) for core level {name!r}: {', '.join(unknown_tags)}"
-            )
+        materials.update(layer.material for layer in selected)
+    return materials
 
 
 def _validate_datasets(spec: ProjectSpec) -> None:

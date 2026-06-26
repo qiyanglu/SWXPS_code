@@ -20,12 +20,14 @@
 - [x] Add optional PyYAML dependency under the `project` extra.
 - [x] Add `swanx.project.validate_project(...)` and `run_project(...)`.
 - [x] Add `swanx validate` and `swanx run` CLI wrappers.
+- [x] Add `swanx init my_project` for beginner YAML project setup.
 - [x] Add `templates/project_minimal.yaml` and `templates/run_project.py`.
 - [x] Support stack layer IDs/tags, repeat blocks, inline parameters, safe
       arithmetic expressions, and core-level layer/tag resolution.
-- [x] Implement `simulate_only` report folder outputs.
+- [x] Implement `simulate_only` report folder outputs without best-fit parameter
+      tables.
 - [x] Add method-specific report writers for least-squares, gradient, and BO
-      result-like objects.
+      result-like objects, including split BO evaluations and best-so-far files.
 - [x] Remove obsolete active tests that depended on ignored local
       `case_studies/` files.
 - [x] Move optimizer-independent fitting implementation to

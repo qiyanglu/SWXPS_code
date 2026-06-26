@@ -23,10 +23,12 @@ parameters:
     initial: 40.0
     lower: 30.0
     upper: 50.0
+    vary: true
   interface_roughness:
     initial: 3.0
     lower: 0.0
     upper: 8.0
+    vary: true
 
 stack:
   - id: "vacuum"

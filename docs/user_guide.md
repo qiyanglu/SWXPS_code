@@ -206,6 +206,30 @@ Supported modes match `swanx.preprocessing.normalize_rocking_curve`, including
 `mean` and `edge_polynomial`. With `normalization_mode=None`, raw intensity is
 returned.
 
+
+## YAML ProjectSpec workflow
+
+The main human-editable workflow is a YAML `ProjectSpec`. Start with:
+
+```bash
+swanx init my_project
+python my_project/run_project.py
+```
+
+Use the CLI for automation when needed:
+
+```bash
+swanx validate my_project/project.yaml
+swanx run my_project/project.yaml
+```
+
+YAML support is optional via `python -m pip install -e ".[project]"`.
+Thickness and roughness fields use Angstrom: `thickness_A` and `roughness_A`.
+`roughness_A` on layer j means roughness/interdiffusion at the upper interface
+of that layer, the interface between layer j-1 and layer j. In repeat blocks,
+`repeat_index` is 1-based. Core levels must explicitly select emitting layers
+with `emit_from.layer_ids`, `emit_from.tags`, or `emit_from.all: true`.
+
 ## Full fitting input workflow
 
 A realistic file-based fitting setup is:
@@ -220,6 +244,6 @@ A realistic file-based fitting setup is:
 
 ## Optimization
 
-JAX-based least-squares fitting is the recommended path for differentiable fixed-shape SWANX workflows. Bayesian optimization remains available as a baseline and robustness check.
+JAX-based least-squares fitting is the recommended path for differentiable fixed-shape SWANX workflows. Bayesian optimization remains available as an optional global black-box baseline/robustness check, not the default.
 
 OPC and IMFP files are read outside the JAX-traced residual function. JAX fitting receives fixed numerical arrays or fixed-shape model inputs.

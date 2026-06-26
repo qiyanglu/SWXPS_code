@@ -10,13 +10,15 @@ standing-wave XPS simulation, fitting, and diagnostics.
 
 ## What problem does SWANX solve?
 
-SWANX has two supported user paths:
+SWANX has two supported user paths. For most users, start with a YAML project:
 
-```text
-project.yaml
-        -> swanx.project.run_project(...)
-        -> runs/<project_name>_<timestamp>/ report folder
+```bash
+swanx init my_project
+python my_project/run_project.py
 ```
+
+That creates and runs a human-editable `project.yaml`, then writes a
+`runs/<project_name>_<timestamp>/` report folder.
 
 For custom Python workflows, SWANX turns local data files into explicit
 simulation and fitting inputs:
@@ -44,13 +46,14 @@ result = sx.simulate_reflectivity(
 python -m pip install -e .
 ```
 
-Recommended JAX least-squares and plotting environment:
+Recommended YAML, JAX least-squares, and plotting environment:
 
 ```bash
-python -m pip install -e ".[least-squares,plot]"
+python -m pip install -e ".[project,least-squares,plot]"
 ```
 
-Bayesian-optimization baseline:
+JAX least-squares is the recommended fitting path. Bayesian optimization is an
+optional global black-box baseline/robustness check:
 
 ```bash
 python -m pip install -e ".[fit]"
@@ -58,7 +61,7 @@ python -m pip install -e ".[fit]"
 
 ## YAML project workflow
 
-The YAML `ProjectSpec` is the new human-editable project input for running a
+The YAML `ProjectSpec` is the main human-editable project input for running a
 SW-XPS project without writing a full custom fitting script. YAML support is
 optional and installed with:
 
@@ -66,21 +69,35 @@ optional and installed with:
 python -m pip install -e ".[project]"
 ```
 
-The easiest entry is to copy or edit `templates/project_minimal.yaml` as your
-`project.yaml`, then run a tiny Python script:
+The recommended beginner path is to initialize a project folder, edit
+`project.yaml`, and run the generated script:
+
+```bash
+swanx init my_project
+python my_project/run_project.py
+```
+
+The CLI is also available for automation:
+
+```bash
+swanx validate my_project/project.yaml
+swanx run my_project/project.yaml
+```
+
+For a repository-local simulation-only template, you can still run:
 
 ```bash
 python templates/run_project.py
 ```
 
-The same workflow is available through the thin CLI for automation:
+Project YAML uses Angstrom for `thickness_A` and `roughness_A`. `roughness_A`
+on layer j means roughness/interdiffusion at the upper interface of layer j,
+i.e. the interface between layer j-1 and layer j. In repeat blocks,
+`repeat_index` is 1-based.
 
-```bash
-swanx validate templates/project_minimal.yaml
-swanx run templates/project_minimal.yaml
-```
-
-Excel and GUI frontends are not implemented here; they remain deferred frontend ideas.
+JAX least-squares is the recommended fitting path. BO is an optional global
+black-box baseline/robustness check, not the default. Excel and GUI frontends
+are future frontends, not implemented here.
 
 Run tests with:
 

@@ -50,11 +50,13 @@ def build_project(spec: ProjectSpec, values: dict[str, float] | None = None) -> 
                 upper=parameter.upper,
                 initial=parameter.initial,
             )
-            for parameter in spec.parameters.values()
+            for parameter in spec.varying_parameters()
         )
         problem = FittingProblem(
             parameters=parameters,
-            stack_builder=lambda trial_values: _build_stack(spec, trial_values, tables),
+            stack_builder=lambda trial_values: _build_stack(
+                spec, {**spec.default_parameter_values(), **trial_values}, tables
+            ),
             photon_energy_ev=spec.photon_energy_ev,
             reflectivity=reflectivity_data,
             rocking_curves=rocking_curve_data,
@@ -132,7 +134,7 @@ def _build_core_levels(
     cores = []
     for raw in spec.core_levels:
         name = str(raw["name"])
-        indices = resolve_emitting_layer_indices(spec, raw.get("emit_from", {}))
+        indices = resolve_emitting_layer_indices(spec, raw["emit_from"])
         concentration = float(raw.get("concentration", 1.0))
         candidate_indices = indices if indices is not None else tuple(range(len(stack.layers)))
         materials = {
@@ -158,7 +160,7 @@ def resolve_emitting_layer_indices(
     spec: ProjectSpec,
     emit_from: dict[str, Any],
 ) -> tuple[int, ...] | None:
-    if not emit_from:
+    if emit_from.get("all", False):
         return None
     selected: list[int] = []
     layer_ids = set(emit_from.get("layer_ids", ()) or ())
