@@ -5,7 +5,7 @@
 SWANX is stabilizing two complementary user workflows:
 
 ```text
-swanx init my_project -> edit project.yaml -> run_project.py -> report folder
+swanx init my_project -> edit project.yaml -> run_project.py -> project-local report folder
 ```
 
 and, for custom Python work:
@@ -40,8 +40,7 @@ global black-box baseline/robustness check.
 ## Future IO and report extensions
 
 - richer experimental-data formats when real lab conventions require them;
-- richer ProjectSpec examples and report exports beyond the first CSV/JSON/plot
-  layout;
+- richer ProjectSpec examples and report exports beyond the current CSV/JSON/Markdown/plot layout;
 - uncertainty/sigma propagation in downstream diagnostics and exports;
 - optional adapters for additional optical-constant formats;
 - continued cleanup of fitting internals into focused `swanx.fitting.*`

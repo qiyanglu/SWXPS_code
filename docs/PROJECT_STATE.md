@@ -12,7 +12,7 @@ The primary human-editable project workflow is:
 swanx init my_project
         -> edit my_project/project.yaml
         -> python my_project/run_project.py
-        -> runs/<project_name>_<timestamp>/ report folder
+        -> my_project/runs/<project_name>_<timestamp>/ report folder
 ```
 
 For custom Python workflows, the maintained object flow is:
@@ -34,7 +34,8 @@ Tutorial data live at:
 
 - `swanx.project` validates and runs YAML ProjectSpec v1 files.
 - `swanx init my_project` creates `project.yaml`, `run_project.py`, and a
-  project README for the beginner workflow.
+  project README for the beginner workflow. `--copy-example-data` creates a
+  self-contained starter; `--data-root` points at another tutorial data root.
 - `templates/project_minimal.yaml` and `templates/run_project.py` provide a
   repository-local simulation-only starter.
 - `swanx validate ...` and `swanx run ...` are thin CLI wrappers for automation.
@@ -62,7 +63,8 @@ Supported YAML workflow features include:
 - compact repeat blocks for multilayers;
 - inline parameter references and AST-whitelisted arithmetic expressions;
 - polarization strings `"s"`, `"p"`, and `"unpolarized"`;
-- complete `simulate_only` report output;
+- project-local default output folders and a simple Markdown `report.md`;
+- complete `simulate_only` report output without best-fit parameter tables;
 - method-specific report writers for least-squares, gradient, and BO result
   objects.
 
@@ -103,31 +105,18 @@ is 1-based inside repeat blocks.
 ## Latest validation
 
 ```bash
-python templates/run_project.py
-# SWANX results written to: runs\minimal_yaml_project_20260626_222809
-
-python -m swanx.cli validate templates/project_minimal.yaml
-# Validated templates\project_minimal.yaml
-
-python -m swanx.cli run templates/project_minimal.yaml
-# Wrote runs\minimal_yaml_project_20260626_222826
-
-python -m pip install -e ".[project]"
-# installed editable package and refreshed the swanx console script
-
-swanx validate templates/project_minimal.yaml
-# Validated templates\project_minimal.yaml
-
-swanx run templates/project_minimal.yaml
-# Wrote runs\minimal_yaml_project_20260626_223107
-
-swanx init runs/init_smoke_20260626_2229
-python runs/init_smoke_20260626_2229/run_project.py
-# SWANX results written to: runs\init_smoke_20260626_2229_20260626_223122
-
 python -m pytest tests/test_project_workflow.py -q
-# 17 passed
+# 20 passed
 
 python -m pytest -q
-# 237 passed, 1 xfailed
+# 240 passed, 1 xfailed
+
+swanx init runs/v11_smoke_default
+python "C:/Users/luqy0/OneDrive - ????/SWXPS_code/runs/v11_smoke_default/run_project.py"
+# SWANX results written to: .../runs/v11_smoke_default/runs/v11_smoke_default_20260627_101343
+# report.md exists under that output folder
+
+swanx init runs/v11_smoke_copied --copy-example-data
+swanx validate runs/v11_smoke_copied/project.yaml
+# Validated runs11_smoke_copied\project.yaml
 ```

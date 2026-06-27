@@ -21,6 +21,9 @@
 - [x] Add `swanx.project.validate_project(...)` and `run_project(...)`.
 - [x] Add `swanx validate` and `swanx run` CLI wrappers.
 - [x] Add `swanx init my_project` for beginner YAML project setup.
+- [x] Add ProjectSpec v1.1 initializer options for copied example data and
+      explicit data roots.
+- [x] Make default ProjectSpec run outputs project-local and write `report.md`.
 - [x] Add `templates/project_minimal.yaml` and `templates/run_project.py`.
 - [x] Support stack layer IDs/tags, repeat blocks, inline parameters, safe
       arithmetic expressions, and core-level layer/tag resolution.

@@ -26,7 +26,7 @@ interpolated at core-level kinetic energy, and the resulting numbers are used
 to construct explicit `SimulationStack`, `CoreLevelRequest`,
 `ReflectivityData`, and `RockingCurveData` objects.
 
-The YAML ProjectSpec workflow is the main human-editable wrapper over the same IO and simulation/fitting objects. It resolves materials, stack layers, explicit core-level emitting layers, datasets, and report output before calling existing SWANX APIs. Thickness and roughness values are Angstrom; `roughness_A` is the upper-interface roughness of that layer, and `repeat_index` is 1-based in repeat blocks.
+The YAML ProjectSpec workflow is the main human-editable wrapper over the same IO and simulation/fitting objects. It resolves materials, stack layers, explicit core-level emitting layers, datasets, and report output before calling existing SWANX APIs. Default outputs are written under the project YAML directory, and every run writes a simple Markdown `report.md`. Thickness and roughness values are Angstrom; `roughness_A` is the upper-interface roughness of that layer, and `repeat_index` is 1-based in repeat blocks.
 
 `RockingCurveRequest` does not read files internally. JAX-traced fitting functions receive fixed numerical arrays or fixed-shape model inputs, not file paths.
 

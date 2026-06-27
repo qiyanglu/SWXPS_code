@@ -23,6 +23,7 @@ from .reports import (
     write_fit_files,
     write_fit_summary,
     write_input_files,
+    write_markdown_report,
     write_method_outputs,
     write_plots,
     write_resolved_files,
@@ -64,7 +65,15 @@ def run_project(path: str | Path) -> Path:
     write_fit_files(output, final_built, simulation, evaluation, result)
     write_fit_summary(output, final_built, timestamp=timestamp, result=result, evaluation=evaluation)
     write_method_outputs(output, spec.fit_method, result, final_built)
-    write_plots(output, final_built, simulation)
+    skipped_outputs = write_plots(output, final_built, simulation)
+    write_markdown_report(
+        output,
+        final_built,
+        timestamp=timestamp,
+        result=result,
+        evaluation=evaluation,
+        skipped_outputs=skipped_outputs,
+    )
     return output
 
 
@@ -119,8 +128,11 @@ def _run_backend(built: BuiltProject) -> Any:
         if not factory_path:
             raise ProjectValidationError(
                 "settings.fit_method='jax_gradient' requires "
-                "settings.optimizer.value_and_grad_factory pointing to a fixed-shape "
-                "factory callback; ProjectSpec v1 does not synthesize one automatically."
+                "settings.optimizer.value_and_grad_factory='module:function' for the "
+                "fixed-shape JAX value-and-gradient callback. Install with python -m pip install -e "
+                "\".[project,gradient]\" and provide a factory, or use "
+                "fit_method: \"simulate_only\" for simulation-only projects. "
+                "Bayesian optimization is not used as a fallback."
             )
         from swanx.fitting import JaxGradientOptimizerSettings, optimize_with_jax_gradient
 

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import builtins
 import csv
 from dataclasses import dataclass
 import importlib
@@ -46,6 +47,21 @@ def _write_curve(path: Path, column: str = "reflectivity") -> None:
         "6.0,1.1\n",
         encoding="utf-8",
     )
+
+
+
+
+def _write_example_data_root(path: Path) -> Path:
+    (path / "OPC").mkdir(parents=True, exist_ok=True)
+    (path / "IMFP").mkdir(parents=True, exist_ok=True)
+    (path / "curves").mkdir(parents=True, exist_ok=True)
+    _write_opc(path / "OPC" / "LaNiO3.dat", 0.1)
+    _write_opc(path / "OPC" / "SrTiO3.dat", 0.2)
+    _write_imfp(path / "IMFP" / "LNO.ANG")
+    _write_imfp(path / "IMFP" / "STO.ANG")
+    _write_curve(path / "curves" / "lno_sto_reflectivity.csv", "reflectivity")
+    _write_curve(path / "curves" / "la4d_rocking_curve.csv", "intensity")
+    return path
 
 
 def _project_yaml(
@@ -222,7 +238,7 @@ def test_template_project_minimal_validates():
     assert spec.name == "minimal_yaml_project"
 
 
-def test_swanx_init_generated_project_validates_and_runs(tmp_path):
+def test_swanx_init_generated_project_validates_and_runs_from_different_cwd(tmp_path):
     project_dir = tmp_path / "my_project"
     assert cli_main(["init", str(project_dir)]) == 0
 
@@ -231,14 +247,39 @@ def test_swanx_init_generated_project_validates_and_runs(tmp_path):
     assert (project_dir / "README.md").exists()
     assert validate_project(project_dir / "project.yaml").name == "my_project"
 
+    other_cwd = tmp_path / "elsewhere"
+    other_cwd.mkdir()
     completed = subprocess.run(
         [sys.executable, str(project_dir / "run_project.py")],
-        cwd=Path.cwd(),
+        cwd=other_cwd,
         text=True,
         capture_output=True,
         check=True,
     )
+
     assert "SWANX results written to:" in completed.stdout
+    outputs = list((project_dir / "runs").glob("my_project_*"))
+    assert outputs
+    assert (outputs[-1] / "report.md").exists()
+
+
+def test_swanx_init_copy_example_data_and_data_root(tmp_path):
+    data_root = _write_example_data_root(tmp_path / "custom_data")
+
+    copied_project = tmp_path / "copied_project"
+    assert cli_main(["init", str(copied_project), "--copy-example-data", "--data-root", str(data_root)]) == 0
+    assert (copied_project / "data" / "OPC" / "LaNiO3.dat").exists()
+    assert (copied_project / "data" / "IMFP" / "LNO.ANG").exists()
+    assert (copied_project / "data" / "curves" / "lno_sto_reflectivity.csv").exists()
+    copied_yaml = (copied_project / "project.yaml").read_text(encoding="utf-8")
+    assert 'opc_file: "data/OPC/LaNiO3.dat"' in copied_yaml
+    assert validate_project(copied_project / "project.yaml").name == "copied_project"
+
+    rooted_project = tmp_path / "rooted_project"
+    assert cli_main(["init", str(rooted_project), "--data-root", str(data_root)]) == 0
+    rooted_yaml = (rooted_project / "project.yaml").read_text(encoding="utf-8")
+    assert "../custom_data/OPC/LaNiO3.dat" in rooted_yaml
+    assert validate_project(rooted_project / "project.yaml").name == "rooted_project"
 
 
 def test_duplicate_layer_id_error(tmp_path):
@@ -370,11 +411,30 @@ def test_validate_run_cli_and_simulate_only_outputs(tmp_path):
         "simulation/reflectivity_simulated.csv",
         "simulation/rocking_curves_simulated.csv",
         "fit/fit_summary.json",
+        "report.md",
     ]
     for relative in expected:
         assert (output / relative).exists()
     assert not (output / "fit" / "best_parameters.csv").exists()
+    assert not (output / "fit" / "residuals.csv").exists()
     assert not any((output / "optimizer").rglob("*.csv")) if (output / "optimizer").exists() else True
+
+
+def test_default_output_goes_under_project_folder_and_report_contains_fields(tmp_path):
+    project_dir = tmp_path / "project_dir"
+    path = _project_yaml(project_dir)
+
+    output = run_project(path)
+
+    assert output.parent == project_dir / "runs"
+    report = output / "report.md"
+    assert report.exists()
+    text = report.read_text(encoding="utf-8")
+    assert "# SWANX Project Report: yaml_test" in text
+    assert "Fit method: simulate_only" in text
+    assert "Photon energy: 900.0 eV" in text
+    assert "No fitting was performed" in text
+    assert "simulation/reflectivity_simulated.csv" in text
 
 
 def test_run_project_writes_experimental_data_and_residuals(tmp_path):
@@ -396,6 +456,28 @@ def test_run_project_writes_experimental_data_and_residuals(tmp_path):
     assert (output / "data" / "rocking_curves_experimental.csv").exists()
     assert (output / "fit" / "residuals.csv").exists()
     assert not (output / "fit" / "best_parameters.csv").exists()
+
+
+def test_matplotlib_missing_plot_skip_is_recorded(monkeypatch, tmp_path):
+    original_import = builtins.__import__
+
+    def fake_import(name, globals=None, locals=None, fromlist=(), level=0):
+        if name == "matplotlib.pyplot":
+            raise ImportError("matplotlib unavailable")
+        return original_import(name, globals, locals, fromlist, level)
+
+    monkeypatch.setattr(builtins, "__import__", fake_import)
+    path = _project_yaml(
+        tmp_path,
+        output_dir=(tmp_path / "out_no_matplotlib").as_posix(),
+        report="  save_plots: true\n",
+    )
+
+    output = run_project(path)
+
+    assert not (output / "plots").exists()
+    report = (output / "report.md").read_text(encoding="utf-8")
+    assert "plots skipped because matplotlib is not installed" in report
 
 
 def test_plots_overlay_experimental_data_when_matplotlib_exists(tmp_path):
@@ -514,4 +596,5 @@ def test_method_specific_report_writers(tmp_path):
     assert _read_csv(bayes_dir / "evaluations.csv")[0] == ["evaluation", "objective", "parameters_json"]
     assert _read_csv(bayes_dir / "best_so_far.csv")[0] == ["evaluation", "best_objective", "best_parameters_json"]
     assert (bayes_dir / "parameter_samples.csv").exists()
+    assert not (bayes_dir / "covariance.csv").exists()
     assert not (bayes_dir / "correlation.csv").exists()

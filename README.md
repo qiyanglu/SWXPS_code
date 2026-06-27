@@ -8,17 +8,117 @@
 **X**-ray spectroscopy: Python tools for multilayer X-ray reflectivity,
 standing-wave XPS simulation, fitting, and diagnostics.
 
-## What problem does SWANX solve?
+## YAML project workflow
 
-SWANX has two supported user paths. For most users, start with a YAML project:
+The YAML `ProjectSpec` is the main human-editable workflow for running a SW-XPS
+project without writing a full custom fitting script. Start here:
 
 ```bash
+python -m pip install -e ".[project]"
 swanx init my_project
 python my_project/run_project.py
 ```
 
-That creates and runs a human-editable `project.yaml`, then writes a
-`runs/<project_name>_<timestamp>/` report folder.
+By default, `swanx init` writes paths to the repository-level `data/` folder,
+relative to `my_project/project.yaml`. For a self-contained starter, copy the
+minimal tutorial data into the project:
+
+```bash
+swanx init my_project --copy-example-data
+```
+
+To point at another data folder while still writing paths relative to
+`project.yaml` when possible:
+
+```bash
+swanx init my_project --data-root /path/to/data
+```
+
+The generated `run_project.py` prints the output directory. The CLI is available
+for automation:
+
+```bash
+swanx validate my_project/project.yaml
+swanx run my_project/project.yaml
+```
+
+For a repository-local simulation-only template, you can also run:
+
+```bash
+python templates/run_project.py
+```
+
+Excel, GUI, JSON input, HTML reports, and automatic no-code JAX residual
+generation are not implemented in this pass.
+
+## Installation
+
+Core package:
+
+```bash
+python -m pip install -e .
+```
+
+Recommended YAML, JAX least-squares, and plotting environment:
+
+```bash
+python -m pip install -e ".[project,least-squares,plot]"
+```
+
+Bayesian-optimization baseline:
+
+```bash
+python -m pip install -e ".[fit]"
+```
+
+## What to edit in project.yaml
+
+Edit `materials`, `parameters`, `stack`, `core_levels`, and optional `datasets`.
+All `thickness_A` and `roughness_A` values are in Angstrom. `roughness_A` on
+layer j means roughness/interdiffusion at the upper interface of layer j, i.e.
+the interface between layer j-1 and layer j. In repeat blocks, `repeat_index` is
+1-based.
+
+Core levels must explicitly select emitting layers with `emit_from.layer_ids`,
+`emit_from.tags`, or `emit_from.all: true`.
+
+For simulation-only projects, keep:
+
+```yaml
+fit_method: "simulate_only"
+```
+
+For fitting, JAX least-squares is the recommended path for differentiable
+fixed-shape workflows. ProjectSpec v1.1 still requires user-provided factory
+callbacks for JAX least-squares and JAX-gradient fitting. Bayesian optimization
+is available as an optional global black-box baseline, not the default.
+
+## What output files are produced
+
+If `project.output_dir` is not set, outputs are written under the YAML file's
+folder:
+
+```text
+my_project/runs/<project_name>_<timestamp>/
+```
+
+Each run writes `report.md`, plus machine-readable inputs, resolved tables,
+simulation CSVs, and `fit/fit_summary.json`. Simulation-only runs do not write
+`fit/best_parameters.csv`; residuals are written only when experimental data are
+present. Fitting methods additionally write best parameters, contributions,
+residuals, and method-specific optimizer files. If plots are requested with
+`report.save_plots: true` and matplotlib is available, SWANX writes:
+
+```text
+plots/reflectivity_fit.png
+plots/rocking_curves_fit.png
+plots/residuals.png
+```
+
+Skipped optional outputs, such as missing matplotlib plots, are recorded in
+`report.md`.
+
+## Advanced Python API
 
 For custom Python workflows, SWANX turns local data files into explicit
 simulation and fitting inputs:
@@ -31,81 +131,6 @@ data/OPC + data/IMFP + data/curves
 ```
 
 The compact simulation API is still available for scripts:
-
-```python
-import swanx as sx
-
-result = sx.simulate_reflectivity(
-    sx.ReflectivityRequest(...)
-)
-```
-
-## Installation
-
-```bash
-python -m pip install -e .
-```
-
-Recommended YAML, JAX least-squares, and plotting environment:
-
-```bash
-python -m pip install -e ".[project,least-squares,plot]"
-```
-
-JAX least-squares is the recommended fitting path. Bayesian optimization is an
-optional global black-box baseline/robustness check:
-
-```bash
-python -m pip install -e ".[fit]"
-```
-
-## YAML project workflow
-
-The YAML `ProjectSpec` is the main human-editable project input for running a
-SW-XPS project without writing a full custom fitting script. YAML support is
-optional and installed with:
-
-```bash
-python -m pip install -e ".[project]"
-```
-
-The recommended beginner path is to initialize a project folder, edit
-`project.yaml`, and run the generated script:
-
-```bash
-swanx init my_project
-python my_project/run_project.py
-```
-
-The CLI is also available for automation:
-
-```bash
-swanx validate my_project/project.yaml
-swanx run my_project/project.yaml
-```
-
-For a repository-local simulation-only template, you can still run:
-
-```bash
-python templates/run_project.py
-```
-
-Project YAML uses Angstrom for `thickness_A` and `roughness_A`. `roughness_A`
-on layer j means roughness/interdiffusion at the upper interface of layer j,
-i.e. the interface between layer j-1 and layer j. In repeat blocks,
-`repeat_index` is 1-based.
-
-JAX least-squares is the recommended fitting path. BO is an optional global
-black-box baseline/robustness check, not the default. Excel and GUI frontends
-are future frontends, not implemented here.
-
-Run tests with:
-
-```bash
-python -m pytest
-```
-
-## Start here: OPC + IMFP -> reflectivity + SW-XPS rocking curves
 
 ```python
 import numpy as np
@@ -167,7 +192,8 @@ photoelectron kinetic energy, `E_kin = h nu - E_B`. `RockingCurveRequest` does
 not read files directly; `swanx.io` prepares file inputs before request
 creation.
 
-## Load experimental curves for fitting
+
+### Load experimental curves for fitting
 
 ```python
 from swanx.io import read_reflectivity_data, read_rocking_curve_data
@@ -186,7 +212,8 @@ The loaders return `ReflectivityData` and `RockingCurveData` objects consumed by
 `swanx.fitting`. IO reads files; `swanx.preprocessing` owns rocking-curve
 normalization algorithms.
 
-## Input file formats
+
+### Input file formats
 
 OPC files use CXRO-style columns:
 
@@ -211,7 +238,8 @@ angle_deg,intensity
 
 Headerless curve files are supported when explicit column indices are supplied.
 
-## Public API map
+
+### Public API map
 
 - `import swanx as sx`: recommended simulation entry point.
 - `swanx.project`: YAML ProjectSpec validation, execution, and report output.
@@ -230,6 +258,7 @@ Reflectivity and rocking-curve requests default to s polarization. Set
 `{"s": 0.5, "p": 0.5}` to combine raw s/p reflectivity or SW-XPS intensity
 before any rocking-curve normalization.
 
+
 ## Fitting and optimization
 
 JAX-based automatic differentiation is the primary fitting method for
@@ -244,6 +273,7 @@ File IO is outside JAX-traced residual functions; fitting receives fixed arrays
 or fixed-shape model inputs. The YAML ProjectSpec workflow is the preferred
 human-editable project entry; direct fitting APIs remain available for custom
 fixed-shape JAX or BO workflows.
+
 
 ## Examples
 

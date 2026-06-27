@@ -12,6 +12,8 @@ def main(argv: list[str] | None = None) -> int:
     subparsers = parser.add_subparsers(dest="command", required=True)
     init_parser = subparsers.add_parser("init")
     init_parser.add_argument("project_dir")
+    init_parser.add_argument("--copy-example-data", action="store_true")
+    init_parser.add_argument("--data-root")
     validate_parser = subparsers.add_parser("validate")
     validate_parser.add_argument("project_yaml")
     run_parser = subparsers.add_parser("run")
@@ -19,7 +21,11 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     if args.command == "init":
-        project_dir = init_project(args.project_dir)
+        project_dir = init_project(
+            args.project_dir,
+            copy_example_data=args.copy_example_data,
+            data_root=args.data_root,
+        )
         print(f"Created SWANX project at: {project_dir}")
         return 0
     if args.command == "validate":

@@ -223,7 +223,10 @@ swanx validate my_project/project.yaml
 swanx run my_project/project.yaml
 ```
 
-YAML support is optional via `python -m pip install -e ".[project]"`.
+Use `swanx init my_project --copy-example-data` for a self-contained starter,
+or `swanx init my_project --data-root /path/to/data` to point at another data
+root. Default outputs are written under `my_project/runs/`, and every run writes
+`report.md`. YAML support is optional via `python -m pip install -e ".[project]"`.
 Thickness and roughness fields use Angstrom: `thickness_A` and `roughness_A`.
 `roughness_A` on layer j means roughness/interdiffusion at the upper interface
 of that layer, the interface between layer j-1 and layer j. In repeat blocks,
