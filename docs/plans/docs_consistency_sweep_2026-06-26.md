@@ -2,13 +2,13 @@
 
 ## Goal
 
-Scan README and docs for stale or inconsistent descriptions after the YAML
-ProjectSpec workflow landed.
+Scan README, AGENTS.md, active docs, and plans for stale or inconsistent
+descriptions after ProjectSpec v1.1 landed.
 
 ## Scope
 
-- Update active docs: README, architecture, user guide, roadmap, project state,
-  and TODO.
+- Update active docs: README, AGENTS.md, architecture, user guide, roadmap,
+  project state, TODO, and active plans.
 - Keep `docs/history/` as a historical archive, but make active guidance point
   to current behavior.
 - Add current-status notes to older plans whose old namespace or case-study
@@ -18,3 +18,12 @@ ProjectSpec workflow landed.
 
 - No physics, numerical, fitting, or API behavior changes.
 - No edits to archived history files except through active index/context docs.
+
+## 2026-06-27 sweep notes
+
+- Updated AGENTS.md with ProjectSpec v1.1 workflow, output, optional dependency,
+  and fitting-backend guidance.
+- Cleaned active ProjectSpec docs/plans to prefer `swanx init`, project-local
+  outputs, `report.md`, JAX least-squares as recommended, and BO as optional.
+- Repaired stale validation text and Windows path escape artifacts in
+  `docs/PROJECT_STATE.md`.

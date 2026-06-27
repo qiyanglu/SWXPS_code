@@ -32,3 +32,8 @@ Run focused ProjectSpec tests first, then the full test suite.
 - Generated `run_project.py` from `swanx init`: passed.
 - ProjectSpec v1.1 smoke: `swanx init --copy-example-data`, cross-CWD
   generated script run, project-local default output, and `report.md`: passed.
+
+## Documentation consistency follow-up
+
+- 2026-06-27: Active docs and AGENTS.md were swept for ProjectSpec v1.1
+  wording after the workflow hardening commit.

@@ -1,9 +1,9 @@
 # SWANX active milestone plan
 
-> Current status (2026-06-26): `swanx` is the only supported namespace, unified
+> Current status (2026-06-27): `swanx` is the only supported namespace, unified
 > slicing is the default high-level path, polarization support is implemented,
-> fitting diagnostics are implemented, and the first YAML ProjectSpec workflow
-> is available through `swanx.project`.
+> fitting diagnostics are implemented, and ProjectSpec v1.1 is the primary
+> human-editable workflow via `swanx init`, `swanx validate`, and `swanx run`.
 
 ## Goal
 
@@ -19,11 +19,13 @@ The complete derivations and chronological record are preserved in
 
 ## Current workflow surfaces
 
-- Human-editable projects: `project.yaml` via `swanx.project.validate_project`
-  and `swanx.project.run_project`.
+- Human-editable projects: `swanx init my_project`, edit
+  `my_project/project.yaml`, then run `python my_project/run_project.py`;
+  automation can use `swanx validate` and `swanx run`.
 - Custom Python workflows: `swanx.io` builds explicit simulation/fitting objects
   consumed by `swanx` requests and `swanx.fitting`.
-- Generated outputs belong in `runs/`.
+- Default ProjectSpec outputs belong under the project folder in
+  `my_project/runs/`; other generated outputs belong in ignored `runs/`.
 - Local/private experimental runners and inputs belong in ignored
   `case_studies/`.
 
@@ -68,6 +70,6 @@ fixed JAX shapes, and NumPy/JAX parity are demonstrated.
 Latest full validation recorded in `docs/PROJECT_STATE.md`:
 
 ```bash
-python -m pytest -q --basetemp runs/pytest_project_full
-# 229 passed, 1 xfailed
+python -m pytest -q
+# 240 passed, 1 xfailed
 ```

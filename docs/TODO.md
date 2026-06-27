@@ -45,13 +45,14 @@
 - [ ] Excel frontend.
 - [ ] GUI frontend.
 - [ ] JSON ProjectSpec input.
-- [ ] HTML report frontend.
+- [ ] HTML report frontend; the current ProjectSpec report is Markdown only.
 - [ ] Online optical-constant database integration.
 - [ ] New optimizers without a demonstrated validation need.
 
 ## Maintenance rules
 
 - Avoid new core physics until user-facing workflows and validation settle.
-- Keep generated outputs in `runs/`; keep superseded experiments in `archive/`.
+- Keep generated outputs in project-local or root `runs/`; keep superseded
+  experiments in `archive/`.
 - Keep local/private experimental inputs and runners in ignored `case_studies/`.
 - Do not commit/push unless explicitly requested in the current request.

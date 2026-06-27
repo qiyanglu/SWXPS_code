@@ -1,4 +1,4 @@
-"""ProjectSpec v1 data model and validation."""
+"""ProjectSpec v1.1 data model and validation."""
 
 from __future__ import annotations
 
@@ -43,7 +43,7 @@ class ResolvedLayerSpec:
 
 @dataclass(frozen=True)
 class ProjectSpec:
-    """Validated YAML ProjectSpec v1.
+    """Validated YAML ProjectSpec v1.1.
 
     ``roughness_A`` on layer j means roughness/interdiffusion at the upper
     interface of layer j, i.e. interface between layer j-1 and layer j.

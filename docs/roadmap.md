@@ -40,7 +40,8 @@ global black-box baseline/robustness check.
 ## Future IO and report extensions
 
 - richer experimental-data formats when real lab conventions require them;
-- richer ProjectSpec examples and report exports beyond the current CSV/JSON/Markdown/plot layout;
+- richer ProjectSpec examples and report exports beyond the current CSV, JSON,
+  Markdown, and plot layout;
 - uncertainty/sigma propagation in downstream diagnostics and exports;
 - optional adapters for additional optical-constant formats;
 - continued cleanup of fitting internals into focused `swanx.fitting.*`
@@ -49,7 +50,8 @@ global black-box baseline/robustness check.
 ## Deferred physics/features
 
 - online optical-constant databases;
-- Excel, GUI, JSON input, and HTML report frontends;
+- Excel, GUI, JSON input, and HTML report frontends; the current ProjectSpec
+  report is Markdown only;
 - expanded photoionization cross-section models;
 - new optimizers without a demonstrated validation need;
 - broad physical-kernel restructuring without a separate validated plan.

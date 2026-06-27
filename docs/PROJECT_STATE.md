@@ -32,7 +32,7 @@ Tutorial data live at:
 
 ## Implemented workflow
 
-- `swanx.project` validates and runs YAML ProjectSpec v1 files.
+- `swanx.project` validates and runs YAML ProjectSpec v1.1 files.
 - `swanx init my_project` creates `project.yaml`, `run_project.py`, and a
   project README for the beginner workflow. `--copy-example-data` creates a
   self-contained starter; `--data-root` points at another tutorial data root.
@@ -48,9 +48,9 @@ Tutorial data live at:
 - `swanx.io.__all__` is narrow and explicit; it does not export preprocessing
   functions or legacy flat helpers.
 
-## ProjectSpec v1 notes
+## ProjectSpec v1.1 notes
 
-ProjectSpec v1 supports sections for `project`, `settings`, `materials`,
+ProjectSpec v1.1 supports sections for `project`, `settings`, `materials`,
 `parameters`, `stack`, `core_levels`, `datasets`, and `report`. The required
 sections are `project`, `settings`, `materials`, `stack`, and `core_levels`;
 `parameters`, `datasets`, and `report` default to empty mappings.
@@ -112,11 +112,11 @@ python -m pytest -q
 # 240 passed, 1 xfailed
 
 swanx init runs/v11_smoke_default
-python "C:/Users/luqy0/OneDrive - ????/SWXPS_code/runs/v11_smoke_default/run_project.py"
-# SWANX results written to: .../runs/v11_smoke_default/runs/v11_smoke_default_20260627_101343
+python <repo>/runs/v11_smoke_default/run_project.py
+# SWANX results written to: <repo>/runs/v11_smoke_default/runs/v11_smoke_default_<timestamp>
 # report.md exists under that output folder
 
 swanx init runs/v11_smoke_copied --copy-example-data
 swanx validate runs/v11_smoke_copied/project.yaml
-# Validated runs11_smoke_copied\project.yaml
+# Validated runs/v11_smoke_copied/project.yaml
 ```
