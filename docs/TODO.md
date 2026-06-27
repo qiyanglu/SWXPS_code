@@ -6,8 +6,8 @@
       aligned with `swanx`.
 - [ ] Add richer ProjectSpec examples only when they reuse existing IO,
       simulation, fitting, and report APIs.
-- [ ] Improve fixed-shape JAX least-squares documentation, including how YAML
-      optimizer callback factories should be used for advanced fitting.
+- [ ] Add a complete advanced example showing ProjectSpec JAX least-squares
+      factory callbacks for fixed-shape differentiable fitting.
 - [ ] Validate root `data/OPC`, `data/IMFP`, and `data/curves` workflows on
       tutorial inputs and local representative case-study inputs when available.
 - [ ] Continue validating RC preprocessing, weighting, angular offsets,
@@ -21,8 +21,10 @@
 - [x] Add `swanx.project.validate_project(...)` and `run_project(...)`.
 - [x] Add `swanx validate` and `swanx run` CLI wrappers.
 - [x] Add `swanx init my_project` for beginner YAML project setup.
-- [x] Add ProjectSpec v1.1 initializer options for copied example data and
+- [x] Add ProjectSpec initializer options for copied example data and
       explicit data roots.
+- [x] Add ProjectSpec v1.2 initializer templates, packaged tutorial data,
+      `swanx inspect`, and richer Markdown report notes.
 - [x] Make default ProjectSpec run outputs project-local and write `report.md`.
 - [x] Add `templates/project_minimal.yaml` and `templates/run_project.py`.
 - [x] Support stack layer IDs/tags, repeat blocks, inline parameters, safe

@@ -212,26 +212,67 @@ returned.
 The main human-editable workflow is a YAML `ProjectSpec`. Start with:
 
 ```bash
+python -m pip install -e ".[project,plot]"
 swanx init my_project
 python my_project/run_project.py
 ```
 
-Use the CLI for automation when needed:
+Default `swanx init` copies packaged minimal tutorial OPC, IMFP, and curve files
+into `my_project/data/`, so the generated project is runnable from any process
+current working directory. The generated `run_project.py` prints the output
+folder.
+
+Available starter templates are:
 
 ```bash
+swanx init my_project --template minimal      # default, simulation-only
+swanx init my_project --template multilayer   # repeat blocks and layer tags
+swanx init my_project --template fit-demo     # datasets plus fitting placeholders
+```
+
+Data options are:
+
+```bash
+swanx init my_project --copy-example-data --data-root /path/to/data
+swanx init my_project --data-root /path/to/data
+```
+
+`--copy-example-data` writes a local `data/` copy. `--data-root` without
+`--copy-example-data` writes paths to the external data folder, relative to
+`project.yaml` when possible.
+
+Use the CLI for automation or review:
+
+```bash
+swanx inspect my_project/project.yaml
 swanx validate my_project/project.yaml
 swanx run my_project/project.yaml
 ```
 
-Use `swanx init my_project --copy-example-data` for a self-contained starter,
-or `swanx init my_project --data-root /path/to/data` to point at another data
-root. Default outputs are written under `my_project/runs/`, and every run writes
+`inspect` prints the project name, output preview, material paths, layer count,
+core levels, datasets, varying parameters, optional dependency status, and
+fitting callback status. It parses and validates the ProjectSpec but does not
+run simulations or fitting.
+
+Default outputs are written under `my_project/runs/`, and every run writes
 `report.md`. YAML support is optional via `python -m pip install -e ".[project]"`.
 Thickness and roughness fields use Angstrom: `thickness_A` and `roughness_A`.
 `roughness_A` on layer j means roughness/interdiffusion at the upper interface
 of that layer, the interface between layer j-1 and layer j. In repeat blocks,
 `repeat_index` is 1-based. Core levels must explicitly select emitting layers
 with `emit_from.layer_ids`, `emit_from.tags`, or `emit_from.all: true`.
+
+For simulation-only projects, keep:
+
+```yaml
+fit_method: "simulate_only"
+```
+
+For fitting, JAX least-squares is the recommended path for differentiable
+fixed-shape workflows. ProjectSpec v1.2 requires user-provided factory callbacks
+for `jax_least_squares` and `jax_gradient`; SWANX does not build automatic
+no-code JAX residuals in this pass. Bayesian optimization is available as an
+optional global black-box baseline, not the default and not a fallback.
 
 ## Full fitting input workflow
 

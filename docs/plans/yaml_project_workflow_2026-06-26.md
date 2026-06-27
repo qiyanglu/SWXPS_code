@@ -4,17 +4,18 @@
 
 Completed: add and harden the initial human-editable YAML ProjectSpec workflow
 so users can run a SW-XPS project without writing a custom fitting script.
-ProjectSpec v1.1 now includes `swanx init`, copied/example data-root options,
-project-local default outputs, and `report.md`.
+ProjectSpec v1.2 now includes `swanx init`, packaged tutorial data,
+templates, `swanx inspect`, copied/example data-root options, project-local
+default outputs, and `report.md`.
 
 ## Scope
 
 - Add optional PyYAML support under the `project` extra.
-- Add `swanx init my_project`, including `--copy-example-data` and
-  `--data-root`.
+- Add `swanx init my_project`, including packaged tutorial data,
+  `--template`, `--copy-example-data`, and `--data-root`.
 - Add `swanx.project.validate_project(...)`, `run_project(...)`, and CLI
-  `swanx validate` / `swanx run`.
-- Build ProjectSpec v1.1 into existing `swanx.io`, simulation, and fitting objects.
+  `swanx inspect` / `swanx validate` / `swanx run`.
+- Build ProjectSpec v1.2 into existing `swanx.io`, simulation, and fitting objects.
 - Support stable layer IDs, tags, repeat expansion, inline parameters, and safe
   arithmetic expressions.
 - Implement complete `simulate_only` output folders, project-local default

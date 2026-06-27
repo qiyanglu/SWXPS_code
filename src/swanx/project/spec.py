@@ -1,4 +1,4 @@
-"""ProjectSpec v1.1 data model and validation."""
+"""ProjectSpec v1.2 data model and validation."""
 
 from __future__ import annotations
 
@@ -43,7 +43,7 @@ class ResolvedLayerSpec:
 
 @dataclass(frozen=True)
 class ProjectSpec:
-    """Validated YAML ProjectSpec v1.1.
+    """Validated YAML ProjectSpec v1.2.
 
     ``roughness_A`` on layer j means roughness/interdiffusion at the upper
     interface of layer j, i.e. interface between layer j-1 and layer j.
@@ -369,19 +369,26 @@ def _validate_settings(spec: ProjectSpec) -> None:
     polarization = spec.settings.get("polarization", "s")
     if polarization not in {"s", "p", "unpolarized"}:
         raise ProjectValidationError("settings.polarization must be 's', 'p', or 'unpolarized'")
-    if method == "jax_least_squares":
-        optimizer = spec.settings.get("optimizer", {}) or {}
-        has_datasets = bool(spec.datasets.get("reflectivity") or spec.datasets.get("rocking_curves"))
-        if has_datasets and not optimizer.get("residual_function_factory"):
-            raise ProjectValidationError(
-                "settings.fit_method='jax_least_squares' requires "
-                "settings.optimizer.residual_function_factory='module:function' for the "
-                "fixed-shape JAX residual. Install with python -m pip install -e "
-                "\".[project,least-squares]\" and provide a factory, or use "
-                "fit_method: \"simulate_only\" for simulation-only "
-                "projects. Bayesian optimization is not used as a fallback."
-            )
-
+    optimizer = spec.settings.get("optimizer", {}) or {}
+    has_datasets = bool(spec.datasets.get("reflectivity") or spec.datasets.get("rocking_curves"))
+    if method == "jax_least_squares" and has_datasets and not optimizer.get("residual_function_factory"):
+        raise ProjectValidationError(
+            "settings.fit_method='jax_least_squares' requires "
+            "settings.optimizer.residual_function_factory='module:function' for the "
+            "fixed-shape JAX residual. Install with python -m pip install -e "
+            "\".[project,least-squares]\" and provide a factory, or use "
+            "fit_method: \"simulate_only\" for simulation-only "
+            "projects. Bayesian optimization is not used as a fallback."
+        )
+    if method == "jax_gradient" and has_datasets and not optimizer.get("value_and_grad_factory"):
+        raise ProjectValidationError(
+            "settings.fit_method='jax_gradient' requires "
+            "settings.optimizer.value_and_grad_factory='module:function' for the "
+            "fixed-shape JAX value-and-gradient callback. Install with python -m pip install -e "
+            "\".[project,gradient]\" and provide a factory, or use "
+            "fit_method: \"simulate_only\" for simulation-only "
+            "projects. Bayesian optimization is not used as a fallback."
+        )
 
 def _validate_materials(spec: ProjectSpec) -> None:
     material_names = set(spec.materials)
@@ -482,5 +489,10 @@ def _resolve_existing_path(spec: ProjectSpec, value: Any, label: str) -> Path:
     if not path.is_absolute():
         path = spec.root_dir / path
     if not path.exists():
-        raise ProjectValidationError(f"missing data file for {label}: {path}")
+        raise ProjectValidationError(
+            f"missing data file for {label}: {path}. "
+            f"Relative ProjectSpec paths are resolved from {spec.root_dir}. "
+            "Check the path, run `swanx inspect project.yaml`, or regenerate starter data with "
+            "`swanx init --copy-example-data`."
+        )
     return path

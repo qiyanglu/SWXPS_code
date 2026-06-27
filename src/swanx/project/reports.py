@@ -237,17 +237,25 @@ def write_method_outputs(output: Path, method: str, result: Any, built: BuiltPro
 
 
 def write_plots(output: Path, built: BuiltProject, simulation) -> list[str]:
+    expected = (
+        "plots/reflectivity_fit.png",
+        "plots/rocking_curves_fit.png",
+        "plots/residuals.png",
+    )
     if not built.spec.report.get("save_plots", False):
-        return ["plots skipped because report.save_plots is false"]
+        return [f"{name} skipped because report.save_plots is false" for name in expected]
     try:
         import matplotlib.pyplot as plt
     except ImportError:
-        return ["plots skipped because matplotlib is not installed"]
+        return [f"{name} skipped because matplotlib is not installed" for name in expected]
+
+    notes: list[str] = []
     (output / "plots").mkdir(exist_ok=True)
     if simulation.reflectivity is not None:
         fig, ax = plt.subplots()
         ax.semilogy(simulation.reflectivity.angle, simulation.reflectivity.reflectivity, label="simulated")
-        if built.reflectivity_data is not None:
+        has_overlay = built.reflectivity_data is not None
+        if has_overlay:
             ax.semilogy(
                 built.reflectivity_data.angles,
                 built.reflectivity_data.reflectivity,
@@ -259,6 +267,13 @@ def write_plots(output: Path, built: BuiltProject, simulation) -> list[str]:
         ax.legend()
         fig.savefig(output / "plots" / "reflectivity_fit.png", dpi=150)
         plt.close(fig)
+        if has_overlay:
+            notes.append("plots/reflectivity_fit.png written with experimental overlay")
+        else:
+            notes.append("plots/reflectivity_fit.png written without experimental overlay because no reflectivity dataset was provided")
+    else:
+        notes.append("plots/reflectivity_fit.png skipped because no simulated reflectivity is available")
+
     if simulation.rocking_curves is not None:
         fig, ax = plt.subplots()
         simulated_by_name = {
@@ -266,14 +281,23 @@ def write_plots(output: Path, built: BuiltProject, simulation) -> list[str]:
         }
         for core in simulation.rocking_curves.core_levels:
             ax.plot(simulation.rocking_curves.angle, core.curve.intensity, label=f"{core.name} simulated")
+        overlaid = []
         for data in built.rocking_curve_data:
             if data.name in simulated_by_name:
                 ax.plot(data.angles, data.intensity, "o", label=f"{data.name} experimental")
+                overlaid.append(data.name)
         ax.set_xlabel("Grazing angle (deg)")
         ax.set_ylabel("Normalized intensity")
         ax.legend()
         fig.savefig(output / "plots" / "rocking_curves_fit.png", dpi=150)
         plt.close(fig)
+        if overlaid:
+            notes.append("plots/rocking_curves_fit.png written with experimental overlays: " + ", ".join(overlaid))
+        else:
+            notes.append("plots/rocking_curves_fit.png written without experimental overlay because no matching rocking-curve dataset was provided")
+    else:
+        notes.append("plots/rocking_curves_fit.png skipped because no simulated rocking curves are available")
+
     residual_rows = _residual_rows(built, simulation)
     if len(residual_rows) > 1:
         fig, ax = plt.subplots()
@@ -289,8 +313,10 @@ def write_plots(output: Path, built: BuiltProject, simulation) -> list[str]:
         ax.legend()
         fig.savefig(output / "plots" / "residuals.png", dpi=150)
         plt.close(fig)
-    return []
-
+        notes.append("plots/residuals.png written from experimental residuals")
+    else:
+        notes.append("plots/residuals.png skipped because no experimental residuals are available")
+    return notes
 
 def write_markdown_report(
     output: Path,
@@ -301,7 +327,8 @@ def write_markdown_report(
     evaluation: Any = None,
     skipped_outputs: list[str] | None = None,
 ) -> None:
-    skipped_outputs = [] if skipped_outputs is None else list(skipped_outputs)
+    plot_notes = [] if skipped_outputs is None else list(skipped_outputs)
+    skipped_notes = [item for item in plot_notes if " skipped " in f" {item} "]
     generated = sorted(
         path.relative_to(output).as_posix()
         for path in output.rglob("*")
@@ -339,6 +366,12 @@ def write_markdown_report(
     lines.extend(["", "## Run Summary", ""])
     if built.spec.fit_method == "simulate_only":
         lines.append("No fitting was performed; this was a simulation-only run.")
+        lines.extend(["", "Used parameter values:", ""])
+        if built.spec.parameters:
+            for name, parameter in built.spec.parameters.items():
+                lines.append(f"- {name}: {built.values.get(name, parameter.value)}")
+        else:
+            lines.append("- none")
     else:
         objective = None if evaluation is None else evaluation.objective
         for attr in ("final_cost", "best_loss", "best_objective"):
@@ -353,15 +386,19 @@ def write_markdown_report(
             lines.extend(["", "Best parameters:", ""])
             for parameter in varying:
                 lines.append(f"- {parameter.name}: {best.get(parameter.name, parameter.value)}")
+    lines.extend(["", "## Plot Notes", ""])
+    if plot_notes:
+        lines.extend(f"- {item}" for item in plot_notes)
+    else:
+        lines.append("- none")
     lines.extend(["", "## Output Files", ""])
     lines.extend(f"- `{item}`" for item in generated)
     lines.extend(["", "## Warnings / Skipped Optional Outputs", ""])
-    if skipped_outputs:
-        lines.extend(f"- {item}" for item in skipped_outputs)
+    if skipped_notes:
+        lines.extend(f"- {item}" for item in skipped_notes)
     else:
         lines.append("- none")
     (output / "report.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
-
 
 def _write_least_squares_outputs(directory: Path, result: Any, built: BuiltProject | None) -> None:
     directory.mkdir(parents=True, exist_ok=True)

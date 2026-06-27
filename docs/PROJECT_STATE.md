@@ -18,39 +18,42 @@ swanx init my_project
 For custom Python workflows, the maintained object flow is:
 
 ```text
-data/OPC + data/IMFP + data/curves
+OPC + IMFP + optional experimental curves
         -> swanx.io
         -> SimulationStack / CoreLevelRequest / ReflectivityData / RockingCurveData
         -> simulation + fitting + diagnostics
 ```
 
-Tutorial data live at:
-
-- `data/OPC/`
-- `data/IMFP/`
-- `data/curves/`
+Tutorial starter data are packaged with `swanx.project` for `swanx init` and are
+also mirrored in the repository under `data/OPC/`, `data/IMFP/`, and
+`data/curves/` for examples.
 
 ## Implemented workflow
 
-- `swanx.project` validates and runs YAML ProjectSpec v1.1 files.
-- `swanx init my_project` creates `project.yaml`, `run_project.py`, and a
-  project README for the beginner workflow. `--copy-example-data` creates a
-  self-contained starter; `--data-root` points at another tutorial data root.
-- `templates/project_minimal.yaml` and `templates/run_project.py` provide a
-  repository-local simulation-only starter.
-- `swanx validate ...` and `swanx run ...` are thin CLI wrappers for automation.
+- `swanx.project` validates and runs YAML ProjectSpec v1.2 files.
+- `swanx init my_project` creates `project.yaml`, `run_project.py`, a project
+  README, and by default a local `data/` copy of packaged minimal tutorial data.
+- `swanx init --template minimal`, `--template multilayer`, and
+  `--template fit-demo` generate beginner starters for simulation-only,
+  repeated multilayers, and dataset/fitting-placeholder workflows.
+- `--copy-example-data` creates a self-contained copy from a chosen data root;
+  `--data-root` points at another tutorial data root and writes relative paths
+  when possible.
+- `swanx inspect ...`, `swanx validate ...`, and `swanx run ...` are thin CLI
+  wrappers for review, validation, and automation.
 - PyYAML is optional via `python -m pip install -e ".[project]"`.
-- `swanx.io` reads OPC, IMFP, reflectivity, and rocking-curve files.
-- `swanx.io` builds `SimulationStack` and `CoreLevelRequest` objects from
-  material tables.
+- `templates/project_minimal.yaml` and `templates/run_project.py` remain a
+  repository-local simulation-only starter.
+- `swanx.io` reads OPC, IMFP, reflectivity, and rocking-curve files and builds
+  `SimulationStack` and `CoreLevelRequest` objects from material tables.
 - `swanx.preprocessing` owns rocking-curve normalization algorithms.
 - `swanx.fitting` consumes `ReflectivityData` and `RockingCurveData`.
 - `swanx.io.__all__` is narrow and explicit; it does not export preprocessing
   functions or legacy flat helpers.
 
-## ProjectSpec v1.1 notes
+## ProjectSpec v1.2 notes
 
-ProjectSpec v1.1 supports sections for `project`, `settings`, `materials`,
+ProjectSpec v1.2 supports sections for `project`, `settings`, `materials`,
 `parameters`, `stack`, `core_levels`, `datasets`, and `report`. The required
 sections are `project`, `settings`, `materials`, `stack`, and `core_levels`;
 `parameters`, `datasets`, and `report` default to empty mappings.
@@ -64,6 +67,7 @@ Supported YAML workflow features include:
 - inline parameter references and AST-whitelisted arithmetic expressions;
 - polarization strings `"s"`, `"p"`, and `"unpolarized"`;
 - project-local default output folders and a simple Markdown `report.md`;
+- per-plot skipped-output notes and experimental-overlay notes in `report.md`;
 - complete `simulate_only` report output without best-fit parameter tables;
 - method-specific report writers for least-squares, gradient, and BO result
   objects.
@@ -86,8 +90,11 @@ is 1-based inside repeat blocks.
 - `ReflectivityRequest`, `RockingCurveRequest`, and `FittingProblem` support
   `polarization="s"` by default, `polarization="p"`, and mixed dictionaries
   such as `{"s": 0.7, "p": 0.3}`.
-- JAX least-squares/autodiff is the recommended fitting path for fixed-shape
-  workflows; BO remains an optional global black-box baseline/robustness check.
+- JAX least-squares/autodiff is the recommended fitting path for differentiable
+  fixed-shape workflows; BO remains an optional global black-box baseline.
+- ProjectSpec v1.2 still requires user-provided factories for
+  `jax_least_squares` and `jax_gradient`; no automatic no-code JAX residual
+  builder is implemented.
 
 ## Repository policy
 
@@ -104,19 +111,22 @@ is 1-based inside repeat blocks.
 
 ## Latest validation
 
+Run these before handing off substantial changes:
+
 ```bash
 python -m pytest tests/test_project_workflow.py -q
-# 20 passed
-
 python -m pytest -q
-# 240 passed, 1 xfailed
-
-swanx init runs/v11_smoke_default
-python <repo>/runs/v11_smoke_default/run_project.py
-# SWANX results written to: <repo>/runs/v11_smoke_default/runs/v11_smoke_default_<timestamp>
-# report.md exists under that output folder
-
-swanx init runs/v11_smoke_copied --copy-example-data
-swanx validate runs/v11_smoke_copied/project.yaml
-# Validated runs/v11_smoke_copied/project.yaml
 ```
+
+ProjectSpec smoke checks:
+
+```bash
+swanx init runs/projectspec_smoke
+python runs/projectspec_smoke/run_project.py
+swanx inspect runs/projectspec_smoke/project.yaml
+swanx validate runs/projectspec_smoke/project.yaml
+```
+
+ProjectSpec v1.2 validation completed on 2026-06-27 with the focused workflow
+tests and full pytest suite passing; the full suite keeps its expected xfail.
+Exact counts are intentionally not pinned here because they become stale quickly.

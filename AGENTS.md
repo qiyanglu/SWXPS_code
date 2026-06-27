@@ -43,9 +43,13 @@ reflectivity, standing-wave XPS, fitting, and diagnostics.
 - Default ProjectSpec outputs belong under the YAML/project folder,
   `my_project/runs/<project_name>_<timestamp>/`, and every run writes
   `report.md`.
-- `swanx init --copy-example-data` should create a self-contained tutorial
-  starter; `--data-root` should write paths relative to `project.yaml` when
-  possible and must not silently generate invalid YAML paths.
+- Default `swanx init` should create a self-contained tutorial starter from
+  packaged ProjectSpec data via `importlib.resources`; `--copy-example-data`
+  should also copy from an explicit `--data-root` when provided.
+- `--data-root` without copying should write paths relative to `project.yaml`
+  when possible and must not silently generate invalid YAML paths.
+- Keep `swanx inspect` as a no-simulation/no-fitting summary path for ProjectSpec
+  files.
 - JAX least-squares is the recommended fitting path for differentiable
   fixed-shape workflows. Bayesian optimization remains an optional global
   black-box baseline. YAML JAX fitting may require explicit factory callbacks;

@@ -12,7 +12,7 @@ import numpy as np
 import pytest
 
 from swanx.fitting import FitContribution, JointObjective, FitParameter, evaluation_from_contributions
-from swanx.project import init_project
+from swanx.project import init_project, inspect_project
 from swanx.project.builder import build_project, project_polarization
 from swanx.project.reports import write_fit_files, write_method_outputs
 from swanx.project.runner import run_project, validate_project
@@ -238,13 +238,20 @@ def test_template_project_minimal_validates():
     assert spec.name == "minimal_yaml_project"
 
 
-def test_swanx_init_generated_project_validates_and_runs_from_different_cwd(tmp_path):
+def test_swanx_init_generated_project_validates_and_runs_from_different_cwd(monkeypatch, tmp_path):
+    start_cwd = tmp_path / "start_without_data"
+    start_cwd.mkdir()
+    monkeypatch.chdir(start_cwd)
     project_dir = tmp_path / "my_project"
     assert cli_main(["init", str(project_dir)]) == 0
 
     assert (project_dir / "project.yaml").exists()
     assert (project_dir / "run_project.py").exists()
     assert (project_dir / "README.md").exists()
+    assert (project_dir / "data" / "OPC" / "LaNiO3.dat").exists()
+    assert (project_dir / "data" / "IMFP" / "LNO.ANG").exists()
+    starter_yaml = (project_dir / "project.yaml").read_text(encoding="utf-8")
+    assert 'opc_file: "data/OPC/LaNiO3.dat"' in starter_yaml
     assert validate_project(project_dir / "project.yaml").name == "my_project"
 
     other_cwd = tmp_path / "elsewhere"
@@ -280,6 +287,37 @@ def test_swanx_init_copy_example_data_and_data_root(tmp_path):
     rooted_yaml = (rooted_project / "project.yaml").read_text(encoding="utf-8")
     assert "../custom_data/OPC/LaNiO3.dat" in rooted_yaml
     assert validate_project(rooted_project / "project.yaml").name == "rooted_project"
+
+
+def test_swanx_init_templates_validate_and_minimal_runs(tmp_path):
+    for template in ("minimal", "multilayer", "fit-demo"):
+        project_dir = tmp_path / f"project_{template.replace('-', '_')}"
+        assert cli_main(["init", str(project_dir), "--template", template]) == 0
+        spec = validate_project(project_dir / "project.yaml")
+        assert spec.name == project_dir.name
+    output = run_project(tmp_path / "project_minimal" / "project.yaml")
+    assert output.parent == tmp_path / "project_minimal" / "runs"
+
+
+def test_swanx_inspect_prints_expected_sections(tmp_path, capsys):
+    project_dir = tmp_path / "inspect_project"
+    assert cli_main(["init", str(project_dir), "--template", "multilayer"]) == 0
+
+    assert cli_main(["inspect", str(project_dir / "project.yaml")]) == 0
+    captured = capsys.readouterr().out
+    assert "[Project]" in captured
+    assert "[Materials]" in captured
+    assert "[Stack]" in captured
+    assert "layer_count:" in captured
+    assert "[Core Levels]" in captured
+    assert "[Datasets]" in captured
+    assert "[Varying Parameters]" in captured
+    assert "[Optional Dependencies]" in captured
+    assert "[Fitting Callbacks]" in captured
+    assert "callback_required: no" in captured
+
+    direct = inspect_project(project_dir / "project.yaml")
+    assert "fit_method: simulate_only" in direct
 
 
 def test_duplicate_layer_id_error(tmp_path):
@@ -389,6 +427,19 @@ def test_jax_least_squares_requires_factory_without_bo_fallback(tmp_path):
         load_project_spec(path)
 
 
+def test_jax_gradient_requires_factory_without_bo_fallback(tmp_path):
+    _write_curve(tmp_path / "reflectivity.csv", "reflectivity")
+    datasets = '''
+  reflectivity:
+    path: "reflectivity.csv"
+    name: "R"
+'''
+    path = _project_yaml(tmp_path, datasets=datasets, fit_method="jax_gradient")
+
+    with pytest.raises(ProjectValidationError, match="value_and_grad_factory.*Bayesian optimization is not used as a fallback"):
+        load_project_spec(path)
+
+
 def test_validate_run_cli_and_simulate_only_outputs(tmp_path):
     output_dir = (tmp_path / "out").as_posix()
     path = _project_yaml(tmp_path, output_dir=output_dir)
@@ -434,6 +485,8 @@ def test_default_output_goes_under_project_folder_and_report_contains_fields(tmp
     assert "Fit method: simulate_only" in text
     assert "Photon energy: 900.0 eV" in text
     assert "No fitting was performed" in text
+    assert "Used parameter values:" in text
+    assert "- lno_thickness: 40.0" in text
     assert "simulation/reflectivity_simulated.csv" in text
 
 
@@ -477,7 +530,9 @@ def test_matplotlib_missing_plot_skip_is_recorded(monkeypatch, tmp_path):
 
     assert not (output / "plots").exists()
     report = (output / "report.md").read_text(encoding="utf-8")
-    assert "plots skipped because matplotlib is not installed" in report
+    assert "plots/reflectivity_fit.png skipped because matplotlib is not installed" in report
+    assert "plots/rocking_curves_fit.png skipped because matplotlib is not installed" in report
+    assert "plots/residuals.png skipped because matplotlib is not installed" in report
 
 
 def test_plots_overlay_experimental_data_when_matplotlib_exists(tmp_path):
@@ -504,6 +559,9 @@ def test_plots_overlay_experimental_data_when_matplotlib_exists(tmp_path):
     assert (output / "plots" / "reflectivity_fit.png").exists()
     assert (output / "plots" / "rocking_curves_fit.png").exists()
     assert (output / "plots" / "residuals.png").exists()
+    report = (output / "report.md").read_text(encoding="utf-8")
+    assert "plots/reflectivity_fit.png written with experimental overlay" in report
+    assert "plots/rocking_curves_fit.png written with experimental overlays: La 4d" in report
 
 
 @dataclass(frozen=True)
@@ -598,3 +656,15 @@ def test_method_specific_report_writers(tmp_path):
     assert (bayes_dir / "parameter_samples.csv").exists()
     assert not (bayes_dir / "covariance.csv").exists()
     assert not (bayes_dir / "correlation.csv").exists()
+
+
+def test_readme_and_project_state_docs_are_current():
+    readme = Path("README.md").read_text(encoding="utf-8")
+    project_state = Path("docs/PROJECT_STATE.md").read_text(encoding="utf-8")
+
+    assert "docs/user_guide.md" in readme
+    assert "swanx init my_project" in readme
+    assert "swanx inspect" in readme
+    assert "repository-level `data/`" not in readme
+    assert "C:\\Users" not in project_state
+    assert "240 passed" not in project_state

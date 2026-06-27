@@ -5,7 +5,7 @@
 SWANX is stabilizing two complementary user workflows:
 
 ```text
-swanx init my_project -> edit project.yaml -> run_project.py -> project-local report folder
+swanx init my_project -> inspect/edit project.yaml -> run_project.py -> project-local report folder
 ```
 
 and, for custom Python work:
@@ -14,9 +14,11 @@ and, for custom Python work:
 data files -> swanx.io -> simulation requests / fitting data -> simulation + fitting + diagnostics
 ```
 
-The YAML ProjectSpec path is the main human-editable project input. Direct
-Python APIs remain the right surface for custom fixed-shape JAX fitting, new
-diagnostics, and lower-level simulation experiments.
+The YAML ProjectSpec path is the main human-editable project input. Default
+initializer projects are self-contained from packaged tutorial data, with
+`minimal`, `multilayer`, and `fit-demo` templates. Direct Python APIs remain the
+right surface for custom fixed-shape JAX fitting, new diagnostics, and
+lower-level simulation experiments.
 
 Unified slicing is the default high-level simulation path. JAX-based automatic
 differentiation and least-squares are the recommended fitting strategy for

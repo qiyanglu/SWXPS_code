@@ -2,8 +2,8 @@
 
 > Current status (2026-06-27): `swanx` is the only supported namespace, unified
 > slicing is the default high-level path, polarization support is implemented,
-> fitting diagnostics are implemented, and ProjectSpec v1.1 is the primary
-> human-editable workflow via `swanx init`, `swanx validate`, and `swanx run`.
+> fitting diagnostics are implemented, and ProjectSpec v1.2 is the primary
+> human-editable workflow via `swanx init`, `swanx inspect`, `swanx validate`, and `swanx run`.
 
 ## Goal
 
@@ -71,5 +71,5 @@ Latest full validation recorded in `docs/PROJECT_STATE.md`:
 
 ```bash
 python -m pytest -q
-# 240 passed, 1 xfailed
+# run before handoff; exact counts are intentionally not pinned here
 ```

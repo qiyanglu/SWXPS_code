@@ -23,6 +23,13 @@ swanx = "swanx.cli:main"
 [tool.setuptools.packages.find]
 where = ["src"]
 
+[tool.setuptools.package-data]
+"swanx.project" = [
+    "example_data/OPC/*.dat",
+    "example_data/IMFP/*.ANG",
+    "example_data/curves/*.csv",
+]
+
 [tool.pytest.ini_options]
 pythonpath = ["src"]
 testpaths = ["tests"]
