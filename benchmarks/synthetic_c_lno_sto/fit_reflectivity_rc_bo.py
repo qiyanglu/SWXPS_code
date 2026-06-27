@@ -344,7 +344,7 @@ def plot_synthetic_data(
     for ax in axes:
         ax.axvline(bragg_angle, color="tab:red", linestyle="--", linewidth=1.0)
         ax.axvline(peak_angle, color="tab:blue", linestyle="-", linewidth=1.0)
-    axes[-1].set_xlabel("Grazing incidence angle (deg)")
+    axes[-1].set_xlabel("Incident angle (deg)")
     fig.tight_layout()
     fig.savefig(path, dpi=200)
     plt.close(fig)
@@ -789,7 +789,7 @@ def plot_colored_best_fit(
         ax.grid(True, alpha=0.25)
         ax.legend(loc="best")
 
-    axes[-1].set_xlabel("Grazing incidence angle (deg)")
+    axes[-1].set_xlabel("Incident angle (deg)")
     fig.tight_layout()
     fig.savefig(path, dpi=220)
     plt.close(fig)

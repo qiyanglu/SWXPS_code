@@ -585,7 +585,7 @@ def _plot_fit(path: Path, output: dict[str, object]) -> None:
         axis.set_ylabel(data.name)
     for axis in axes:
         axis.grid(True, alpha=0.25)
-    axes[-1].set_xlabel("Grazing incidence angle (deg)")
+    axes[-1].set_xlabel("Incident angle (deg)")
     fig.tight_layout()
     fig.savefig(path, dpi=200)
     plt.close(fig)

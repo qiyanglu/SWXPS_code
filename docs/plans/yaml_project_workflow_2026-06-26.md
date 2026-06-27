@@ -6,7 +6,7 @@ Completed: add and harden the initial human-editable YAML ProjectSpec workflow
 so users can run a SW-XPS project without writing a custom fitting script.
 ProjectSpec v1.2 now includes `swanx init`, packaged tutorial data,
 templates, `swanx inspect`, copied/example data-root options, project-local
-default outputs, and `report.md`.
+default outputs, progress messages, polished report plots, and `report.md`.
 
 ## Scope
 
@@ -21,6 +21,7 @@ default outputs, and `report.md`.
 - Implement complete `simulate_only` output folders, project-local default
   outputs, Markdown `report.md`, and method-specific report writers for
   existing result-like objects.
+- Add visible progress messages for `swanx run` and generated beginner scripts.
 
 ## Non-goals
 

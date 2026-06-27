@@ -369,6 +369,8 @@ def _validate_settings(spec: ProjectSpec) -> None:
     polarization = spec.settings.get("polarization", "s")
     if polarization not in {"s", "p", "unpolarized"}:
         raise ProjectValidationError("settings.polarization must be 's', 'p', or 'unpolarized'")
+    _validate_slicing_setting(spec)
+    _validate_offpeak_mask_setting(spec)
     optimizer = spec.settings.get("optimizer", {}) or {}
     has_datasets = bool(spec.datasets.get("reflectivity") or spec.datasets.get("rocking_curves"))
     if method == "jax_least_squares" and has_datasets and not optimizer.get("residual_function_factory"):
@@ -389,6 +391,52 @@ def _validate_settings(spec: ProjectSpec) -> None:
             "fit_method: \"simulate_only\" for simulation-only "
             "projects. Bayesian optimization is not used as a fallback."
         )
+
+def _validate_slicing_setting(spec: ProjectSpec) -> None:
+    raw = spec.settings.get("slicing")
+    if raw is None:
+        return
+    if isinstance(raw, str):
+        if raw not in {"adaptive", "unified", "legacy"}:
+            raise ProjectValidationError("settings.slicing must be 'adaptive', 'unified', 'legacy', or a mapping")
+        return
+    if not isinstance(raw, Mapping):
+        raise ProjectValidationError("settings.slicing must be 'adaptive', 'unified', 'legacy', or a mapping")
+    mode = str(raw.get("mode", "adaptive"))
+    if mode not in {"adaptive", "unified", "legacy", "none", "fixed", "fixed_grid"}:
+        raise ProjectValidationError("settings.slicing.mode must be adaptive, unified, legacy, fixed, or fixed_grid")
+    if "min_slices" in raw and int(raw["min_slices"]) <= 0:
+        raise ProjectValidationError("settings.slicing.min_slices must be positive")
+    max_slice = raw.get("max_slice_thickness_A", raw.get("max_slice_thickness"))
+    if max_slice is not None and float(max_slice) <= 0:
+        raise ProjectValidationError("settings.slicing.max_slice_thickness_A must be positive")
+    reference_values = raw.get("reference_values", {}) or {}
+    if not isinstance(reference_values, Mapping):
+        raise ProjectValidationError("settings.slicing.reference_values must be a mapping")
+    unknown = sorted(set(reference_values) - set(spec.parameters))
+    if unknown:
+        raise ProjectValidationError("unknown parameter(s) in settings.slicing.reference_values: " + ", ".join(unknown))
+    for name, value in reference_values.items():
+        try:
+            float(value)
+        except (TypeError, ValueError) as error:
+            raise ProjectValidationError(f"settings.slicing.reference_values.{name} must be numeric") from error
+
+
+def _validate_offpeak_mask_setting(spec: ProjectSpec) -> None:
+    raw = spec.settings.get("rocking_curve_offpeak_mask", spec.settings.get("offpeak_mask"))
+    if raw is None:
+        return
+    if not isinstance(raw, Mapping):
+        raise ProjectValidationError("settings.rocking_curve_offpeak_mask must be a mapping")
+    mode = str(raw.get("mode", "exclude_reflectivity_peak"))
+    if mode != "exclude_reflectivity_peak":
+        raise ProjectValidationError("settings.rocking_curve_offpeak_mask.mode must be 'exclude_reflectivity_peak'")
+    if float(raw.get("half_width_deg", 1.25)) <= 0:
+        raise ProjectValidationError("settings.rocking_curve_offpeak_mask.half_width_deg must be positive")
+    if not spec.datasets.get("reflectivity"):
+        raise ProjectValidationError("settings.rocking_curve_offpeak_mask requires datasets.reflectivity")
+
 
 def _validate_materials(spec: ProjectSpec) -> None:
     material_names = set(spec.materials)
@@ -479,9 +527,33 @@ def _validate_datasets(spec: ProjectSpec) -> None:
     if reflectivity:
         fields = _as_mapping(reflectivity, "datasets.reflectivity")
         _resolve_existing_path(spec, fields["path"], "datasets.reflectivity.path")
+        _validate_optional_positive_float(fields, "weight", "datasets.reflectivity.weight", allow_zero=True)
+        _validate_optional_positive_float(fields, "log_floor", "datasets.reflectivity.log_floor")
     for index, dataset in enumerate(spec.datasets.get("rocking_curves", ()) or ()):
         fields = _as_mapping(dataset, f"datasets.rocking_curves[{index}]")
         _resolve_existing_path(spec, fields["path"], f"datasets.rocking_curves[{index}].path")
+        _validate_optional_positive_float(
+            fields,
+            "weight",
+            f"datasets.rocking_curves[{index}].weight",
+            allow_zero=True,
+        )
+
+
+def _validate_optional_positive_float(
+    fields: Mapping[str, Any],
+    key: str,
+    label: str,
+    *,
+    allow_zero: bool = False,
+) -> None:
+    if key not in fields:
+        return
+    value = float(fields[key])
+    invalid = value < 0 if allow_zero else value <= 0
+    if invalid:
+        comparator = "non-negative" if allow_zero else "positive"
+        raise ProjectValidationError(f"{label} must be {comparator}")
 
 
 def _resolve_existing_path(spec: ProjectSpec, value: Any, label: str) -> Path:

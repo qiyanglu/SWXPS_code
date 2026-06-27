@@ -14,7 +14,7 @@ validated optics, XPS, reflectivity, fitting, and numerical code paths.
 - Support `vary: false` constants and keep only varying parameters in fitting.
 - Keep JAX least-squares as the recommended fitting path and BO as an optional
   baseline.
-- Clarify method-specific report outputs, plots, and docs.
+- Clarify method-specific report outputs, plots, progress messages, and docs.
 - ProjectSpec v1.2: make default `swanx init` self-contained from packaged
   tutorial data, add starter templates and `swanx inspect`, support copied
   example data and explicit data roots, keep default outputs under the project
@@ -39,3 +39,5 @@ Run focused ProjectSpec tests first, then the full test suite.
 
 - 2026-06-27: Active docs and AGENTS.md were swept for ProjectSpec v1.2
   wording after the workflow hardening commit.
+- 2026-06-27: ProjectSpec reports gained visible run progress, compound overview
+  plots, incident-angle labels, and least-squares parameter/correlation plots.

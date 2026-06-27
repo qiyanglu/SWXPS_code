@@ -1,0 +1,181 @@
+﻿project:
+  name: "synthetic_c_lno_sto_projectspec_jax_ls"
+
+settings:
+  photon_energy_ev: 1000.0
+  polarization: "s"
+  normalization: "mean"
+  fit_method: "jax_least_squares"
+  slicing:
+    mode: "fixed_grid"
+    min_slices: 3
+    max_slice_thickness_A: 1.0
+    reference_values:
+      carbon_thickness: 16.0
+      carbon_roughness_fraction: 0.3333333333333333
+      lno_thickness: 22.0
+      sto_thickness: 22.0
+      superlattice_roughness: 3.0
+      substrate_roughness: 3.0
+      angle_offset: 0.0
+  rocking_curve_offpeak_mask:
+    mode: "exclude_reflectivity_peak"
+    half_width_deg: 1.25
+  # ProjectSpec v1.2 uses an explicit fixed-shape residual factory for JAX fitting.
+  # Run from this folder, or use run_project.py so this folder is on PYTHONPATH.
+  optimizer:
+    residual_function_factory: "synthetic_residual_factory:build_residual_function"
+    max_nfev: 80
+    ftol: 1.0e-8
+    xtol: 1.0e-8
+    gtol: 1.0e-8
+    record_history: true
+    estimate_covariance: true
+
+materials:
+  C:
+    opc_file: "../../../data/OPC/C.dat"
+    imfp_file: "../../../data/IMFP/C.ANG"
+  LNO:
+    opc_file: "../../../data/OPC/LaNiO3.dat"
+    imfp_file: "../../../data/IMFP/LNO.ANG"
+  STO:
+    opc_file: "../../../data/OPC/SrTiO3.dat"
+    imfp_file: "../../../data/IMFP/STO.ANG"
+
+parameters:
+  carbon_thickness:
+    initial: 8.5
+    lower: 4.0
+    upper: 16.0
+    vary: true
+  carbon_roughness_fraction:
+    initial: 0.2
+    lower: 0.0
+    upper: 1.0
+    vary: true
+  lno_thickness:
+    initial: 19.2
+    lower: 18.0
+    upper: 22.0
+    vary: true
+  sto_thickness:
+    initial: 20.8
+    lower: 18.0
+    upper: 22.0
+    vary: true
+  superlattice_roughness:
+    initial: 2.2
+    lower: 1.0
+    upper: 5.0
+    vary: true
+  substrate_roughness:
+    initial: 3.8
+    lower: 1.0
+    upper: 5.0
+    vary: true
+  angle_offset:
+    initial: 0.08
+    lower: -0.25
+    upper: 0.25
+    vary: true
+
+stack:
+  - id: "vacuum"
+    material: "vacuum"
+    thickness_A: 0.0
+    roughness_A: 0.0
+
+  - id: "carbon_cap"
+    material: "C"
+    tags: ["carbon_layer"]
+    thickness_A: "$carbon_thickness"
+    # The original synthetic benchmark uses:
+    # carbon_roughness = 1 + carbon_roughness_fraction * (min(5, carbon_thickness) - 1)
+    # YAML expressions intentionally keep only arithmetic, so this visible stack uses
+    # the carbon_thickness >= 5 branch. The JAX residual factory below uses the exact
+    # original formula during least-squares fitting.
+    roughness_A: "1.0 + 4.0 * carbon_roughness_fraction"
+
+  - repeat:
+      times: 20
+      layers:
+        - id: "lno_{repeat_index}"
+          material: "LNO"
+          tags: ["lno_layers", "oxide_layers"]
+          thickness_A: "$lno_thickness"
+          roughness_A: "$superlattice_roughness"
+        - id: "sto_{repeat_index}"
+          material: "STO"
+          tags: ["sto_layers", "oxide_layers"]
+          thickness_A: "$sto_thickness"
+          roughness_A: "$superlattice_roughness"
+
+  - id: "sto_substrate"
+    material: "STO"
+    tags: ["sto_layers", "substrate"]
+    thickness_A: 0.0
+    roughness_A: "$substrate_roughness"
+
+core_levels:
+  - name: "La 4d"
+    binding_energy_ev: 105.0
+    emit_from:
+      tags: ["lno_layers"]
+    concentration: 1.0
+    emission_angle_deg: 0.0
+  - name: "O 1s"
+    binding_energy_ev: 530.0
+    emit_from:
+      tags: ["oxide_layers", "substrate"]
+    concentration: 1.0
+    emission_angle_deg: 0.0
+  - name: "Ti 2p"
+    binding_energy_ev: 460.0
+    emit_from:
+      tags: ["sto_layers"]
+    concentration: 1.0
+    emission_angle_deg: 0.0
+  - name: "C 1s"
+    binding_energy_ev: 285.0
+    emit_from:
+      tags: ["carbon_layer"]
+    concentration: 1.0
+    emission_angle_deg: 0.0
+
+datasets:
+  reflectivity:
+    path: "data/curves/lno_sto_c_synthetic_data.csv"
+    name: "reflectivity"
+    angle_column: "angle_deg"
+    intensity_column: "reflectivity"
+    weight: 0.2709975524929604
+    log_floor: 1.0e-12
+  rocking_curves:
+    - path: "data/curves/lno_sto_c_synthetic_data.csv"
+      name: "La 4d"
+      angle_column: "angle_deg"
+      intensity_column: "la4d_rc"
+      normalization:
+      weight: 5.0
+    - path: "data/curves/lno_sto_c_synthetic_data.csv"
+      name: "O 1s"
+      angle_column: "angle_deg"
+      intensity_column: "o1s_rc"
+      normalization:
+      weight: 5.0
+    - path: "data/curves/lno_sto_c_synthetic_data.csv"
+      name: "Ti 2p"
+      angle_column: "angle_deg"
+      intensity_column: "ti2p_rc"
+      normalization:
+      weight: 5.0
+    - path: "data/curves/lno_sto_c_synthetic_data.csv"
+      name: "C 1s"
+      angle_column: "angle_deg"
+      intensity_column: "c1s_rc"
+      normalization:
+      weight: 5.0
+
+report:
+  save_plots: true

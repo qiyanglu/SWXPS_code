@@ -50,7 +50,7 @@ def main(argv: list[str] | None = None) -> int:
         print(f"Project is valid: {args.project_yaml}")
         return 0
     if args.command == "run":
-        output = run_project(args.project_yaml)
+        output = run_project(args.project_yaml, progress=True)
         print(f"SWANX results written to: {output}")
         return 0
     parser.error(f"unknown command {args.command!r}")

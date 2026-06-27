@@ -18,7 +18,7 @@ InitTemplate = Literal["minimal", "multilayer", "fit-demo"]
 RUN_PROJECT_TEXT = '''from pathlib import Path
 from swanx.project import run_project
 
-output = run_project(Path(__file__).with_name("project.yaml"))
+output = run_project(Path(__file__).with_name("project.yaml"), progress=True)
 print(f"SWANX results written to: {output}")
 '''
 

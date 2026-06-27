@@ -38,9 +38,9 @@ swanx validate my_project/project.yaml
 swanx run my_project/project.yaml
 ```
 
-The generated `run_project.py` prints the output directory. See the
-[full user guide](docs/user_guide.md) for ProjectSpec fields, templates,
-reports, and fitting notes.
+The generated `run_project.py` prints progress messages while it runs and
+then prints the output directory. See the [full user guide](docs/user_guide.md)
+for ProjectSpec fields, templates, reports, and fitting notes.
 
 ## Installation
 
@@ -91,8 +91,10 @@ Every run writes `report.md`, input snapshots, resolved CSVs, simulation CSVs,
 and `fit/fit_summary.json`. Simulation-only runs do not write
 `fit/best_parameters.csv`; residuals are written only when experimental datasets
 exist. When `report.save_plots: true` and matplotlib is available, reports also
-include reflectivity, rocking-curve, and residual plots with experimental
-overlays when data are present. Skipped plot reasons are recorded per plot in
+include `plots/fit_overview.png`, `plots/reflectivity_fit.png`, and
+`plots/rocking_curves_fit.png` with experimental overlays when data are present.
+Least-squares reports also include parameter uncertainty and correlation plots
+when diagnostics are available. Skipped plot reasons are recorded per plot in
 `report.md`.
 
 ## Advanced Python API

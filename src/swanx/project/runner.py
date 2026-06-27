@@ -5,7 +5,8 @@ from __future__ import annotations
 from datetime import datetime
 import importlib
 from pathlib import Path
-from typing import Any
+import sys
+from typing import Any, Callable
 
 from swanx.bo import BayesianOptimizationSettings, run_bayesian_fit
 from swanx.fitting import initial_vector
@@ -32,6 +33,9 @@ from .reports import (
 from .spec import ProjectSpec, ProjectValidationError, load_project_spec
 
 
+ProgressReporter = bool | Callable[[str], None]
+
+
 def validate_project(path: str | Path) -> ProjectSpec:
     """Parse and validate a YAML ProjectSpec."""
 
@@ -40,32 +44,46 @@ def validate_project(path: str | Path) -> ProjectSpec:
     return spec
 
 
-def run_project(path: str | Path) -> Path:
+def run_project(path: str | Path, *, progress: ProgressReporter = False) -> Path:
     """Run a YAML ProjectSpec and write a report folder."""
 
+    emit = _progress_emitter(progress)
+    emit(f"Reading ProjectSpec: {path}")
     spec = load_project_spec(path)
+    emit(f"Building project objects for {spec.name!r}")
     built = build_project(spec)
+    dataset_count = (1 if built.reflectivity_data is not None else 0) + len(built.rocking_curve_data)
+    emit(
+        "Loaded "
+        f"{len(built.spec.stack)} layers, {len(built.core_levels)} core levels, "
+        f"{dataset_count} dataset(s), {len(built.spec.varying_parameters())} varying parameter(s)"
+    )
     output = prepare_output_dir(spec)
+    emit(f"Writing run inputs and resolved project files: {output}")
     timestamp = datetime.now().isoformat(timespec="seconds")
     write_input_files(output, built, timestamp)
     write_resolved_files(output, built)
 
-    result = _run_backend(built)
+    result = _run_backend(built, emit=emit)
     best_values = _best_values(built, result)
+    emit("Rebuilding project with final parameter values")
     final_built = build_project(spec, best_values)
+    emit("Simulating final curves")
     simulation = _simulate(final_built)
+    emit("Evaluating final objective and residuals")
     evaluation = (
         None
         if final_built.fitting_problem is None
         else final_built.fitting_problem.evaluate(best_values)
     )
 
+    emit("Writing simulation, data, fit, optimizer, and plot reports")
     write_simulation_files(output, simulation)
     write_experimental_files(output, final_built)
     write_fit_files(output, final_built, simulation, evaluation, result)
     write_fit_summary(output, final_built, timestamp=timestamp, result=result, evaluation=evaluation)
-    write_method_outputs(output, spec.fit_method, result, final_built)
-    skipped_outputs = write_plots(output, final_built, simulation)
+    method_notes = write_method_outputs(output, spec.fit_method, result, final_built)
+    skipped_outputs = method_notes + write_plots(output, final_built, simulation)
     write_markdown_report(
         output,
         final_built,
@@ -74,17 +92,25 @@ def run_project(path: str | Path) -> Path:
         evaluation=evaluation,
         skipped_outputs=skipped_outputs,
     )
+    emit(f"Done. Results written to: {output}")
     return output
 
 
-def _run_backend(built: BuiltProject) -> Any:
+def _run_backend(built: BuiltProject, *, emit: Callable[[str], None] | None = None) -> Any:
+    emit = _null_progress if emit is None else emit
     method = built.spec.fit_method
     if method == "simulate_only":
+        emit("Fit method is simulate_only; skipping optimizer")
         return None
     if built.fitting_problem is None:
         raise ProjectValidationError(f"{method} requires at least one dataset")
     if method == "bayesian_optimization":
         settings = built.spec.settings.get("optimizer", {})
+        emit(
+            "Running bayesian_optimization "
+            f"(n_calls={int(settings.get('n_calls', 40))}, "
+            f"n_initial_points={int(settings.get('n_initial_points', 10))})"
+        )
         return run_bayesian_fit(
             built.fitting_problem,
             BayesianOptimizationSettings(
@@ -109,7 +135,9 @@ def _run_backend(built: BuiltProject) -> Any:
             )
         from swanx.fitting import JaxLeastSquaresOptimizerSettings, optimize_with_jax_least_squares
 
-        residual_function = _load_callable(factory_path)(built.fitting_problem)
+        emit(f"Loading JAX least-squares residual factory: {factory_path}")
+        residual_function = _load_callable(factory_path, built.spec.root_dir)(built.fitting_problem)
+        emit(f"Running jax_least_squares (max_nfev={settings.get('max_nfev', 100)})")
         return optimize_with_jax_least_squares(
             built.fitting_problem.parameters,
             residual_function,
@@ -136,7 +164,9 @@ def _run_backend(built: BuiltProject) -> Any:
             )
         from swanx.fitting import JaxGradientOptimizerSettings, optimize_with_jax_gradient
 
-        value_and_grad = _load_callable(factory_path)(built.fitting_problem)
+        emit(f"Loading JAX gradient value-and-gradient factory: {factory_path}")
+        value_and_grad = _load_callable(factory_path, built.spec.root_dir)(built.fitting_problem)
+        emit(f"Running jax_gradient (maxiter={int(settings.get('maxiter', 100))})")
         return optimize_with_jax_gradient(
             built.fitting_problem.parameters,
             value_and_grad,
@@ -148,6 +178,18 @@ def _run_backend(built: BuiltProject) -> Any:
             ),
         )
     raise ProjectValidationError(f"unknown fit method {method!r}")
+
+
+def _progress_emitter(progress: ProgressReporter) -> Callable[[str], None]:
+    if progress is True:
+        return lambda message: print(f"[swanx] {message}", flush=True)
+    if callable(progress):
+        return progress
+    return _null_progress
+
+
+def _null_progress(_message: str) -> None:
+    return None
 
 
 def _best_values(built: BuiltProject, result: Any) -> dict[str, float]:
@@ -206,11 +248,27 @@ def _simulate(built: BuiltProject):
     )()
 
 
-def _load_callable(dotted_path: str):
+def _load_callable(dotted_path: str, project_root: Path | None = None):
     module_name, _, attribute = str(dotted_path).partition(":")
     if not module_name or not attribute:
         raise ProjectValidationError("optimizer factory must be written as 'module:function'")
-    module = importlib.import_module(module_name)
+    if project_root is not None:
+        project_path = str(Path(project_root).resolve())
+        if project_path not in sys.path:
+            sys.path.insert(0, project_path)
+    try:
+        module = importlib.import_module(module_name)
+    except ModuleNotFoundError as error:
+        if error.name != module_name:
+            raise
+        hint = ""
+        if project_root is not None:
+            hint = f" Project-local factories are loaded relative to {Path(project_root).resolve()}."
+        raise ProjectValidationError(
+            f"could not import optimizer factory module {module_name!r}.{hint} "
+            "Use 'module:function' and place the module next to project.yaml, install it, "
+            "or run from a directory on PYTHONPATH."
+        ) from error
     callback = getattr(module, attribute)
     if not callable(callback):
         raise ProjectValidationError(f"optimizer factory {dotted_path!r} is not callable")

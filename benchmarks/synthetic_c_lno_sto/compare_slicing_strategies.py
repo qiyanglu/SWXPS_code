@@ -302,7 +302,7 @@ def plot_comparison(
             axes[row, column].grid(True, alpha=0.25)
 
     for axis in axes[-1]:
-        axis.set_xlabel("Grazing incidence angle (deg)")
+        axis.set_xlabel("Incident angle (deg)")
     fig.suptitle(
         "Synthetic C/[LNO/STO]x20/STO: legacy vs unified slicing\n"
         f"cells {results['legacy_effective_cells']} vs {results['unified_cells']}; "

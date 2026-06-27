@@ -219,8 +219,8 @@ python my_project/run_project.py
 
 Default `swanx init` copies packaged minimal tutorial OPC, IMFP, and curve files
 into `my_project/data/`, so the generated project is runnable from any process
-current working directory. The generated `run_project.py` prints the output
-folder.
+current working directory. The generated `run_project.py` prints stage-by-stage
+progress messages and then the output folder.
 
 Available starter templates are:
 
@@ -252,7 +252,10 @@ swanx run my_project/project.yaml
 `inspect` prints the project name, output preview, material paths, layer count,
 core levels, datasets, varying parameters, optional dependency status, and
 fitting callback status. It parses and validates the ProjectSpec but does not
-run simulations or fitting.
+run simulations or fitting. `swanx run` prints progress messages for parsing,
+building, fitting/simulation, and report writing. Advanced Python callers can
+keep quiet output with `run_project("project.yaml")` or opt in with
+`run_project("project.yaml", progress=True)`.
 
 Default outputs are written under `my_project/runs/`, and every run writes
 `report.md`. YAML support is optional via `python -m pip install -e ".[project]"`.

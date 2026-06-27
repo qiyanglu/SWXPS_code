@@ -15,6 +15,9 @@ XPS, reflectivity, fitting algorithms, or numerical behavior.
 - Validate missing `jax_gradient` callback factories like least-squares.
 - Improve `report.md` with per-plot notes, overlay status, and simulation-only
   parameter values.
+- Add visible progress messages for `swanx run` and generated beginner scripts.
+- Polish report plots with a compound reflectivity-plus-RC overview, incident-angle
+  labels, and least-squares parameter/correlation diagnostics.
 - Keep Markdown reports; no GUI, Excel, JSON input, HTML, Auger, XES, XMCD,
   single-crystal diffraction, BO fallback, or automatic no-code JAX residuals.
 

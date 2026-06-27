@@ -15,7 +15,7 @@ from swanx.fitting import FitContribution, JointObjective, FitParameter, evaluat
 from swanx.project import init_project, inspect_project
 from swanx.project.builder import build_project, project_polarization
 from swanx.project.reports import write_fit_files, write_method_outputs
-from swanx.project.runner import run_project, validate_project
+from swanx.project.runner import _load_callable, run_project, validate_project
 from swanx.project.spec import ProjectValidationError, load_project_spec
 from swanx.project.yaml_io import YAML_INSTALL_MESSAGE, read_yaml
 from swanx.cli import main as cli_main
@@ -264,6 +264,8 @@ def test_swanx_init_generated_project_validates_and_runs_from_different_cwd(monk
         check=True,
     )
 
+    assert "[swanx] Reading ProjectSpec:" in completed.stdout
+    assert "[swanx] Simulating final curves" in completed.stdout
     assert "SWANX results written to:" in completed.stdout
     outputs = list((project_dir / "runs").glob("my_project_*"))
     assert outputs
@@ -414,6 +416,20 @@ def test_core_level_layer_tag_resolution_and_polarization(tmp_path):
     assert project_polarization("unpolarized") == {"s": 0.5, "p": 0.5}
 
 
+def test_optimizer_factory_imports_relative_to_project_yaml(tmp_path, monkeypatch):
+    factory = tmp_path / "local_factory.py"
+    factory.write_text(
+        "def make(problem):\n"
+        "    return {'problem': problem}\n",
+        encoding="utf-8",
+    )
+    monkeypatch.chdir(tmp_path.parent)
+
+    callback = _load_callable("local_factory:make", tmp_path)
+
+    assert callback("ok") == {"problem": "ok"}
+
+
 def test_jax_least_squares_requires_factory_without_bo_fallback(tmp_path):
     _write_curve(tmp_path / "reflectivity.csv", "reflectivity")
     datasets = '''
@@ -440,7 +456,7 @@ def test_jax_gradient_requires_factory_without_bo_fallback(tmp_path):
         load_project_spec(path)
 
 
-def test_validate_run_cli_and_simulate_only_outputs(tmp_path):
+def test_validate_run_cli_and_simulate_only_outputs(tmp_path, capsys):
     output_dir = (tmp_path / "out").as_posix()
     path = _project_yaml(tmp_path, output_dir=output_dir)
 
@@ -449,6 +465,12 @@ def test_validate_run_cli_and_simulate_only_outputs(tmp_path):
     output = run_project(path)
     assert output == tmp_path / "out"
     assert cli_main(["run", str(path)]) == 0
+    captured = capsys.readouterr().out
+    assert "Project is valid:" in captured
+    assert "[swanx] Reading ProjectSpec:" in captured
+    assert "[swanx] Fit method is simulate_only; skipping optimizer" in captured
+    assert "[swanx] Writing simulation, data, fit, optimizer, and plot reports" in captured
+    assert "SWANX results written to:" in captured
 
     expected = [
         "input/project_original.yaml",
@@ -530,9 +552,9 @@ def test_matplotlib_missing_plot_skip_is_recorded(monkeypatch, tmp_path):
 
     assert not (output / "plots").exists()
     report = (output / "report.md").read_text(encoding="utf-8")
+    assert "plots/fit_overview.png skipped because matplotlib is not installed" in report
     assert "plots/reflectivity_fit.png skipped because matplotlib is not installed" in report
     assert "plots/rocking_curves_fit.png skipped because matplotlib is not installed" in report
-    assert "plots/residuals.png skipped because matplotlib is not installed" in report
 
 
 def test_plots_overlay_experimental_data_when_matplotlib_exists(tmp_path):
@@ -556,10 +578,12 @@ def test_plots_overlay_experimental_data_when_matplotlib_exists(tmp_path):
 
     output = run_project(path)
 
+    assert (output / "plots" / "fit_overview.png").exists()
     assert (output / "plots" / "reflectivity_fit.png").exists()
     assert (output / "plots" / "rocking_curves_fit.png").exists()
-    assert (output / "plots" / "residuals.png").exists()
+    assert not (output / "plots" / "residuals.png").exists()
     report = (output / "report.md").read_text(encoding="utf-8")
+    assert "plots/fit_overview.png written with experimental overlays: reflectivity, La 4d" in report
     assert "plots/reflectivity_fit.png written with experimental overlay" in report
     assert "plots/rocking_curves_fit.png written with experimental overlays: La 4d" in report
 
@@ -582,14 +606,14 @@ class _Result:
     status = 1
     message = "ok"
     success = True
-    best_parameters = {"lno_thickness": 41.0, "interface_roughness": 2.5}
+    best_parameters = {"lno_thickness": 41.0, "sto_thickness": 11.0, "interface_roughness": 2.5}
     final_cost = 0.5
     best_loss = 0.4
     best_objective = 0.3
-    final_residuals = np.array([1.0, 2.0])
-    final_jacobian = np.eye(2)
-    covariance = np.eye(2)
-    final_gradient = np.array([0.1, 0.2])
+    final_residuals = np.array([1.0, 2.0, 3.0, 4.0])
+    final_jacobian = np.array([[1.0, 0.0, 0.2], [0.0, 1.0, 0.1], [0.3, 0.0, 1.0], [0.0, 0.4, 1.0]])
+    covariance = np.eye(3)
+    final_gradient = np.array([0.1, 0.2, 0.3])
     history = (_Record(1, parameters={"lno_thickness": 41.0}),)
 
 
@@ -623,6 +647,20 @@ def test_method_specific_report_writers(tmp_path):
     uncertainty = _read_csv(ls_dir / "parameter_uncertainty.csv")
     assert uncertainty[0] == ["parameter", "best_value", "stderr", "ci95_low", "ci95_high", "lower", "upper"]
     assert uncertainty[1][0] == "lno_thickness"
+
+    if importlib.util.find_spec("matplotlib") is not None:
+        plot_project = tmp_path / "plot_project"
+        plot_project.mkdir()
+        _write_curve(plot_project / "reflectivity.csv", "reflectivity")
+        datasets = '''
+  reflectivity:
+    path: "reflectivity.csv"
+    name: "R"
+'''
+        plot_built = build_project(load_project_spec(_project_yaml(plot_project, datasets=datasets)))
+        write_method_outputs(tmp_path / "plot_outputs", "jax_least_squares", _Result(), plot_built)
+        assert (tmp_path / "plot_outputs" / "plots" / "parameter_uncertainty.png").exists()
+        assert (tmp_path / "plot_outputs" / "plots" / "parameter_correlation.png").exists()
 
     write_method_outputs(tmp_path, "jax_gradient", _Result())
     gradient_dir = tmp_path / "optimizer" / "gradient"

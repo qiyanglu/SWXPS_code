@@ -67,7 +67,15 @@ Supported YAML workflow features include:
 - inline parameter references and AST-whitelisted arithmetic expressions;
 - polarization strings `"s"`, `"p"`, and `"unpolarized"`;
 - project-local default output folders and a simple Markdown `report.md`;
+- opt-in progress messages for `run_project(..., progress=True)`, enabled by
+  `swanx run` and generated beginner scripts;
 - per-plot skipped-output notes and experimental-overlay notes in `report.md`;
+- compound reflectivity-plus-rocking-curve overview plots with incident-angle
+  labels and no default residual PNG;
+- least-squares parameter-range and correlation plot images when diagnostics are
+  available;
+- optional dataset weights/log floors, off-peak RC masks, and fixed-grid slicing
+  settings that pass through to the existing `FittingProblem` APIs;
 - complete `simulate_only` report output without best-fit parameter tables;
 - method-specific report writers for least-squares, gradient, and BO result
   objects.
@@ -127,6 +135,7 @@ swanx inspect runs/projectspec_smoke/project.yaml
 swanx validate runs/projectspec_smoke/project.yaml
 ```
 
-ProjectSpec v1.2 validation completed on 2026-06-27 with the focused workflow
-tests and full pytest suite passing; the full suite keeps its expected xfail.
-Exact counts are intentionally not pinned here because they become stale quickly.
+ProjectSpec report/progress validation completed on 2026-06-27 with the
+focused workflow tests, full pytest suite, and synthetic C/LNO/STO ProjectSpec
+least-squares benchmark passing; the full suite keeps its expected xfail. Exact
+counts are intentionally not pinned here because they become stale quickly.

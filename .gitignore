@@ -12,7 +12,7 @@ dist/
 *.egg-info/
 
 # Local generated runs and historical experiment artifacts
-/runs/
+runs/
 /archive/
 /archives/
 /case_studies/

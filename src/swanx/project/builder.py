@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import Any
 
@@ -18,6 +18,7 @@ from swanx.io import (
     stack_from_layer_specs,
 )
 from swanx.stack import SimulationStack
+from swanx.stack.slicing import LayerSlicingPolicy, fixed_layer_grid_plan
 from swanx.workflows.simulate import CoreLevelRequest
 
 from .spec import ProjectSpec, ProjectValidationError
@@ -65,6 +66,8 @@ def build_project(spec: ProjectSpec, values: dict[str, float] | None = None) -> 
             roughness_step=float(spec.settings.get("roughness_step", 1.0)),
             roughness_profile=str(spec.settings.get("roughness_profile", "erf")),
             polarization=project_polarization(str(spec.settings.get("polarization", "s"))),
+            slicing=_slicing_from_settings(spec, tables),
+            offpeak_mask=_offpeak_mask_from_settings(spec, reflectivity_data, rocking_curve_data),
             rocking_curve_normalization=str(spec.settings.get("normalization", "mean")),
             simulation_backend=str(spec.settings.get("simulation_backend", "numpy")),
         )
@@ -184,19 +187,77 @@ def _read_datasets(spec: ProjectSpec) -> tuple[ReflectivityData | None, tuple[Ro
             intensity_column=fields.get("intensity_column", "reflectivity"),
             sigma_column=fields.get("sigma_column"),
         )
+        reflectivity = replace(
+            reflectivity,
+            weight=float(fields.get("weight", reflectivity.weight)),
+            log_floor=float(fields.get("log_floor", reflectivity.log_floor)),
+        )
     rocking = []
     for fields in spec.datasets.get("rocking_curves", ()) or ():
-        rocking.append(
-            read_rocking_curve_data(
-                _resolve(spec, fields["path"]),
-                name=fields.get("name"),
-                angle_column=fields.get("angle_column", "angle_deg"),
-                intensity_column=fields.get("intensity_column", "intensity"),
-                sigma_column=fields.get("sigma_column"),
-                normalization_mode=fields.get("normalization", spec.settings.get("normalization")),
-            )
+        curve = read_rocking_curve_data(
+            _resolve(spec, fields["path"]),
+            name=fields.get("name"),
+            angle_column=fields.get("angle_column", "angle_deg"),
+            intensity_column=fields.get("intensity_column", "intensity"),
+            sigma_column=fields.get("sigma_column"),
+            normalization_mode=fields.get("normalization", spec.settings.get("normalization")),
         )
+        rocking.append(replace(curve, weight=float(fields.get("weight", curve.weight))))
     return reflectivity, tuple(rocking)
+
+
+def _slicing_from_settings(spec: ProjectSpec, tables: MaterialTables):
+    raw = spec.settings.get("slicing")
+    if raw is None:
+        return LayerSlicingPolicy()
+    if isinstance(raw, str):
+        if raw in {"adaptive", "unified"}:
+            return LayerSlicingPolicy()
+        if raw == "legacy":
+            return None
+        raise ProjectValidationError("settings.slicing must be 'adaptive', 'unified', 'legacy', or a mapping")
+    if not isinstance(raw, dict):
+        raise ProjectValidationError("settings.slicing must be 'adaptive', 'unified', 'legacy', or a mapping")
+    mode = str(raw.get("mode", "adaptive"))
+    if mode in {"adaptive", "unified"}:
+        return LayerSlicingPolicy(
+            min_slices=int(raw.get("min_slices", 3)),
+            max_slice_thickness=float(raw.get("max_slice_thickness_A", raw.get("max_slice_thickness", 1.0))),
+        )
+    if mode in {"legacy", "none"}:
+        return None
+    if mode not in {"fixed", "fixed_grid"}:
+        raise ProjectValidationError("settings.slicing.mode must be adaptive, unified, legacy, fixed, or fixed_grid")
+    reference_values = spec.default_parameter_values()
+    reference_values.update({name: float(value) for name, value in (raw.get("reference_values", {}) or {}).items()})
+    capacity_stack = _build_stack(spec, reference_values, tables)
+    policy = LayerSlicingPolicy(
+        min_slices=int(raw.get("min_slices", 3)),
+        max_slice_thickness=float(raw.get("max_slice_thickness_A", raw.get("max_slice_thickness", 1.0))),
+    )
+    return fixed_layer_grid_plan(capacity_stack.optical_layers, policy)
+
+
+def _offpeak_mask_from_settings(
+    spec: ProjectSpec,
+    reflectivity: ReflectivityData | None,
+    rocking: tuple[RockingCurveData, ...],
+) -> np.ndarray | None:
+    raw = spec.settings.get("rocking_curve_offpeak_mask", spec.settings.get("offpeak_mask"))
+    if raw is None or not rocking:
+        return None
+    if not isinstance(raw, dict):
+        raise ProjectValidationError("settings.rocking_curve_offpeak_mask must be a mapping")
+    mode = str(raw.get("mode", "exclude_reflectivity_peak"))
+    if mode != "exclude_reflectivity_peak":
+        raise ProjectValidationError("settings.rocking_curve_offpeak_mask.mode must be 'exclude_reflectivity_peak'")
+    if reflectivity is None:
+        raise ProjectValidationError("settings.rocking_curve_offpeak_mask requires a reflectivity dataset")
+    half_width = float(raw.get("half_width_deg", 1.25))
+    if half_width <= 0:
+        raise ProjectValidationError("settings.rocking_curve_offpeak_mask.half_width_deg must be positive")
+    peak_angle = float(reflectivity.angles[int(np.argmax(reflectivity.reflectivity))])
+    return np.abs(np.asarray(rocking[0].angles, dtype=float) - peak_angle) > half_width
 
 
 def _resolve(spec: ProjectSpec, value: Any) -> Path:

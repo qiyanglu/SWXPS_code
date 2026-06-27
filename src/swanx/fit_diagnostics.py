@@ -225,7 +225,7 @@ def plot_best_fit(
         ax.legend()
         axis_index += 1
 
-    axes[-1].set_xlabel("Grazing incidence angle (deg)")
+    axes[-1].set_xlabel("Incident angle (deg)")
     fig.tight_layout()
     fig.savefig(path, dpi=200)
     plt.close(fig)
