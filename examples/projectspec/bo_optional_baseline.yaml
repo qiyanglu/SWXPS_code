@@ -1,0 +1,80 @@
+﻿# Optional baseline example. Bayesian optimization is not the recommended
+# default fitting path and is not a fallback for missing JAX callbacks.
+project:
+  name: "lno_sto_bo_optional_baseline"
+
+settings:
+  photon_energy_ev: 900.0
+  angles_deg: [5.0, 5.1, 5.2, 5.3]
+  polarization: "s"
+  normalization: "mean"
+  fit_method: "bayesian_optimization"
+  optimizer:
+    n_calls: 40
+    n_initial_points: 10
+    random_state: 0
+
+materials:
+  LNO:
+    opc_file: "../../data/OPC/LaNiO3.dat"
+    imfp_file: "../../data/IMFP/LNO.ANG"
+  STO:
+    opc_file: "../../data/OPC/SrTiO3.dat"
+    imfp_file: "../../data/IMFP/STO.ANG"
+
+parameters:
+  lno_thickness:
+    initial: 40.0
+    lower: 30.0
+    upper: 50.0
+    vary: true
+  interface_roughness:
+    initial: 3.0
+    lower: 1.0
+    upper: 6.0
+    vary: true
+
+stack:
+  - id: "vacuum"
+    material: "vacuum"
+    thickness_A: 0.0
+    roughness_A: 0.0
+
+  - id: "lno_film"
+    material: "LNO"
+    tags: ["lno_layers"]
+    thickness_A: "$lno_thickness"
+    roughness_A: "$interface_roughness"
+
+  - id: "sto_substrate"
+    material: "STO"
+    tags: ["substrate"]
+    thickness_A: 0.0
+    roughness_A: 0.0
+
+core_levels:
+  - name: "La 4d"
+    binding_energy_ev: 105.0
+    emit_from:
+      tags: ["lno_layers"]
+    concentration: 1.0
+    emission_angle_deg: 0.0
+
+datasets:
+  reflectivity:
+    path: "../../data/curves/lno_sto_reflectivity.csv"
+    name: "Reflectivity"
+    angle_column: "angle_deg"
+    intensity_column: "reflectivity"
+    weight: 1.0
+    log_floor: 1.0e-12
+  rocking_curves:
+    - path: "../../data/curves/la4d_rocking_curve.csv"
+      name: "La 4d"
+      angle_column: "angle_deg"
+      intensity_column: "intensity"
+      normalization: "mean"
+      weight: 1.0
+
+report:
+  save_plots: true

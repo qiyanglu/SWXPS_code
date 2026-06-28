@@ -1,0 +1,52 @@
+﻿project:
+  name: "minimal_lno_sto_simulate_only"
+
+settings:
+  photon_energy_ev: 900.0
+  angle_start_deg: 5.0
+  angle_stop_deg: 15.0
+  angle_count: 101
+  polarization: "s"
+  normalization: "mean"
+  fit_method: "simulate_only"
+
+materials:
+  LNO:
+    opc_file: "../../data/OPC/LaNiO3.dat"
+    imfp_file: "../../data/IMFP/LNO.ANG"
+  STO:
+    opc_file: "../../data/OPC/SrTiO3.dat"
+    imfp_file: "../../data/IMFP/STO.ANG"
+
+parameters: {}
+
+stack:
+  - id: "vacuum"
+    material: "vacuum"
+    thickness_A: 0.0
+    roughness_A: 0.0
+
+  - id: "lno_film"
+    material: "LNO"
+    tags: ["lno_layers"]
+    thickness_A: 40.0
+    roughness_A: 3.0
+
+  - id: "sto_substrate"
+    material: "STO"
+    tags: ["substrate"]
+    thickness_A: 0.0
+    roughness_A: 0.0
+
+core_levels:
+  - name: "La 4d"
+    binding_energy_ev: 105.0
+    emit_from:
+      tags: ["lno_layers"]
+    concentration: 1.0
+    emission_angle_deg: 0.0
+
+datasets: {}
+
+report:
+  save_plots: true

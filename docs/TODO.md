@@ -52,6 +52,8 @@
       root backend modules as compatibility shims.
 - [x] Split ProjectSpec report writers under `swanx.project.reporting` while
       keeping `swanx.project.reports` as the compatibility facade.
+- [x] Add a background-first README, practical ProjectSpec user guide, detailed
+      YAML reference, and copy-pasteable ProjectSpec examples.
 
 ## Deferred or out of scope
 

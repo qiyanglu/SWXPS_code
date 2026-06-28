@@ -1,10 +1,52 @@
-# User guide
+# User Guide
 
-SWANX (**S**tanding-**W**ave **A**nalysis for **N**anoscale **X**-ray spectroscopy) is imported as `swanx`.
+SWANX (**S**tanding-**W**ave **A**nalysis for **N**anoscale **X**-ray
+spectroscopy) is imported as `swanx`. The most beginner-friendly workflow is a
+YAML ProjectSpec: edit one `project.yaml`, then run a small script or CLI
+command.
 
-## YAML ProjectSpec workflow
+## Overview
 
-The main human-editable workflow is a YAML `ProjectSpec`. Start with:
+A SWANX project gathers the inputs needed for multilayer SW-XPS work: material
+optical constants, electron attenuation data, a stack model, core levels, and
+optional experimental curves. SWANX turns those into simulations or fits and
+writes a project-local report folder.
+
+```text
+OPC + IMFP + stack + core levels + optional datasets
+  -> simulation / fitting
+  -> report.md + CSVs + plots
+```
+
+Use YAML when you want a reproducible project file. Use the Python API when you
+need custom model code, custom fixed-shape JAX residuals, or a larger scripted
+workflow.
+
+## Core Concepts
+
+- **Material**: a label such as `LNO` or `STO` that connects stack layers to OPC
+  and IMFP files.
+- **Stack layer**: one physical layer in order from vacuum to substrate. Each
+  concrete layer has a stable `id`.
+- **Optical constants (OPC)**: photon-energy-dependent `delta` and `beta` values
+  for the refractive index convention `n = 1 - delta + i beta`.
+- **IMFP**: inelastic mean free path, interpolated at photoelectron kinetic
+  energy.
+- **Core level**: an emitted photoelectron line such as `La 4d` with a binding
+  energy and emitting-layer selector.
+- **Emitting layer selector**: `emit_from.layer_ids`, `emit_from.tags`, or
+  `emit_from.all: true`; material-only emission selection is not used.
+- **Reflectivity curve**: reflected x-ray intensity versus incident angle.
+- **Rocking curve**: core-level photoemission intensity versus incident angle,
+  written conceptually as $$I_\mathrm{core}(\theta)$$.
+- **Fit parameter**: a named scalar with `initial`, `lower`, and `upper` bounds
+  when varied, or a constant `value` when fixed.
+- **Report folder**: the project-local output directory containing `report.md`,
+  CSVs, optional plots, and optimizer outputs.
+
+## Quickstart: Simulate-Only Project
+
+Create a self-contained starter project:
 
 ```bash
 python -m pip install -e ".[project,plot]"
@@ -12,285 +54,275 @@ swanx init my_project
 python my_project/run_project.py
 ```
 
-Default `swanx init` copies packaged minimal tutorial OPC, IMFP, and curve files
-into `my_project/data/`, so the generated project is runnable from any process
-current working directory. The generated `run_project.py` prints stage-by-stage
-progress messages and then the output folder.
+The generated project contains:
 
-Available starter templates are:
-
-```bash
-swanx init my_project --template minimal      # default, simulation-only
-swanx init my_project --template multilayer   # repeat blocks and layer tags
-swanx init my_project --template fit-demo     # datasets plus fitting placeholders
+```text
+my_project/
+  project.yaml
+  run_project.py
+  README.md
+  data/
 ```
 
-Data options are:
+The minimal generated YAML uses `fit_method: "simulate_only"`. That means SWANX
+builds the stack, simulates reflectivity and rocking curves, and writes a report
+without optimizing parameters.
 
-```bash
-swanx init my_project --copy-example-data --data-root /path/to/data
-swanx init my_project --data-root /path/to/data
+Typical first edits in `project.yaml` are:
+
+- change `project.name`;
+- edit `settings.photon_energy_ev` and the angle grid;
+- update `materials` paths;
+- edit `stack` thicknesses and roughnesses;
+- choose which layers emit each `core_level`;
+- set `report.save_plots: true` when matplotlib is installed.
+
+More complete syntax is documented in
+[projectspec_reference.md](projectspec_reference.md).
+Copy-pasteable starter YAML files are in
+[../examples/projectspec](../examples/projectspec).
+
+## Add Experimental Data And Overlay Points
+
+To compare simulations with data while still avoiding fitting, keep:
+
+```yaml
+settings:
+  fit_method: "simulate_only"
 ```
 
-`--copy-example-data` writes a local `data/` copy. `--data-root` without
-`--copy-example-data` writes paths to the external data folder, relative to
-`project.yaml` when possible.
+and add datasets:
 
-Use the CLI for automation or review:
+```yaml
+datasets:
+  reflectivity:
+    path: "data/curves/lno_sto_reflectivity.csv"
+    name: "Reflectivity"
+    angle_column: "angle_deg"
+    intensity_column: "reflectivity"
+    weight: 1.0
+    log_floor: 1.0e-12
+
+  rocking_curves:
+    - path: "data/curves/la4d_rocking_curve.csv"
+      name: "La 4d"
+      angle_column: "angle_deg"
+      intensity_column: "intensity"
+      normalization: "mean"
+      weight: 1.0
+```
+
+Dataset paths are resolved relative to `project.yaml`, not the process current
+working directory. Rocking-curve names should match core-level names when you
+want overlays and residuals.
+
+With datasets present, `simulate_only` reports can include experimental data
+CSVs, residuals, and plot overlays, but they still do not write
+`fit/best_parameters.csv` because no fitting was performed.
+
+## Fit Workflow
+
+JAX least-squares is the recommended fitting path for differentiable fixed-shape
+workflows. In YAML, it currently requires a user-provided factory callback:
+
+```yaml
+settings:
+  fit_method: "jax_least_squares"
+  optimizer:
+    residual_function_factory: "fit_factory:build_residual"
+    max_nfev: 100
+    estimate_covariance: true
+```
+
+The factory module can live next to `project.yaml`; the ProjectSpec runner adds
+that folder to `PYTHONPATH` while loading the callback. SWANX does not generate a
+no-code JAX residual builder in the current ProjectSpec workflow. If the factory
+is missing, validation and run errors should point out the missing setting and
+there is no fallback to Bayesian optimization.
+
+Bayesian optimization is available as an optional global black-box baseline or
+robustness check:
+
+```yaml
+settings:
+  fit_method: "bayesian_optimization"
+  optimizer:
+    n_calls: 40
+    n_initial_points: 10
+    random_state: 0
+```
+
+BO is not the default and not a fallback. It requires the optional fitting extra
+and reports BO-specific evaluations and best-so-far CSVs; it does not write
+least-squares covariance or correlation outputs.
+
+## How To Inspect And Validate
+
+Use inspection before running a new project:
 
 ```bash
-swanx inspect my_project/project.yaml
-swanx validate my_project/project.yaml
-swanx run my_project/project.yaml
+swanx inspect project.yaml
 ```
 
 `inspect` prints the project name, output preview, material paths, layer count,
 core levels, datasets, varying parameters, optional dependency status, and
-fitting callback status. It parses and validates the ProjectSpec but does not
-run simulations or fitting. `swanx run` prints progress messages for parsing,
-building, fitting/simulation, and report writing. Advanced Python callers can
-keep quiet output with `run_project("project.yaml")` or opt in with
-`run_project("project.yaml", progress=True)`.
+fitting callback status. It does not run simulations or fitting.
 
-Default outputs are written under `my_project/runs/`, and every run writes
-`report.md`. YAML support is optional via `python -m pip install -e ".[project]"`.
-Thickness and roughness fields use Angstrom: `thickness_A` and `roughness_A`.
-`roughness_A` on layer j means roughness/interdiffusion at the upper interface
-of that layer, the interface between layer j-1 and layer j. In repeat blocks,
-`repeat_index` is 1-based. Core levels must explicitly select emitting layers
-with `emit_from.layer_ids`, `emit_from.tags`, or `emit_from.all: true`.
+Validate the YAML and referenced files:
 
-For simulation-only projects, keep:
-
-```yaml
-fit_method: "simulate_only"
+```bash
+swanx validate project.yaml
 ```
 
-For fitting, JAX least-squares is the recommended path for differentiable
-fixed-shape workflows. ProjectSpec YAML fitting requires user-provided factory callbacks
-for `jax_least_squares` and `jax_gradient`; SWANX does not build automatic
-no-code JAX residuals in this pass. Bayesian optimization is available as an
-optional global black-box baseline, not the default and not a fallback.
+Common validation errors include:
 
-Beginner scripts should start with:
+- missing OPC file for a non-vacuum stack material;
+- missing IMFP file for a material that emits a core level;
+- duplicate layer `id`;
+- unknown layer tag or layer id in `emit_from`;
+- missing `emit_from`;
+- unknown parameter name in an expression;
+- dataset path not found;
+- missing JAX factory for a JAX fit method.
+
+## How To Read Outputs
+
+A default run folder looks like:
+
+```text
+runs/<project_name>_<timestamp>/
+  report.md
+  input/
+  resolved/
+  simulation/
+  data/
+  fit/
+  plots/
+  optimizer/
+```
+
+Important files:
+
+- `report.md`: human-readable summary, output list, plot notes, and skipped
+  optional outputs.
+- `resolved/stack_resolved.csv`: expanded stack after parameter expressions and
+  repeat blocks are resolved.
+- `resolved/materials_resolved.csv`: material labels and whether OPC/IMFP tables
+  were loaded.
+- `resolved/core_levels_resolved.csv`: core-level settings and emitting layer
+  indices.
+- `simulation/reflectivity_simulated.csv`: simulated reflectivity versus
+  incident angle.
+- `simulation/rocking_curves_simulated.csv`: simulated rocking curves for each
+  core level.
+- `data/reflectivity_experimental.csv` and `data/rocking_curves_experimental.csv`:
+  copied experimental data, only when datasets exist.
+- `fit/residuals.csv`: residuals when experimental data exist.
+- `fit/best_parameters.csv`: fitted parameter summary for fitting methods, not
+  for `simulate_only`.
+- `optimizer/least_squares/`: status, residual vector, Jacobian, covariance,
+  correlation, active bounds, convergence history, and parameter uncertainty
+  when available.
+- `optimizer/gradient/`: status, objective history, parameter history, gradient
+  norms, and final gradient when available.
+- `optimizer/bayesian/`: evaluations, best-so-far, parameter samples, and stage
+  summary.
+- `plots/`: overview, reflectivity, rocking curves, stack schematic, and
+  backend-specific diagnostics when available.
+
+## Advanced Python API
+
+For custom scripts, use:
 
 ```python
 import swanx as sx
 ```
 
-The recommended simulation entry pattern is `import swanx as sx`. File readers,
-fitting data classes, and diagnostics live in focused namespaces for explicit
-workflow steps.
-
-## Optical constants (OPC)
-
-SWANX expects optical constants to be resolved before simulation. CXRO-style OPC files use the fixed column meaning:
-
-```text
-Energy(eV), Delta, Beta
-```
-
-The values are interpolated at photon energy:
-
-```text
-E = h nu
-```
-
-SWANX keeps the refractive-index convention:
-
-```text
-n = 1 - delta + i beta
-```
-
-Use:
+File IO, preprocessing, fitting, and diagnostics live in focused namespaces:
 
 ```python
-from swanx.io import read_optical_constants
-
-table = read_optical_constants("data/OPC/LaNiO3.dat")
-delta, beta = table.at_energy(900.0)
+from swanx.io import load_material_tables, stack_from_layer_specs
+from swanx.fitting import FittingProblem, FitParameter
+from swanx.diagnostics import plot_correlation_matrix
 ```
 
-## IMFP
+A realistic custom file-based fitting setup is:
 
-Electron IMFP files are interpolated at photoelectron kinetic energy:
+1. Read OPC and IMFP files with `load_material_tables(...)`.
+2. Build a `SimulationStack` with `stack_from_layer_specs(...)`.
+3. Build core-level requests with `core_level_from_tables(...)`.
+4. Load experimental reflectivity with `read_reflectivity_data(...)`.
+5. Load experimental rocking curves with `read_rocking_curve_data(...)`.
+6. Pass those objects into `swanx.fitting.FittingProblem` or a fitting backend.
 
-```text
-E_kin = h nu - E_B
+OPC and IMFP files are read outside JAX-traced residual functions. JAX fitting
+receives fixed numerical arrays or fixed-shape model inputs.
+
+## Troubleshooting
+
+**Missing data file**
+
+Paths in `project.yaml` are resolved relative to the YAML file. If a path works
+from your shell but not from SWANX, rewrite it relative to `project.yaml` or use
+an absolute path.
+
+**Missing PyYAML**
+
+Install the project extra:
+
+```bash
+python -m pip install -e ".[project]"
 ```
 
-Use:
+**Missing matplotlib**
 
-```python
-from swanx.io import read_imfp
+Plots are optional. Install plotting support with:
 
-table = read_imfp("data/IMFP/LNO.ANG")
-lambda_angstrom = table.at_kinetic_energy(795.0)
+```bash
+python -m pip install -e ".[plot]"
 ```
 
-## Material labels
+If matplotlib is unavailable, SWANX skips plots and records the reason in
+`report.md`.
 
-Material labels must match across layer specs, OPC mappings, IMFP mappings, and concentration dictionaries. Common labels in examples are:
+**Missing JAX or SciPy**
 
-```text
-LNO
-STO
-vacuum
+For JAX least-squares workflows, install:
+
+```bash
+python -m pip install -e ".[least-squares]"
 ```
 
-## Loading material tables
+The YAML still needs a residual factory callback.
 
-Users may place files wherever convenient and pass explicit paths. The tutorial
-files live under `data/OPC/` and `data/IMFP/`:
+**Unknown layer tag**
 
-```python
-from swanx.io import load_material_tables
+Check `stack` layer `tags` and `core_levels.emit_from.tags`. Tags are strings
+and must match exactly.
 
-tables = load_material_tables(
-    opc_files={"LNO": "data/OPC/LaNiO3.dat", "STO": "data/OPC/SrTiO3.dat"},
-    imfp_files={"LNO": "data/IMFP/LNO.ANG", "STO": "data/IMFP/STO.ANG"},
-)
+**Duplicate layer id**
+
+Every concrete layer needs a unique `id`. In repeat blocks, include
+`{repeat_index}` in repeated IDs.
+
+**Missing emit_from**
+
+Every core level must explicitly say where it emits from with `layer_ids`,
+`tags`, or `all: true`.
+
+**jax_least_squares without factory**
+
+Add `settings.optimizer.residual_function_factory: "module:function"` or use
+`fit_method: "simulate_only"` while preparing the project. SWANX does not fall
+back to BO.
+
+**BO not installed**
+
+Install the fitting extra:
+
+```bash
+python -m pip install -e ".[fit]"
 ```
 
-Directory mode is also available:
-
-```python
-tables = load_material_tables(opc_dir="data/OPC", imfp_dir="data/IMFP", materials=["LNO", "STO"])
-```
-
-The repository examples use `data/OPC/` and `data/IMFP/`. These are tutorial/example data, not a complete built-in materials database.
-
-## Building simulation requests
-
-`RockingCurveRequest` receives already-resolved stack optical constants, core-level IMFP dictionaries, and material concentration dictionaries. It does not read OPC or IMFP files internally.
-
-```python
-from swanx.io import stack_from_layer_specs, core_level_from_tables
-
-stack = stack_from_layer_specs(
-    [
-        {"material": "vacuum", "thickness": 0.0},
-        {"material": "LNO", "thickness": 40.0, "roughness": 3.0},
-        {"material": "STO", "thickness": 0.0},
-    ],
-    optical_constants=tables.optical_constants,
-    energy_ev=900.0,
-)
-
-la4d = core_level_from_tables(
-    name="La 4d",
-    binding_energy_ev=105.0,
-    photon_energy_ev=900.0,
-    concentration_by_material={"LNO": 1.0},
-    imfp_tables=tables.imfp,
-)
-```
-
-## Polarization
-
-High-level reflectivity and rocking-curve requests use s-polarization by
-default:
-
-```python
-request = sx.ReflectivityRequest(angles=angles, energy_ev=900.0, stack=stack)
-```
-
-Set `polarization="p"` for p-polarized optics, or pass a mixed raw weighting:
-
-```python
-request = sx.RockingCurveRequest(
-    angles=angles,
-    photon_energy_ev=900.0,
-    stack=stack,
-    core_levels=(la4d,),
-    polarization={"s": 0.7, "p": 0.3},
-)
-```
-
-For mixed polarization, SWANX combines raw reflectivity or raw SW-XPS intensity
-as `fs * s + fp * p` before rocking-curve normalization.
-
-## Loading experimental reflectivity data
-
-Experimental reflectivity files can be CSV or whitespace-separated tables with
-headers:
-
-```text
-angle_deg,reflectivity
-5.0,0.010
-5.1,0.012
-```
-
-Use:
-
-```python
-from swanx.io import read_reflectivity_data
-
-reflectivity_exp = read_reflectivity_data("data/curves/lno_sto_reflectivity.csv")
-```
-
-Headerless files are supported when explicit column indices are provided:
-
-```python
-reflectivity_exp = read_reflectivity_data(
-    "reflectivity.dat",
-    angle_column=0,
-    intensity_column=1,
-)
-```
-
-The loader sorts rows by angle, rejects duplicate angles, rejects non-finite
-angles/intensities/sigma values, and rejects negative sigma. Negative intensity
-is allowed for background-subtracted data.
-
-## Loading experimental rocking curves
-
-Rocking-curve files use the same table conventions:
-
-```python
-from swanx.io import read_rocking_curve_data
-
-la4d_exp = read_rocking_curve_data("data/curves/la4d_rocking_curve.csv")
-```
-
-Common intensity headers include `intensity`, `I`, `counts`, and `signal`.
-Headerless files require explicit column indices.
-
-## Rocking-curve normalization
-
-`swanx.io` reads external files. `swanx.preprocessing` owns normalization
-algorithms. `swanx.fitting` consumes `ReflectivityData` and `RockingCurveData`
-objects.
-
-To normalize while loading a rocking curve, pass a preprocessing mode through
-the loader:
-
-```python
-la4d_exp = read_rocking_curve_data(
-    "data/curves/la4d_rocking_curve.csv",
-    normalization_mode="mean",
-)
-```
-
-Supported modes match `swanx.preprocessing.normalize_rocking_curve`, including
-`mean` and `edge_polynomial`. With `normalization_mode=None`, raw intensity is
-returned.
-
-
-## Full fitting input workflow
-
-A realistic file-based fitting setup is:
-
-1. Read OPC files with `load_material_tables(...)`.
-2. Read IMFP files with `load_material_tables(...)`.
-3. Build a `SimulationStack` with `stack_from_layer_specs(...)`.
-4. Build core-level requests with `core_level_from_tables(...)`.
-5. Load experimental reflectivity with `read_reflectivity_data(...)`.
-6. Load experimental rocking curves with `read_rocking_curve_data(...)`.
-7. Pass those objects into `swanx.fitting.FittingProblem`.
-
-## Optimization
-
-JAX-based least-squares fitting is the recommended path for differentiable fixed-shape SWANX workflows. Bayesian optimization remains available as an optional global black-box baseline/robustness check, not the default.
-
-OPC and IMFP files are read outside the JAX-traced residual function. JAX fitting receives fixed numerical arrays or fixed-shape model inputs.
+BO remains an optional baseline and can require many evaluations in broad
+parameter spaces.

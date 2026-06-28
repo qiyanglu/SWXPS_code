@@ -708,11 +708,63 @@ def test_method_specific_report_writers(tmp_path):
 
 def test_readme_and_project_state_docs_are_current():
     readme = Path("README.md").read_text(encoding="utf-8")
+    user_guide = Path("docs/user_guide.md").read_text(encoding="utf-8")
+    reference = Path("docs/projectspec_reference.md").read_text(encoding="utf-8")
     project_state = Path("docs/PROJECT_STATE.md").read_text(encoding="utf-8")
 
+    assert readme.index("## What Is SWANX?") < readme.index("## Quickstart")
+    assert "## Why Standing-Wave XPS?" in readme
+    assert "## What SWANX Can Do" in readme
+    assert "| Capability | Current support |" in readme
+    assert "## What SWANX Does Not Try To Do" in readme
+    assert "Bayesian optimization is not the default fitting path" in readme
+    assert "not used as a\n  fallback" in readme
     assert "docs/user_guide.md" in readme
+    assert "docs/projectspec_reference.md" in readme
     assert "swanx init my_project" in readme
     assert "swanx inspect" in readme
     assert "repository-level `data/`" not in readme
+
+    for heading in (
+        "## Overview",
+        "## Core Concepts",
+        "## Quickstart: Simulate-Only Project",
+        "## Add Experimental Data And Overlay Points",
+        "## Fit Workflow",
+        "## How To Inspect And Validate",
+        "## How To Read Outputs",
+        "## Advanced Python API",
+        "## Troubleshooting",
+    ):
+        assert heading in user_guide
+
+    for section in (
+        "project",
+        "settings",
+        "materials",
+        "parameters",
+        "stack",
+        "core_levels",
+        "datasets",
+        "report",
+    ):
+        assert f"{section}:" in reference
+    assert "BO is an optional global black-box baseline" in reference
+
     assert "C:\\Users" not in project_state
     assert "240 passed" not in project_state
+
+
+def test_projectspec_example_yaml_files_validate():
+    examples = Path("examples/projectspec")
+    expected = {
+        "minimal_simulate_only.yaml",
+        "multilayer_repeat.yaml",
+        "compare_with_data.yaml",
+        "fit_jax_least_squares_placeholder.yaml",
+        "bo_optional_baseline.yaml",
+    }
+    assert expected <= {path.name for path in examples.glob("*.yaml")}
+
+    for name in expected:
+        validate_project(examples / name)

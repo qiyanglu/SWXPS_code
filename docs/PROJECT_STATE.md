@@ -44,6 +44,8 @@ also mirrored in the repository under `data/OPC/`, `data/IMFP/`, and
 - PyYAML is optional via `python -m pip install -e ".[project]"`.
 - `templates/project_minimal.yaml` and `templates/run_project.py` remain a
   repository-local simulation-only starter.
+- `docs/projectspec_reference.md` is the detailed YAML ProjectSpec reference,
+  and `examples/projectspec/` contains copy-pasteable ProjectSpec examples.
 - `swanx.io` reads OPC, IMFP, reflectivity, and rocking-curve files and builds
   `SimulationStack` and `CoreLevelRequest` objects from material tables.
 - `swanx.preprocessing` owns rocking-curve normalization algorithms.
@@ -142,7 +144,7 @@ swanx inspect runs/projectspec_smoke/project.yaml
 swanx validate runs/projectspec_smoke/project.yaml
 ```
 
-ProjectSpec report/progress and v1.3 package-layout validation completed on
-2026-06-28 with focused workflow/import tests and the full pytest suite passing;
-the full suite keeps its expected xfail. Exact counts are intentionally not
-pinned here because they become stale quickly.
+ProjectSpec report/progress, v1.3 package-layout, and documentation-reference
+validation completed on 2026-06-28 with focused workflow/import/docs tests and
+the full pytest suite passing; the full suite keeps its expected xfail. Exact
+counts are intentionally not pinned here because they become stale quickly.
