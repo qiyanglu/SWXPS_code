@@ -46,8 +46,8 @@ global black-box baseline/robustness check.
   Markdown, and plot layout;
 - uncertainty/sigma propagation in downstream diagnostics and exports;
 - optional adapters for additional optical-constant formats;
-- continued cleanup of fitting internals into focused `swanx.fitting.*`
-  submodules when it reduces complexity.
+- maintain the focused `swanx.fitting.*` backend layout and compatibility
+  shims while reducing complexity only when there is a clear need.
 
 ## Deferred physics/features
 

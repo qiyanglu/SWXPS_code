@@ -459,5 +459,5 @@ Notes:
 - `repeat_index` is 1-based inside repeat blocks.
 - JAX least-squares is the recommended fitting path for differentiable fixed-shape workflows.
 - Bayesian optimization is available as an optional global black-box baseline.
-- ProjectSpec v1.2 does not build automatic no-code JAX residuals; JAX fitting still requires factory callbacks.
+- ProjectSpec does not build automatic no-code JAX residuals; JAX fitting still requires factory callbacks.
 '''

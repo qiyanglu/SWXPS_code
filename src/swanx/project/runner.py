@@ -8,7 +8,7 @@ from pathlib import Path
 import sys
 from typing import Any, Callable
 
-from swanx.bo import BayesianOptimizationSettings, run_bayesian_fit
+from swanx.fitting.bo import BayesianOptimizationSettings, run_bayesian_fit
 from swanx.fitting import initial_vector
 from swanx.workflows.simulate import (
     ReflectivityRequest,

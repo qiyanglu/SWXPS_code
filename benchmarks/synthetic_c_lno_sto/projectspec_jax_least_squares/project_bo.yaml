@@ -1,11 +1,10 @@
 project:
-  name: "synthetic_c_lno_sto_projectspec_jax_ls"
+  name: "synthetic_c_lno_sto_projectspec_bo"
 
 settings:
   photon_energy_ev: 1000.0
   polarization: "s"
   normalization: "mean"
-  fit_method: "jax_least_squares"
   slicing:
     mode: "fixed_grid"
     min_slices: 3
@@ -21,16 +20,13 @@ settings:
   rocking_curve_offpeak_mask:
     mode: "exclude_reflectivity_peak"
     half_width_deg: 1.25
-  # ProjectSpec uses an explicit fixed-shape residual factory for JAX fitting.
-  # Run from this folder, or use run_project.py so this folder is on PYTHONPATH.
+  fit_method: "bayesian_optimization"
   optimizer:
-    residual_function_factory: "synthetic_residual_factory:build_residual_function"
-    max_nfev: 80
-    ftol: 1.0e-8
-    xtol: 1.0e-8
-    gtol: 1.0e-8
-    record_history: true
-    estimate_covariance: true
+    n_calls: 100
+    n_initial_points: 30
+    acquisition_function: "EI"
+    random_state: 7
+    show_progress: false
 
 materials:
   C:
@@ -92,9 +88,8 @@ stack:
     thickness_A: "$carbon_thickness"
     # The original synthetic benchmark uses:
     # carbon_roughness = 1 + carbon_roughness_fraction * (min(5, carbon_thickness) - 1)
-    # YAML expressions intentionally keep only arithmetic, so this visible stack uses
-    # the carbon_thickness >= 5 branch. The JAX residual factory below uses the exact
-    # original formula during least-squares fitting.
+    # YAML expressions intentionally keep only arithmetic, so this ProjectSpec uses
+    # the carbon_thickness >= 5 branch and bounds carbon_thickness at 5 A.
     roughness_A: "1.0 + 4.0 * carbon_roughness_fraction"
 
   - repeat:

@@ -30,7 +30,7 @@ also mirrored in the repository under `data/OPC/`, `data/IMFP/`, and
 
 ## Implemented workflow
 
-- `swanx.project` validates and runs YAML ProjectSpec v1.2 files.
+- `swanx.project` validates and runs YAML ProjectSpec files.
 - `swanx init my_project` creates `project.yaml`, `run_project.py`, a project
   README, and by default a local `data/` copy of packaged minimal tutorial data.
 - `swanx init --template minimal`, `--template multilayer`, and
@@ -47,13 +47,13 @@ also mirrored in the repository under `data/OPC/`, `data/IMFP/`, and
 - `swanx.io` reads OPC, IMFP, reflectivity, and rocking-curve files and builds
   `SimulationStack` and `CoreLevelRequest` objects from material tables.
 - `swanx.preprocessing` owns rocking-curve normalization algorithms.
-- `swanx.fitting` consumes `ReflectivityData` and `RockingCurveData`.
+- `swanx.fitting` consumes `ReflectivityData` and `RockingCurveData`; maintained fitting backends live under `swanx.fitting.bo`, `swanx.fitting.jax_gradient`, and `swanx.fitting.jax_least_squares`.
 - `swanx.io.__all__` is narrow and explicit; it does not export preprocessing
   functions or legacy flat helpers.
 
-## ProjectSpec v1.2 notes
+## YAML ProjectSpec notes
 
-ProjectSpec v1.2 supports sections for `project`, `settings`, `materials`,
+The current YAML ProjectSpec supports sections for `project`, `settings`, `materials`,
 `parameters`, `stack`, `core_levels`, `datasets`, and `report`. The required
 sections are `project`, `settings`, `materials`, `stack`, and `core_levels`;
 `parameters`, `datasets`, and `report` default to empty mappings.
@@ -72,8 +72,11 @@ Supported YAML workflow features include:
 - per-plot skipped-output notes and experimental-overlay notes in `report.md`;
 - compound reflectivity-plus-rocking-curve overview plots with incident-angle
   labels and no default residual PNG;
-- least-squares parameter-range and correlation plot images when diagnostics are
-  available;
+- stack schematic plots for all run methods;
+- least-squares convergence, parameter-range, and correlation plot images when
+  diagnostics are available;
+- Bayesian-optimization convergence and surrogate-slice plots when diagnostics
+  are available;
 - optional dataset weights/log floors, off-peak RC masks, and fixed-grid slicing
   settings that pass through to the existing `FittingProblem` APIs;
 - complete `simulate_only` report output without best-fit parameter tables;
@@ -100,9 +103,13 @@ is 1-based inside repeat blocks.
   such as `{"s": 0.7, "p": 0.3}`.
 - JAX least-squares/autodiff is the recommended fitting path for differentiable
   fixed-shape workflows; BO remains an optional global black-box baseline.
-- ProjectSpec v1.2 still requires user-provided factories for
+- YAML ProjectSpec fitting still requires user-provided factories for
   `jax_least_squares` and `jax_gradient`; no automatic no-code JAX residual
   builder is implemented.
+- ProjectSpec v1.3 package layout cleanup moves maintained backend
+  implementations under `swanx.fitting` and report implementations under
+  `swanx.project.reporting`; root backend modules and `swanx.project.reports`
+  remain compatibility shims.
 
 ## Repository policy
 
@@ -135,7 +142,7 @@ swanx inspect runs/projectspec_smoke/project.yaml
 swanx validate runs/projectspec_smoke/project.yaml
 ```
 
-ProjectSpec report/progress validation completed on 2026-06-27 with the
-focused workflow tests, full pytest suite, and synthetic C/LNO/STO ProjectSpec
-least-squares benchmark passing; the full suite keeps its expected xfail. Exact
-counts are intentionally not pinned here because they become stale quickly.
+ProjectSpec report/progress and v1.3 package-layout validation completed on
+2026-06-28 with focused workflow/import tests and the full pytest suite passing;
+the full suite keeps its expected xfail. Exact counts are intentionally not
+pinned here because they become stale quickly.

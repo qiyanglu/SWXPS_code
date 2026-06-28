@@ -12,7 +12,7 @@ import numpy as np
 from ..fitting.core import FitParameter
 
 if TYPE_CHECKING:
-    from ..jax_least_squares import JaxLeastSquaresOptimizationResult
+    from ..fitting.jax_least_squares import JaxLeastSquaresOptimizationResult
 
 
 @dataclass(frozen=True)

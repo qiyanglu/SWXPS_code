@@ -11,11 +11,22 @@ Beginner users who want a whole project run should start with `swanx init my_pro
 - `swanx.stack`: layers, stacks, templates, slicing, and profiles.
 - `swanx.optics`: Parratt, transfer-matrix, fields, and unified-grid optics.
 - `swanx.xps`: attenuation, XPS intensity, and rocking curves.
-- `swanx.fitting`: parameters, objectives, and maintained fitting backends; optimizer-independent fitting helpers live in `swanx.fitting.core`.
+- `swanx.fitting`: parameters, objectives, and maintained fitting backends. Optimizer-independent helpers live in `swanx.fitting.core`; backends live in `swanx.fitting.bo`, `swanx.fitting.jax_gradient`, and `swanx.fitting.jax_least_squares`.
 - `swanx.diagnostics`: covariance, correlation, plots, reports, and result exports.
 - `swanx.io`: OPC readers, IMFP readers, material-table loaders, stack/core-level builders, and experimental reflectivity/rocking-curve readers.
 - `swanx.workflows`: high-level simulation, fitting, and reporting entry points.
-- `swanx.project`: YAML ProjectSpec parsing, validation, object building, project execution, and report-file writing.
+- `swanx.project`: YAML ProjectSpec parsing, validation, object building, project execution, and report-file writing. Report implementation modules live under `swanx.project.reporting`; `swanx.project.reports` is the compatibility facade.
+
+## Compatibility shims
+
+Several root modules remain only to keep older documented imports working. New
+internal code should use the maintained subpackages instead:
+
+- `swanx.bo` -> `swanx.fitting.bo`
+- `swanx.jax_gradient` -> `swanx.fitting.jax_gradient`
+- `swanx.jax_least_squares` -> `swanx.fitting.jax_least_squares`
+- `swanx.reflectivity` -> `swanx.optics.parratt`
+- `swanx._fitting` -> `swanx.fitting.core`
 
 ## IO boundary
 
@@ -51,4 +62,4 @@ The core uses grazing angles in degrees, photon energy in eV, lengths in Angstro
 
 ## Fitting
 
-Unified slicing is the default for high-level simulation and fitting. `slicing=None` explicitly selects the legacy fixed-step path. `simulate_only` is fully supported by YAML ProjectSpec v1.2. JAX-based least-squares/autodiff is the recommended fitting path for differentiable fixed-shape workflows, with explicit factory callbacks still required by YAML projects; Bayesian optimization remains available as an optional global black-box baseline/robustness check, not the default.
+Unified slicing is the default for high-level simulation and fitting. `slicing=None` explicitly selects the legacy fixed-step path. `simulate_only` is fully supported by the YAML ProjectSpec workflow. JAX-based least-squares/autodiff is the recommended fitting path for differentiable fixed-shape workflows, with explicit factory callbacks still required by YAML projects; Bayesian optimization remains available as an optional global black-box baseline/robustness check, not the default.

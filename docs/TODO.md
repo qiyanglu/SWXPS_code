@@ -23,10 +23,11 @@
 - [x] Add `swanx init my_project` for beginner YAML project setup.
 - [x] Add ProjectSpec initializer options for copied example data and
       explicit data roots.
-- [x] Add ProjectSpec v1.2 initializer templates, packaged tutorial data,
+- [x] Add ProjectSpec initializer templates, packaged tutorial data,
       `swanx inspect`, and richer Markdown report notes.
 - [x] Improve ProjectSpec fitting plots with a compound overview, incident-angle
-      labels, LS parameter/correlation diagnostics, and no default residual PNG.
+      labels, stack schematics, LS convergence/parameter/correlation diagnostics,
+      BO convergence/surrogate diagnostics, and no default residual PNG.
 - [x] Add visible ProjectSpec run progress messages for `swanx run` and
       generated beginner scripts.
 - [x] Add a synthetic C/LNO/STO ProjectSpec JAX least-squares benchmark with
@@ -47,6 +48,10 @@
 - [x] Keep `swanx` as the only supported namespace.
 - [x] Keep rocking-curve normalization under `swanx.preprocessing`.
 - [x] Keep fitting data consumption under `swanx.fitting`.
+- [x] Move maintained fitting backends under `swanx.fitting` while keeping
+      root backend modules as compatibility shims.
+- [x] Split ProjectSpec report writers under `swanx.project.reporting` while
+      keeping `swanx.project.reports` as the compatibility facade.
 
 ## Deferred or out of scope
 

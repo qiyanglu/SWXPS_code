@@ -46,7 +46,7 @@ class FakeModel:
 
 
 def test_bayesian_optimization_adapter_returns_native_result(monkeypatch):
-    import swanx.bo as bo
+    import swanx.fitting.bo as bo
 
     def fake_gp_minimize(
         func,
@@ -114,7 +114,7 @@ def test_bayesian_optimization_result_predicts_surrogate_mean_and_std():
 
 
 def test_staged_multistart_fit_carries_best_parameters_forward(monkeypatch):
-    import swanx.bo as bo
+    import swanx.fitting.bo as bo
 
     calls = []
 

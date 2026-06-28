@@ -1,11 +1,10 @@
 project:
-  name: "synthetic_c_lno_sto_projectspec_jax_ls"
+  name: "synthetic_c_lno_sto_projectspec_simulate_only"
 
 settings:
   photon_energy_ev: 1000.0
   polarization: "s"
   normalization: "mean"
-  fit_method: "jax_least_squares"
   slicing:
     mode: "fixed_grid"
     min_slices: 3
@@ -18,19 +17,10 @@ settings:
       superlattice_roughness: 3.0
       substrate_roughness: 3.0
       angle_offset: 0.0
-  rocking_curve_offpeak_mask:
-    mode: "exclude_reflectivity_peak"
-    half_width_deg: 1.25
-  # ProjectSpec uses an explicit fixed-shape residual factory for JAX fitting.
-  # Run from this folder, or use run_project.py so this folder is on PYTHONPATH.
-  optimizer:
-    residual_function_factory: "synthetic_residual_factory:build_residual_function"
-    max_nfev: 80
-    ftol: 1.0e-8
-    xtol: 1.0e-8
-    gtol: 1.0e-8
-    record_history: true
-    estimate_covariance: true
+  angle_start_deg: 6.915650706368666
+  angle_stop_deg: 10.915650706368666
+  angle_count: 161
+  fit_method: "simulate_only"
 
 materials:
   C:
@@ -45,40 +35,26 @@ materials:
 
 parameters:
   carbon_thickness:
-    initial: 8.5
-    lower: 5.0
-    upper: 16.0
-    vary: true
+    value: 10.0
+    vary: false
   carbon_roughness_fraction:
-    initial: 0.2
-    lower: 0.0
-    upper: 1.0
-    vary: true
+    value: 0.3333333333333333
+    vary: false
   lno_thickness:
-    initial: 19.2
-    lower: 18.0
-    upper: 22.0
-    vary: true
+    value: 20.0
+    vary: false
   sto_thickness:
-    initial: 20.8
-    lower: 18.0
-    upper: 22.0
-    vary: true
+    value: 20.0
+    vary: false
   superlattice_roughness:
-    initial: 2.2
-    lower: 1.0
-    upper: 5.0
-    vary: true
+    value: 3.0
+    vary: false
   substrate_roughness:
-    initial: 3.8
-    lower: 1.0
-    upper: 5.0
-    vary: true
+    value: 3.0
+    vary: false
   angle_offset:
-    initial: 0.08
-    lower: -0.25
-    upper: 0.25
-    vary: true
+    value: 0.0
+    vary: false
 
 stack:
   - id: "vacuum"
@@ -92,9 +68,9 @@ stack:
     thickness_A: "$carbon_thickness"
     # The original synthetic benchmark uses:
     # carbon_roughness = 1 + carbon_roughness_fraction * (min(5, carbon_thickness) - 1)
-    # YAML expressions intentionally keep only arithmetic, so this visible stack uses
-    # the carbon_thickness >= 5 branch. The JAX residual factory below uses the exact
-    # original formula during least-squares fitting.
+    # YAML expressions intentionally keep only arithmetic, so this ProjectSpec uses
+    # the carbon_thickness >= 5 branch. That matches the synthetic truth and most
+    # fitted candidates, but differs from the exact formula below 5 A.
     roughness_A: "1.0 + 4.0 * carbon_roughness_fraction"
 
   - repeat:
@@ -143,39 +119,6 @@ core_levels:
     concentration: 1.0
     emission_angle_deg: 0.0
 
-datasets:
-  reflectivity:
-    path: "data/curves/lno_sto_c_synthetic_data.csv"
-    name: "reflectivity"
-    angle_column: "angle_deg"
-    intensity_column: "reflectivity"
-    weight: 0.2709975524929604
-    log_floor: 1.0e-12
-  rocking_curves:
-    - path: "data/curves/lno_sto_c_synthetic_data.csv"
-      name: "La 4d"
-      angle_column: "angle_deg"
-      intensity_column: "la4d_rc"
-      normalization:
-      weight: 5.0
-    - path: "data/curves/lno_sto_c_synthetic_data.csv"
-      name: "O 1s"
-      angle_column: "angle_deg"
-      intensity_column: "o1s_rc"
-      normalization:
-      weight: 5.0
-    - path: "data/curves/lno_sto_c_synthetic_data.csv"
-      name: "Ti 2p"
-      angle_column: "angle_deg"
-      intensity_column: "ti2p_rc"
-      normalization:
-      weight: 5.0
-    - path: "data/curves/lno_sto_c_synthetic_data.csv"
-      name: "C 1s"
-      angle_column: "angle_deg"
-      intensity_column: "c1s_rc"
-      normalization:
-      weight: 5.0
 
 report:
   save_plots: true

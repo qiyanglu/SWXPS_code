@@ -555,6 +555,7 @@ def test_matplotlib_missing_plot_skip_is_recorded(monkeypatch, tmp_path):
     assert "plots/fit_overview.png skipped because matplotlib is not installed" in report
     assert "plots/reflectivity_fit.png skipped because matplotlib is not installed" in report
     assert "plots/rocking_curves_fit.png skipped because matplotlib is not installed" in report
+    assert "plots/stack_schematic.png skipped because matplotlib is not installed" in report
 
 
 def test_plots_overlay_experimental_data_when_matplotlib_exists(tmp_path):
@@ -581,11 +582,13 @@ def test_plots_overlay_experimental_data_when_matplotlib_exists(tmp_path):
     assert (output / "plots" / "fit_overview.png").exists()
     assert (output / "plots" / "reflectivity_fit.png").exists()
     assert (output / "plots" / "rocking_curves_fit.png").exists()
+    assert (output / "plots" / "stack_schematic.png").exists()
     assert not (output / "plots" / "residuals.png").exists()
     report = (output / "report.md").read_text(encoding="utf-8")
     assert "plots/fit_overview.png written with experimental overlays: reflectivity, La 4d" in report
     assert "plots/reflectivity_fit.png written with experimental overlay" in report
     assert "plots/rocking_curves_fit.png written with experimental overlays: La 4d" in report
+    assert "plots/stack_schematic.png written from the final stack" in report
 
 
 @dataclass(frozen=True)
@@ -661,6 +664,7 @@ def test_method_specific_report_writers(tmp_path):
         write_method_outputs(tmp_path / "plot_outputs", "jax_least_squares", _Result(), plot_built)
         assert (tmp_path / "plot_outputs" / "plots" / "parameter_uncertainty.png").exists()
         assert (tmp_path / "plot_outputs" / "plots" / "parameter_correlation.png").exists()
+        assert (tmp_path / "plot_outputs" / "plots" / "convergence.png").exists()
 
     write_method_outputs(tmp_path, "jax_gradient", _Result())
     gradient_dir = tmp_path / "optimizer" / "gradient"
@@ -685,6 +689,10 @@ def test_method_specific_report_writers(tmp_path):
             "best_parameters": {"x": 1.0},
             "best_objective": 1.0,
             "history": _History(history.evaluations),
+            "predict_objective": lambda self, vectors: (
+                np.sum(np.asarray(vectors, dtype=float) ** 2, axis=1),
+                np.full(np.asarray(vectors).shape[0], 0.1),
+            ),
         },
     )()
     write_method_outputs(tmp_path, "bayesian_optimization", bo_result)
@@ -692,6 +700,8 @@ def test_method_specific_report_writers(tmp_path):
     assert _read_csv(bayes_dir / "evaluations.csv")[0] == ["evaluation", "objective", "parameters_json"]
     assert _read_csv(bayes_dir / "best_so_far.csv")[0] == ["evaluation", "best_objective", "best_parameters_json"]
     assert (bayes_dir / "parameter_samples.csv").exists()
+    if importlib.util.find_spec("matplotlib") is not None:
+        assert (tmp_path / "plots" / "convergence.png").exists()
     assert not (bayes_dir / "covariance.csv").exists()
     assert not (bayes_dir / "correlation.csv").exists()
 

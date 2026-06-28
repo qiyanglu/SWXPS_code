@@ -61,6 +61,10 @@ reflectivity, standing-wave XPS, fitting, and diagnostics.
 ## Repository map
 
 - `src/swanx`: maintained package and only supported Python namespace.
+- Maintained fitting backends live under `src/swanx/fitting`; root backend
+  modules are compatibility shims only.
+- Project report implementation lives under `src/swanx/project/reporting`;
+  `src/swanx/project/reports.py` is a compatibility facade.
 - `tests`: regression tests.
 - `examples`: compact tutorial scripts and small tutorial data.
 - `case_studies`: local/private experimental inputs and runners; ignored by Git.

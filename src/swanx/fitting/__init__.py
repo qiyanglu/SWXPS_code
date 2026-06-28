@@ -21,7 +21,7 @@ from .core import (
     stack_with_updates,
     validate_finite_layer_roughness,
 )
-from ..bo import (
+from .bo import (
     BayesianOptimizationResult,
     BayesianOptimizationSettings,
     FitStage,
@@ -33,7 +33,7 @@ from ..bo import (
     run_bayesian_optimization,
     run_staged_multistart_bayesian_fit,
 )
-from ..jax_gradient import (
+from .jax_gradient import (
     JaxGradientHistoryRecord,
     JaxGradientOptimizationResult,
     JaxGradientOptimizerSettings,
@@ -41,7 +41,7 @@ from ..jax_gradient import (
     physical_to_scaled,
     scaled_to_physical,
 )
-from ..jax_least_squares import (
+from .jax_least_squares import (
     JaxCompilationCounter,
     JaxLeastSquaresHistoryRecord,
     JaxLeastSquaresOptimizationResult,

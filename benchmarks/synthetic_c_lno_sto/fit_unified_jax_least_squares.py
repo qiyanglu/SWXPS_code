@@ -19,7 +19,7 @@ for path in (SRC_DIR, CASE_DIR):
         sys.path.insert(0, str(path))
 
 import fit_reflectivity_rc_bo as case  # noqa: E402
-from swanx.jax_least_squares import (  # noqa: E402
+from swanx.fitting import (  # noqa: E402
     JaxLeastSquaresOptimizerSettings,
     JaxLeastSquaresResidualSettings,
     build_jax_residual_function,

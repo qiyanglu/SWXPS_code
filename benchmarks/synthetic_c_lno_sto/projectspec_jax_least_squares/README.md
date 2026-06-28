@@ -3,12 +3,16 @@
 This folder runs the existing synthetic C/LNO/STO reflectivity plus SW-XPS
 rocking-curve benchmark through the YAML ProjectSpec workflow.
 
-It is intentionally a ProjectSpec v1.2 example rather than a no-code JAX
+It is intentionally a ProjectSpec YAML example rather than a no-code JAX
 residual generator:
 
-- `project.yaml` owns the human-editable project information: materials, OPC and
-  IMFP paths, stack layer IDs/tags, core-level emitting layers, datasets, and
-  fitting parameters.
+- `project.yaml` owns the JAX least-squares variant: materials, OPC and IMFP
+  paths, stack layer IDs/tags, core-level emitting layers, datasets, and fitting
+  parameters.
+- `project_simulate_only.yaml` uses fixed synthetic truth values and writes
+  simulation/report outputs without fitting.
+- `project_bo.yaml` uses the existing generic Bayesian-optimization backend as
+  an optional black-box baseline.
 - `synthetic_residual_factory.py` is the explicit fixed-shape JAX residual
   callback required by `settings.fit_method: "jax_least_squares"`.
 - `run_project.py` is the minimal script entry point.
@@ -27,7 +31,8 @@ The YAML mirrors the existing synthetic case in
 
 Note: ProjectSpec arithmetic intentionally does not include functions such as
 `min(...)`. The visible YAML stack uses the `carbon_thickness >= 5 A` branch for
-carbon roughness. The JAX residual factory uses the exact original benchmark
+carbon roughness, so the YAML fitting examples bound carbon thickness at `5 A` to
+avoid invalid roughness-greater-than-thickness candidates. The JAX residual factory uses the exact original benchmark
 formula during least-squares fitting:
 
 ```text
@@ -68,6 +73,9 @@ From the repository root:
 swanx inspect benchmarks/synthetic_c_lno_sto/projectspec_jax_least_squares/project.yaml
 swanx validate benchmarks/synthetic_c_lno_sto/projectspec_jax_least_squares/project.yaml
 swanx run benchmarks/synthetic_c_lno_sto/projectspec_jax_least_squares/project.yaml
+
+swanx run benchmarks/synthetic_c_lno_sto/projectspec_jax_least_squares/project_simulate_only.yaml
+swanx run benchmarks/synthetic_c_lno_sto/projectspec_jax_least_squares/project_bo.yaml
 ```
 
 Or from this benchmark folder:
@@ -77,6 +85,8 @@ cd benchmarks/synthetic_c_lno_sto/projectspec_jax_least_squares
 swanx inspect project.yaml
 swanx validate project.yaml
 swanx run project.yaml
+swanx run project_simulate_only.yaml
+swanx run project_bo.yaml
 ```
 
 Equivalent module form is also available with `python -m swanx.cli ...`.
@@ -100,6 +110,18 @@ optimizer/least_squares/parameter_uncertainty.csv
 plots/fit_overview.png
 plots/reflectivity_fit.png
 plots/rocking_curves_fit.png
+plots/stack_schematic.png
+plots/convergence.png
 plots/parameter_uncertainty.png
 plots/parameter_correlation.png
 ```
+
+For `project_bo.yaml`, the BO-specific plot set includes:
+
+```text
+plots/convergence.png
+plots/surrogate_slices.png
+```
+
+For `project_simulate_only.yaml`, the YAML omits datasets intentionally, so it
+writes pure simulation outputs without `data/` or `fit/residuals.csv`.

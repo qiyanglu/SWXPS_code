@@ -91,11 +91,12 @@ Every run writes `report.md`, input snapshots, resolved CSVs, simulation CSVs,
 and `fit/fit_summary.json`. Simulation-only runs do not write
 `fit/best_parameters.csv`; residuals are written only when experimental datasets
 exist. When `report.save_plots: true` and matplotlib is available, reports also
-include `plots/fit_overview.png`, `plots/reflectivity_fit.png`, and
-`plots/rocking_curves_fit.png` with experimental overlays when data are present.
-Least-squares reports also include parameter uncertainty and correlation plots
-when diagnostics are available. Skipped plot reasons are recorded per plot in
-`report.md`.
+include `plots/fit_overview.png`, `plots/reflectivity_fit.png`,
+`plots/rocking_curves_fit.png`, and `plots/stack_schematic.png`.
+Least-squares reports also include convergence, parameter uncertainty, and
+correlation plots when diagnostics are available. Bayesian-optimization reports
+also include convergence and surrogate-slice plots when the backend exposes a
+surrogate model. Skipped plot reasons are recorded per plot in `report.md`.
 
 ## Advanced Python API
 
@@ -110,10 +111,15 @@ focused namespaces such as `swanx.io`, `swanx.preprocessing`,
 `swanx.fitting`, and `swanx.diagnostics`. Use these when a custom script needs
 more control than a YAML `ProjectSpec`.
 
+Maintained fitting backends now live under `swanx.fitting`: `swanx.fitting.bo`,
+`swanx.fitting.jax_gradient`, and `swanx.fitting.jax_least_squares`. Root
+modules such as `swanx.bo`, `swanx.jax_gradient`, `swanx.jax_least_squares`,
+`swanx.reflectivity`, and `swanx._fitting` are compatibility shims only.
+
 ## Fitting And Optimization
 
 JAX least-squares is the recommended fitting path for differentiable fixed-shape
-workflows. ProjectSpec v1.2 still requires user-provided JAX callback factories
+workflows. ProjectSpec YAML fitting still requires user-provided JAX callback factories
 for `jax_least_squares` and `jax_gradient`; SWANX does not generate automatic
 no-code JAX residuals in this pass. Bayesian optimization is available as an
 optional global black-box baseline and is not the default or a fallback.

@@ -1,6 +1,6 @@
-﻿"""Fixed-shape JAX residual factory for the synthetic C/LNO/STO ProjectSpec.
+"""Fixed-shape JAX residual factory for the synthetic C/LNO/STO ProjectSpec.
 
-ProjectSpec v1.2 intentionally does not generate no-code JAX residuals. This
+ProjectSpec intentionally does not generate no-code JAX residuals. This
 module is the explicit callback requested by ``settings.optimizer`` in
 ``project.yaml``. It reuses the existing synthetic benchmark's fixed-grid JAX
 model and weighting conventions while letting the YAML file own materials,
@@ -27,7 +27,7 @@ from fit_unified_jax_least_squares import (  # noqa: E402
     UnifiedSyntheticJaxModel,
     capacity_values,
 )
-from swanx.jax_least_squares import (  # noqa: E402
+from swanx.fitting import (  # noqa: E402
     JaxLeastSquaresResidualSettings,
     build_jax_residual_function,
 )
@@ -41,7 +41,7 @@ def build_residual_function(problem):
 
     The YAML ProjectSpec supplies the datasets and parameter declarations. This
     factory adds the benchmark-specific pieces that are intentionally outside
-    generic ProjectSpec v1.2: fixed-grid JAX tracing, the off-peak RC
+    generic ProjectSpec YAML: fixed-grid JAX tracing, the off-peak RC
     normalization mask, and the original synthetic benchmark dataset weights.
     """
 
