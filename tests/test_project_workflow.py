@@ -712,13 +712,17 @@ def test_readme_and_project_state_docs_are_current():
     reference = Path("docs/projectspec_reference.md").read_text(encoding="utf-8")
     project_state = Path("docs/PROJECT_STATE.md").read_text(encoding="utf-8")
 
-    assert readme.index("## What Is SWANX?") < readme.index("## Quickstart")
-    assert "## Why Standing-Wave XPS?" in readme
-    assert "## What SWANX Can Do" in readme
-    assert "| Capability | Current support |" in readme
-    assert "## What SWANX Does Not Try To Do" in readme
-    assert "Bayesian optimization is not the default fitting path" in readme
-    assert "not used as a\n  fallback" in readme
+    assert readme.index("## Why SWANX?") < readme.index("## Quickstart")
+    assert "## What SWANX helps you do" in readme
+    assert "| Task | What SWANX provides |" in readme
+    assert "## Project File Overview" in readme
+    assert "## Important YAML Conventions" in readme
+    assert "## Outputs" in readme
+    assert "## Fitting Overview" in readme
+    assert "The generated project is self-contained" in readme
+    assert "JAX least-squares" in readme
+    assert "global black-box baseline or robustness check" in readme
+    assert "not the default and is not\nused as a fallback" in readme
     assert "docs/user_guide.md" in readme
     assert "docs/projectspec_reference.md" in readme
     assert "swanx init my_project" in readme
