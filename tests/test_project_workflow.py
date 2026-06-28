@@ -712,17 +712,19 @@ def test_readme_and_project_state_docs_are_current():
     reference = Path("docs/projectspec_reference.md").read_text(encoding="utf-8")
     project_state = Path("docs/PROJECT_STATE.md").read_text(encoding="utf-8")
 
-    assert readme.index("## Why SWANX?") < readme.index("## Quickstart")
-    assert "## What SWANX helps you do" in readme
-    assert "| Task | What SWANX provides |" in readme
-    assert "## Project File Overview" in readme
-    assert "## Important YAML Conventions" in readme
+    assert readme.index("## What problem does SWANX solve?") < readme.index("## Quickstart")
+    assert "## What can I do with SWANX?" in readme
+    assert "## ProjectSpec overview" in readme
     assert "## Outputs" in readme
-    assert "## Fitting Overview" in readme
+    assert "## Fitting" in readme
+    assert "## Installation options" in readme
     assert "The generated project is self-contained" in readme
+    assert "copies packaged tutorial OPC, IMFP, and curve files" in readme
+    assert "thickness_A` and `roughness_A` are in Angstrom" in readme
+    assert "repeat_index` is 1-based" in readme
     assert "JAX least-squares" in readme
-    assert "global black-box baseline or robustness check" in readme
-    assert "not the default and is not\nused as a fallback" in readme
+    assert "optional global black-box baseline" in readme
+    assert "BO is not the default fitting method and is not used as a fallback" in readme
     assert "docs/user_guide.md" in readme
     assert "docs/projectspec_reference.md" in readme
     assert "swanx init my_project" in readme

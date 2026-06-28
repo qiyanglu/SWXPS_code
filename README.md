@@ -6,88 +6,59 @@
 
 **SWANX** means **S**tanding-**W**ave **A**nalysis for **N**anoscale **X**-ray spectroscopy.
 
-SWANX is a Python package for building, simulating, fitting, and documenting
-multilayer standing-wave XPS projects. It is designed for workflows where a user
-has a multilayer stack, optical constants, core-level signals, and possibly
-experimental reflectivity or rocking-curve data, and wants a reproducible way to
-go from model assumptions to simulated curves, fits, plots, and reports.
+SWANX is a Python package for multilayer standing-wave XPS projects. It helps users build a sample model, simulate x-ray reflectivity and core-level rocking curves, compare with experimental data, fit selected stack parameters, and save reproducible reports.
 
-SWANX focuses on a practical question:
+Typical SWANX inputs are:
 
-> Given a multilayer sample, where do different core-level signals come from,
-> and what stack parameters best explain the measured reflectivity and
-> standing-wave XPS rocking curves?
+```text
+optical constants + IMFP tables + stack model + core levels + optional datasets
+```
 
-## Why SWANX?
+Typical SWANX outputs are:
 
-Standing-wave XPS is powerful because the x-ray field inside a multilayer sample
-depends strongly on incidence angle. Near a multilayer Bragg condition, the
-incident and reflected x-rays interfere, creating a depth-dependent excitation
-field. As the incidence angle is scanned, atoms at different depths can be
-highlighted differently.
+```text
+simulated curves + fitted parameters + residuals + plots + report.md
+```
 
-A typical SW-XPS dataset therefore contains curves such as
+SWANX is designed for users working with layered samples such as thin films, oxide heterostructures, superlattices, and multilayer standing-wave mirrors.
+
+## What problem does SWANX solve?
+
+Standing-wave XPS can provide depth sensitivity because the x-ray electric field inside a multilayer changes with incidence angle. A reflectivity scan gives
 
 $$
 R(\theta)
 $$
 
-for x-ray reflectivity, and
+and a core-level rocking curve gives
 
 $$
 I_\mathrm{core}(\theta)
 $$
 
-for a core-level photoemission intensity measured as a function of incidence
-angle. These core-level “rocking curves” can be sensitive to layer thickness,
-interface roughness/interdiffusion, emitting-layer depth, optical constants, and
-photoelectron attenuation.
+where the curve shape depends on where that core-level signal originates in the stack.
 
-In practice, SW-XPS analysis can be difficult because many pieces must stay
-consistent:
+In practice, analyzing these curves requires keeping many things consistent: layer thicknesses, roughnesses, optical constants, IMFPs, emitting layers, experimental datasets, fitting parameters, and output diagnostics. SWANX packages these steps into a reproducible workflow.
 
-- optical constants for each material;
-- electron attenuation / IMFP tables;
-- a multilayer stack model;
-- roughness or interdiffusion assumptions;
-- core levels and their emitting layers;
-- reflectivity and rocking-curve datasets;
-- fitting parameters and bounds;
-- diagnostic plots and output files.
+## What can I do with SWANX?
 
-SWANX turns these pieces into a reproducible project workflow.
+You can use SWANX to:
 
-## What SWANX helps you do
+- build multilayer stacks with stable layer IDs, tags, and repeat blocks;
+- load optical-constant and IMFP tables;
+- simulate multilayer x-ray reflectivity;
+- simulate standing-wave XPS rocking curves for selected core levels;
+- overlay simulated curves with experimental reflectivity and rocking-curve data;
+- fit thickness and roughness parameters;
+- generate project-local reports, plots, and CSV outputs;
+- use JAX least-squares for differentiable fixed-shape fitting workflows;
+- use Bayesian optimization as an optional global baseline or robustness check.
 
-SWANX is intended for multilayer SW-XPS projects such as oxide heterostructures,
-superlattices, thin films on standing-wave mirrors, and similar layered samples.
-
-Typical tasks include:
-
-| Task | What SWANX provides |
-|---|---|
-| Build a multilayer model | YAML or Python stack definitions with stable layer IDs and tags |
-| Load optical data | OPC and IMFP readers for material tables |
-| Simulate reflectivity | Multilayer x-ray reflectivity vs incidence angle |
-| Simulate SW-XPS rocking curves | Core-level intensity vs incidence angle for selected emitting layers |
-| Compare to experiment | Overlay experimental reflectivity and rocking-curve points |
-| Fit model parameters | Fit thickness / roughness parameters with bounded optimizers |
-| Diagnose results | Residuals, best parameters, covariance/correlation for least-squares when available |
-| Record outputs | Project-local `report.md`, CSV files, resolved inputs, and plots |
-
-The recommended fitting path is **JAX least-squares** for differentiable,
-fixed-shape workflows. Bayesian optimization is also available as an optional
-global black-box baseline or robustness check; it is not the default and is not
-used as a fallback.
-
-SWANX is inspired by established x-ray-optics and standing-wave photoemission
-workflows, including YXRO and SWOPT, but it is not intended to be a full clone of
-either. The emphasis here is a modern, scriptable Python workflow for multilayer
-reflectivity and SW-XPS analysis.
+SWANX is inspired by standing-wave x-ray optics and SW-PES analysis workflows such as YXRO and SWOPT, but it has a narrower goal: a modern Python workflow for multilayer SW-XPS simulation, fitting, and diagnostics.
 
 ## Quickstart
 
-From the repository root, install the project workflow and plotting extras:
+Install the project workflow and plotting extras:
 
 ```bash
 python -m pip install -e ".[project,plot]"
@@ -105,22 +76,25 @@ Run it:
 python my_project/run_project.py
 ```
 
-The generated project is self-contained: `swanx init` copies packaged tutorial
-OPC, IMFP, and curve files into `my_project/data/`.
+The generated project is self-contained. By default, `swanx init` copies packaged tutorial OPC, IMFP, and curve files into:
 
-The output folder will look like:
+```text
+my_project/data/
+```
+
+Each run writes results under:
 
 ```text
 my_project/runs/<project_name>_<timestamp>/
 ```
 
-Each run writes a Markdown report:
+The main human-readable output is:
 
 ```text
-my_project/runs/<project_name>_<timestamp>/report.md
+report.md
 ```
 
-You can also use the CLI directly:
+Useful CLI commands are:
 
 ```bash
 swanx inspect my_project/project.yaml
@@ -128,9 +102,7 @@ swanx validate my_project/project.yaml
 swanx run my_project/project.yaml
 ```
 
-## Starter Templates
-
-`init` can generate a few different starting points:
+## Starter templates
 
 ```bash
 swanx init my_project --template minimal
@@ -141,26 +113,26 @@ swanx init my_project --template fit-demo
 Use:
 
 - `minimal` for a small simulation-only project;
-- `multilayer` for a repeat-block stack example;
-- `fit-demo` for a project that includes experimental datasets and fitting placeholders.
+- `multilayer` for a repeat-block multilayer example;
+- `fit-demo` for a project with example datasets and fitting placeholders.
 
-You can also point SWANX to your own data folder:
+To use your own data folder:
 
 ```bash
 swanx init my_project --data-root /path/to/data
 ```
 
-or copy from that folder into the project:
+To copy data into the project:
 
 ```bash
 swanx init my_project --copy-example-data --data-root /path/to/data
 ```
 
-## Project File Overview
+## ProjectSpec overview
 
 A SWANX project is controlled by `project.yaml`.
 
-The top-level structure is:
+The top-level YAML sections are:
 
 ```yaml
 project:
@@ -173,7 +145,7 @@ datasets:
 report:
 ```
 
-A minimal stack might look like:
+A minimal stack looks like:
 
 ```yaml
 stack:
@@ -194,7 +166,7 @@ stack:
     roughness_A: 0.0
 ```
 
-Core levels explicitly choose which layers emit:
+A core level explicitly selects its emitting layers:
 
 ```yaml
 core_levels:
@@ -206,96 +178,23 @@ core_levels:
     emission_angle_deg: 0.0
 ```
 
-A reflectivity dataset can be added with:
+Common conventions:
 
-```yaml
-datasets:
-  reflectivity:
-    path: "data/curves/lno_sto_reflectivity.csv"
-    name: "Reflectivity"
-    angle_column: "angle_deg"
-    intensity_column: "reflectivity"
-```
+- `thickness_A` and `roughness_A` are in Angstrom.
+- `roughness_A` is the upper-interface roughness of that layer.
+- `repeat_index` is 1-based inside repeat blocks.
+- Only parameters with `vary: true` are fitted.
+- Dataset paths are resolved relative to `project.yaml`.
+- Core levels should use `emit_from.layer_ids`, `emit_from.tags`, or `emit_from.all: true`.
 
-A rocking-curve dataset can be added with:
+For details, see:
 
-```yaml
-datasets:
-  rocking_curves:
-    - path: "data/curves/la4d_rocking_curve.csv"
-      name: "La 4d"
-      angle_column: "angle_deg"
-      intensity_column: "intensity"
-      normalization: "mean"
-```
-
-For the full YAML reference, see:
-
-- `docs/projectspec_reference.md`
-
-For copy-pasteable project examples, see:
-
-- `docs/projectspec_examples.md`
-- `examples/projectspec/`
-
-## Important YAML Conventions
-
-Lengths are in Angstrom.
-
-```yaml
-thickness_A: 40.0
-roughness_A: 3.0
-```
-
-`roughness_A` is the upper-interface roughness of a layer. For layer `j`, it
-describes the interface between layer `j-1` and layer `j`.
-
-Only parameters with `vary: true` are fitted:
-
-```yaml
-parameters:
-  lno_thickness:
-    initial: 40.0
-    lower: 30.0
-    upper: 50.0
-    vary: true
-
-  repeat_center:
-    value: 20.0
-    vary: false
-```
-
-Inline parameter references are supported:
-
-```yaml
-thickness_A: "$lno_thickness"
-```
-
-Safe arithmetic expressions are supported:
-
-```yaml
-thickness_A: "A_LNO + B_LNO * repeat_index"
-```
-
-In repeat blocks, `repeat_index` is 1-based:
-
-```yaml
-stack:
-  - repeat:
-      times: 4
-      layers:
-        - id: "lno_{repeat_index}"
-          material: "LNO"
-          tags: ["lno_layers"]
-          thickness_A: "$lno_thickness"
-          roughness_A: "$interface_roughness"
-```
+- [`docs/projectspec_reference.md`](docs/projectspec_reference.md)
+- [`docs/projectspec_examples.md`](docs/projectspec_examples.md)
 
 ## Outputs
 
-A run folder contains both human-readable and machine-readable outputs.
-
-Common files include:
+A typical run folder contains:
 
 ```text
 report.md
@@ -310,25 +209,18 @@ simulation/rocking_curves_simulated.csv
 fit/fit_summary.json
 ```
 
-If experimental datasets are provided, SWANX also writes experimental-data and
-residual files:
+If experimental datasets are provided, SWANX also writes experimental-data and residual files.
 
-```text
-data/reflectivity_experimental.csv
-data/rocking_curves_experimental.csv
-fit/residuals.csv
+If fitting is performed, SWANX writes best-fit parameters and optimizer-specific outputs.
+
+If plotting is enabled with
+
+```yaml
+report:
+  save_plots: true
 ```
 
-If fitting is performed, SWANX writes:
-
-```text
-fit/best_parameters.csv
-fit/fit_contributions.csv
-optimizer/
-```
-
-If `report.save_plots: true` and matplotlib is available, SWANX writes plots such
-as:
+SWANX writes plots such as:
 
 ```text
 plots/fit_overview.png
@@ -337,12 +229,9 @@ plots/rocking_curves_fit.png
 plots/stack_schematic.png
 ```
 
-Least-squares runs may also include convergence, uncertainty, and correlation
-plots when the required diagnostics are available.
-
 Skipped optional outputs are recorded in `report.md`.
 
-## Fitting Overview
+## Fitting
 
 Simulation-only projects use:
 
@@ -351,7 +240,7 @@ settings:
   fit_method: "simulate_only"
 ```
 
-For JAX least-squares fitting:
+The recommended fitting path is JAX least-squares for differentiable fixed-shape workflows:
 
 ```yaml
 settings:
@@ -362,14 +251,9 @@ settings:
     estimate_covariance: true
 ```
 
-The factory module can live next to `project.yaml`. SWANX adds the project folder
-to the import path when loading project-local factories.
+Current ProjectSpec fitting requires an explicit user-provided factory callback. SWANX does not automatically generate no-code JAX residual functions.
 
-Current ProjectSpec fitting does not automatically synthesize a JAX residual
-function. This is intentional: fixed-shape JAX residuals should be explicit and
-traceable.
-
-Bayesian optimization can be used as an optional baseline:
+Bayesian optimization is available as an optional global black-box baseline:
 
 ```yaml
 settings:
@@ -380,12 +264,11 @@ settings:
     random_state: 0
 ```
 
-Use BO when you want a global black-box check or a robustness comparison. Do not
-treat it as the default fitting route for differentiable SWANX workflows.
+BO is not the default fitting method and is not used as a fallback.
 
-## Installation Options
+## Installation options
 
-Core simulation package:
+Core package:
 
 ```bash
 python -m pip install -e .
@@ -411,13 +294,13 @@ python -m pip install -e ".[project,fit,plot]"
 
 ## Python API
 
-For custom scripts, use the compact simulation API:
+For custom scripts:
 
 ```python
 import swanx as sx
 ```
 
-Focused subpackages are available for explicit workflows:
+Focused namespaces are also available:
 
 ```python
 from swanx.io import load_material_tables, stack_from_layer_specs
@@ -434,18 +317,25 @@ swanx.fitting.jax_gradient
 swanx.fitting.jax_least_squares
 ```
 
-Root modules such as `swanx.bo`, `swanx.jax_gradient`,
-`swanx.jax_least_squares`, `swanx.reflectivity`, and `swanx._fitting` are
-compatibility shims.
+Root modules such as `swanx.bo`, `swanx.jax_gradient`, `swanx.jax_least_squares`, `swanx.reflectivity`, and `swanx._fitting` are compatibility shims.
 
 ## Documentation
 
 Start here:
 
-- `docs/user_guide.md` - practical walkthrough
-- `docs/projectspec_reference.md` - full YAML reference
-- `docs/projectspec_examples.md` - example project files
-- `docs/architecture.md` - package layout and design notes
+- [`docs/user_guide.md`](docs/user_guide.md) — practical walkthrough
+- [`docs/projectspec_reference.md`](docs/projectspec_reference.md) — YAML reference
+- [`docs/projectspec_examples.md`](docs/projectspec_examples.md) — copy-pasteable examples
+- [`docs/architecture.md`](docs/architecture.md) — package layout and design notes
+
+## Background
+
+SWANX builds on ideas from standing-wave x-ray optics and SW-XPS analysis while keeping a narrower Python-first scope focused on multilayer reflectivity, rocking curves, fitting, and diagnostics.
+
+Related background:
+
+- S.-H. Yang et al., “Making use of x-ray optical effects in photoelectron-, Auger electron-, and x-ray emission spectroscopies,” *Journal of Applied Physics* 113, 073513 (2013).
+- O. Karslıoğlu et al., “An Efficient Algorithm for Automatic Structure Optimization in X-ray Standing-Wave Experiments,” *Journal of Electron Spectroscopy and Related Phenomena* 230, 10–20 (2019).
 
 ## Development
 
@@ -455,29 +345,10 @@ Run tests with:
 python -m pytest
 ```
 
-The maintained Python package namespace is:
+The maintained Python namespace is:
 
 ```python
 import swanx
 ```
 
 The old `swxps` namespace is retired.
-
-Generated run outputs should stay in local `runs/` folders and should not be
-committed unless intentionally added as documentation examples.
-
-## Background References
-
-SWANX builds on ideas from standing-wave x-ray optics and SW-XPS analysis, while
-keeping a narrower, Python-first scope.
-
-Useful background papers include:
-
-- S.-H. Yang et al., ?Making use of x-ray optical effects in photoelectron-,
-  Auger electron-, and x-ray emission spectroscopies: Total reflection,
-  standing-wave excitation, and resonant effects,? Journal of Applied Physics
-  113, 073513 (2013). doi:10.1063/1.4790171
-- O. Karsl?o?lu et al., ?An Efficient Algorithm for Automatic Structure
-  Optimization in X-ray Standing-Wave Experiments,? Journal of Electron
-  Spectroscopy and Related Phenomena 230, 10-20 (2019).
-  doi:10.1016/j.elspec.2018.10.006
