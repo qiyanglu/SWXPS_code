@@ -1,4 +1,4 @@
-"""Run a small JAX-gradient fit on the synthetic C/LNO/STO stack geometry."""
+"""Run a small JAX-gradient fit on the synthetic C/LaNiO3/SrTiO3 stack geometry."""
 
 from __future__ import annotations
 

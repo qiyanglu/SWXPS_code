@@ -118,6 +118,7 @@ materials:
 
 Rules:
 
+- In the starter examples, `LNO` means LaNiO3 and `STO` means SrTiO3.
 - Material labels must match `stack[*].material` values.
 - Non-vacuum stack materials require `opc_file`.
 - Materials used by emitting layers require `imfp_file`.
@@ -339,7 +340,7 @@ report:
   save_plots: true
 ```
 
-When matplotlib is available and `save_plots: true`, common plots are:
+When matplotlib is available and `save_plots: true`, fitting runs write:
 
 - `plots/fit_overview.png`
 - `plots/reflectivity_fit.png`
@@ -347,6 +348,13 @@ When matplotlib is available and `save_plots: true`, common plots are:
 - `plots/stack_schematic.png`
 - least-squares diagnostic plots when available;
 - Bayesian optimization convergence/surrogate plots when available.
+
+For `simulate_only`, the corresponding curve plots are:
+
+- `plots/simulation_overview.png`
+- `plots/reflectivity_simulation.png`
+- `plots/rocking_curves_simulation.png`
+- `plots/stack_schematic.png`
 
 Skipped plot reasons are written to `report.md`.
 

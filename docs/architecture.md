@@ -4,7 +4,7 @@ SWANX means **S**tanding-**W**ave **A**nalysis for **N**anoscale **X**-ray spect
 
 ## Public API
 
-Beginner users who want a whole project run should start with `swanx init my_project` and `python my_project/run_project.py`; default init projects copy packaged tutorial data and are runnable from any process current working directory. Advanced project scripts can call `swanx.project.run_project("project.yaml")`. Users writing custom simulation scripts should use `import swanx as sx` for the compact top-level simulation API. Focused subpackages support explicit IO, fitting, diagnostics, and internal development.
+Beginner users who want a whole project run should start with `swanx init my_project` and `python my_project/run_project.py`; default init projects copy packaged tutorial data, include a project-local JAX residual factory for the synthetic C/LaNiO3/SrTiO3 starter fit, and are runnable from any process current working directory. Advanced project scripts can call `swanx.project.run_project("project.yaml")`. Users writing custom simulation scripts should use `import swanx as sx` for the compact top-level simulation API. Focused subpackages support explicit IO, fitting, diagnostics, and internal development.
 
 ## Maintained namespaces
 
@@ -31,8 +31,11 @@ internal code should use the maintained subpackages instead:
 ## IO boundary
 
 Starter inputs live under `data/OPC/`, `data/IMFP/`, and `data/curves/` for
-`swanx init`. Maintained examples use those OPC/IMFP tables plus the synthetic
-C/LNO/STO benchmark CSV when they need reflectivity and rocking-curve data.
+`swanx init`. The packaged init starter also uses
+`swanx.project.synthetic_lno_sto_jax` through a generated local callback module.
+Maintained examples use those OPC/IMFP tables plus the synthetic
+C/LaNiO3/SrTiO3 (C/LNO/STO) benchmark CSV when they need reflectivity and
+rocking-curve data.
 OPC, IMFP, and experimental curve files are read before simulation/fitting.
 CXRO optical-constant tables are interpolated at photon energy, IMFP tables are
 interpolated at core-level kinetic energy, and the resulting numbers are used
@@ -64,4 +67,4 @@ The core uses grazing angles in degrees, photon energy in eV, lengths in Angstro
 
 ## Fitting
 
-Unified slicing is the default for high-level simulation and fitting. `slicing=None` explicitly selects the legacy fixed-step path. `simulate_only` is fully supported by the YAML ProjectSpec workflow. JAX-based least-squares/autodiff is the recommended fitting path for differentiable fixed-shape workflows, with explicit factory callbacks still required by YAML projects; Bayesian optimization remains available as an optional global black-box baseline/robustness check, not the default.
+Unified slicing is the default for high-level simulation and fitting. `slicing=None` explicitly selects the legacy fixed-step path. `simulate_only` is fully supported by the YAML ProjectSpec workflow and uses simulation-specific plot filenames. JAX-based least-squares/autodiff is the recommended fitting path for differentiable fixed-shape workflows, with explicit factory callbacks still required by YAML projects; Bayesian optimization remains available as an optional global black-box baseline/robustness check, not the default.

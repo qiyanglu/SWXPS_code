@@ -1,4 +1,4 @@
-"""Run a small JAX least-squares fit on the synthetic C/LNO/STO stack geometry."""
+"""Run a small JAX least-squares fit on the synthetic C/LaNiO3/SrTiO3 stack geometry."""
 
 from __future__ import annotations
 
@@ -74,7 +74,7 @@ def main() -> None:
         )
     )
     data = ReflectivityData(
-        name="synthetic C/LNO/STO reflectivity",
+        name="synthetic C/LaNiO3/SrTiO3 reflectivity",
         angles=np.asarray(scan_angles),
         reflectivity=target,
         sigma=np.full(target.shape, 1.0e-5),

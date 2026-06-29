@@ -1,7 +1,8 @@
 # Benchmarks
 
 - `performance/`: focused backend timing scripts.
-- `synthetic_c_lno_sto/`: deterministic synthetic reflectivity/SW-XPS fitting benchmark.
+- `synthetic_c_lno_sto/`: deterministic synthetic C/LaNiO3/SrTiO3
+  (C/LNO/STO) reflectivity/SW-XPS fitting benchmark.
 - `synthetic_c_lno_sto/projectspec_jax_least_squares/`: the same synthetic case routed through the YAML ProjectSpec workflow with an explicit JAX least-squares residual factory.
 
 Legacy benchmark-generated output belongs under `runs/synthetic_c_lno_sto`. The ProjectSpec benchmark writes project-local outputs under `benchmarks/synthetic_c_lno_sto/projectspec_jax_least_squares/runs/`.

@@ -1,4 +1,4 @@
-"""Shared synthetic C/LNO/STO case used by the examples.
+"""Shared synthetic C/LaNiO3/SrTiO3 case used by the examples.
 
 The teaching examples intentionally reuse the same structure as the benchmark
 case: vacuum / C / [LaNiO3 / SrTiO3]x20 / SrTiO3 substrate at 1000 eV.
@@ -66,7 +66,7 @@ def stack_values(values: dict[str, float] | None = None) -> dict[str, float]:
 
 
 def stack_template(carbon_roughness: float | str = "carbon_roughness") -> StackTemplate:
-    """Return the canonical vacuum/C/[LNO/STO]x20/STO template."""
+    """Return the canonical vacuum/C/[LaNiO3/SrTiO3]x20/SrTiO3 template."""
 
     return StackTemplate(
         energy_ev=PHOTON_ENERGY_EV,
@@ -236,7 +236,7 @@ def make_data_problem(data: dict[str, np.ndarray] | None = None) -> FittingProbl
         stack_builder=lambda values: build_stack(),
         photon_energy_ev=PHOTON_ENERGY_EV,
         reflectivity=ReflectivityData(
-            name="synthetic C/LNO/STO reflectivity",
+            name="synthetic C/LaNiO3/SrTiO3 reflectivity",
             angles=scan_angles,
             reflectivity=loaded["reflectivity"],
             log_floor=1.0e-12,

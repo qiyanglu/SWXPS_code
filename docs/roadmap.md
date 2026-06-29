@@ -29,7 +29,7 @@ global black-box baseline/robustness check.
 
 1. Keep README, user guide, templates, and maintained examples concise,
    executable, based on `swanx`, and aligned with the synthetic
-   C/[LNO/STO]x20/STO teaching case.
+   C/[LaNiO3/SrTiO3 (LNO/STO)]x20/SrTiO3 teaching case.
 2. Expand ProjectSpec examples only when they reuse existing IO, simulation,
    and fitting APIs without introducing new physics paths.
 3. Improve fixed-shape JAX least-squares fitting documentation and show how it

@@ -1,4 +1,4 @@
-"""Compare roughness-profile shapes for the synthetic C/LNO/STO stack."""
+"""Compare roughness-profile shapes for the synthetic C/LaNiO3/SrTiO3 stack."""
 
 from __future__ import annotations
 
@@ -53,7 +53,7 @@ def main() -> None:
     ax_reflectivity.semilogy(scan_angles, linear_reflectivity, color="tab:blue", linewidth=1.2, linestyle="--", label="linear roughness")
     ax_reflectivity.axvline(bragg_angle_deg(), color="tab:red", linestyle=":", linewidth=1.0, label="Bragg estimate")
     ax_reflectivity.set_ylabel("Reflectivity")
-    ax_reflectivity.set_title("C/[LNO/STO]x20: RMS-matched roughness profiles")
+    ax_reflectivity.set_title("C/[LaNiO3/SrTiO3]x20: RMS-matched roughness profiles")
     ax_reflectivity.set_xlim(scan_angles.min(), scan_angles.max())
     ax_reflectivity.set_ylim(1e-6, 1.2)
     ax_reflectivity.grid(True, which="both", alpha=0.25)

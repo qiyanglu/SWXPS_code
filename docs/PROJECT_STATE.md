@@ -26,17 +26,21 @@ OPC + IMFP + optional experimental curves
 
 Starter data are packaged with `swanx.project` for `swanx init` and are also
 mirrored in the repository under `data/OPC/`, `data/IMFP/`, and `data/curves/`.
-Maintained examples use the synthetic C/LNO/STO benchmark CSV when they need
-reflectivity and rocking-curve data.
+Maintained examples use the synthetic C/LaNiO3/SrTiO3 (C/LNO/STO) benchmark CSV
+when they need reflectivity and rocking-curve data.
 
 ## Implemented workflow
 
 - `swanx.project` validates and runs YAML ProjectSpec files.
 - `swanx init my_project` creates `project.yaml`, `run_project.py`, a project
-  README, and by default a local `data/` copy of packaged minimal tutorial data.
+  README, a project-local `synthetic_residual_factory.py`, and by default a
+  local `data/` copy of packaged C/LaNiO3/SrTiO3 starter data. The default
+  project runs a JAX least-squares fit against the packaged synthetic
+  reflectivity and four rocking-curve datasets.
 - `swanx init --template minimal`, `--template multilayer`, and
-  `--template fit-demo` generate beginner starters for simulation-only,
-  repeated multilayers, and dataset/fitting-placeholder workflows.
+  `--template fit-demo` generate beginner starters for the default fitting
+  workflow, a simulation-only repeated multilayer, and an explicit fitting
+  starter alias.
 - `--copy-example-data` creates a self-contained copy from a chosen data root;
   `--data-root` points at another tutorial data root and writes relative paths
   when possible.
@@ -44,14 +48,15 @@ reflectivity and rocking-curve data.
   wrappers for review, validation, and automation.
 - PyYAML is optional via `python -m pip install -e ".[project]"`.
 - `templates/project_minimal.yaml` and `templates/run_project.py` remain a
-  repository-local simulation-only starter.
+  repository-local JAX least-squares fitting starter.
 - `docs/projectspec_reference.md` is the detailed YAML ProjectSpec reference,
   and `examples/01_quickstart_projectspec/` contains copy-pasteable ProjectSpec
   examples.
 - `examples/` is organized as a user learning path: ProjectSpec quickstarts,
   experimental-data loading, compact Python API scripts, fitting examples, and
   advanced low-level visualizations. All maintained examples share the
-  synthetic C/[LNO/STO]x20/STO case used by the benchmark folder.
+  synthetic C/[LaNiO3/SrTiO3 (LNO/STO)]x20/SrTiO3 case used by the benchmark
+  folder.
 - `swanx.io` reads OPC, IMFP, reflectivity, and rocking-curve files and builds
   `SimulationStack` and `CoreLevelRequest` objects from material tables.
 - `swanx.preprocessing` owns rocking-curve normalization algorithms.
@@ -80,6 +85,10 @@ Supported YAML workflow features include:
 - per-plot skipped-output notes and experimental-overlay notes in `report.md`;
 - compound reflectivity-plus-rocking-curve overview plots with incident-angle
   labels and no default residual PNG;
+- method-aware plot filenames: fitting runs write `fit_overview.png`,
+  `reflectivity_fit.png`, and `rocking_curves_fit.png`; `simulate_only` runs
+  write `simulation_overview.png`, `reflectivity_simulation.png`, and
+  `rocking_curves_simulation.png`;
 - stack schematic plots for all run methods;
 - least-squares convergence, parameter-range, and correlation plot images when
   diagnostics are available;
@@ -113,7 +122,8 @@ is 1-based inside repeat blocks.
   fixed-shape workflows; BO remains an optional global black-box baseline.
 - YAML ProjectSpec fitting still requires user-provided factories for
   `jax_least_squares` and `jax_gradient`; no automatic no-code JAX residual
-  builder is implemented.
+  builder is implemented. The packaged init starter includes an explicit
+  factory for the synthetic C/LaNiO3/SrTiO3 case.
 - ProjectSpec v1.3 package layout cleanup moves maintained backend
   implementations under `swanx.fitting` and report implementations under
   `swanx.project.reporting`; root backend modules and `swanx.project.reports`
@@ -124,7 +134,7 @@ is 1-based inside repeat blocks.
 - `src/swanx/` is the maintained package and only supported Python namespace.
 - `tests/` contains regression tests.
 - `examples/` contains compact tutorials built around the synthetic
-  C/[LNO/STO]x20/STO benchmark case.
+  C/[LaNiO3/SrTiO3 (LNO/STO)]x20/SrTiO3 benchmark case.
 - `templates/` contains editable ProjectSpec starter files.
 - `case_studies/` is local/private experimental input and runner space ignored
   by Git.
@@ -151,8 +161,10 @@ swanx inspect runs/projectspec_smoke/project.yaml
 swanx validate runs/projectspec_smoke/project.yaml
 ```
 
-Documentation consistency validation completed on 2026-06-29 with Markdown link
-checking across maintained docs and focused ProjectSpec workflow tests passing.
-The latest full-suite validation remains the examples realignment run from
-2026-06-29; the full suite keeps its expected xfail. Exact counts are
-intentionally not pinned here because they become stale quickly.
+Default init JAX-fit smoke validation completed on 2026-06-29: a fresh
+`swanx init` project loaded `synthetic_residual_factory.py`, ran
+`jax_least_squares`, wrote `fit/best_parameters.csv`, and produced fit-named
+plots. A simulation-only ProjectSpec smoke wrote `simulation_overview.png`,
+`reflectivity_simulation.png`, and `rocking_curves_simulation.png`. Focused
+ProjectSpec workflow tests and the full suite passed afterward; the full suite
+kept its expected xfail and one existing diagnostics warning.

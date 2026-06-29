@@ -1,4 +1,4 @@
-"""Load the synthetic C/LNO/STO data into SWANX fitting data objects."""
+"""Load the synthetic C/LaNiO3/SrTiO3 data into SWANX fitting data objects."""
 
 from __future__ import annotations
 
@@ -23,7 +23,7 @@ from swanx.io import read_reflectivity_data, read_rocking_curve_data  # noqa: E4
 def main() -> None:
     reflectivity = read_reflectivity_data(
         DATA_FILE,
-        name="synthetic C/LNO/STO reflectivity",
+        name="synthetic C/LaNiO3/SrTiO3 reflectivity",
         angle_column="angle_deg",
         intensity_column="reflectivity",
     )

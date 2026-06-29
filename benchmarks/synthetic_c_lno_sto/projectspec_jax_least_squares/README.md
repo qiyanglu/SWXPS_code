@@ -1,7 +1,8 @@
-# ProjectSpec JAX Least-Squares Synthetic C/LNO/STO Benchmark
+# ProjectSpec JAX Least-Squares Synthetic C/LaNiO3/SrTiO3 Benchmark
 
-This folder runs the existing synthetic C/LNO/STO reflectivity plus SW-XPS
-rocking-curve benchmark through the YAML ProjectSpec workflow.
+This folder runs the existing synthetic C/LaNiO3/SrTiO3 (C/LNO/STO)
+reflectivity plus SW-XPS rocking-curve benchmark through the YAML ProjectSpec
+workflow.
 
 It is intentionally a ProjectSpec YAML example rather than a no-code JAX
 residual generator:
@@ -22,7 +23,7 @@ The YAML mirrors the existing synthetic case in
 `benchmarks/synthetic_c_lno_sto/fit_reflectivity_rc_bo.py`:
 
 - photon energy: `1000 eV`
-- stack: `vacuum / C / [LNO / STO] x 20 / STO substrate`
+- stack: `vacuum / C / [LaNiO3 / SrTiO3] x 20 / SrTiO3 substrate`
 - OPC files: `data/OPC/C.dat`, `data/OPC/LaNiO3.dat`, `data/OPC/SrTiO3.dat`
 - IMFP files: `data/IMFP/C.ANG`, `data/IMFP/LNO.ANG`, `data/IMFP/STO.ANG`
 - datasets: local copy of `lno_sto_c_synthetic_data.csv`
@@ -124,4 +125,6 @@ plots/surrogate_slices.png
 ```
 
 For `project_simulate_only.yaml`, the YAML omits datasets intentionally, so it
-writes pure simulation outputs without `data/` or `fit/residuals.csv`.
+writes pure simulation outputs without `data/` or `fit/residuals.csv`; its
+curve plots use `simulation_overview.png`, `reflectivity_simulation.png`, and
+`rocking_curves_simulation.png`.

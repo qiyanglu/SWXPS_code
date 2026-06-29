@@ -1,4 +1,4 @@
-"""Plot synthetic C/LNO/STO reflectivity and SW-XPS rocking curves."""
+"""Plot synthetic C/LaNiO3/SrTiO3 reflectivity and SW-XPS rocking curves."""
 
 from __future__ import annotations
 
@@ -50,7 +50,9 @@ def main() -> None:
     ax_r.axvline(bragg_angle, color="tab:red", linestyle="--", linewidth=1.0)
     ax_r.axvline(peak_angle, color="tab:blue", linestyle="-", linewidth=1.0)
     ax_r.set_ylabel("Reflectivity")
-    ax_r.set_title(f"C/[LNO/STO]x20 reflectivity and SW-XPS RCs, {PHOTON_ENERGY_EV:.0f} eV")
+    ax_r.set_title(
+        f"C/[LaNiO3/SrTiO3]x20 reflectivity and SW-XPS RCs, {PHOTON_ENERGY_EV:.0f} eV"
+    )
     ax_r.grid(True, which="both", alpha=0.25)
 
     for ax, core in zip(axes[1:], rc_result.core_levels):

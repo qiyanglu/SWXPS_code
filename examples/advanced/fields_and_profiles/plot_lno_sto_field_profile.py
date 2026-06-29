@@ -1,4 +1,4 @@
-"""Plot electric-field intensity for the synthetic C/LNO/STO stack."""
+"""Plot electric-field intensity for the synthetic C/LaNiO3/SrTiO3 stack."""
 
 from __future__ import annotations
 
@@ -63,7 +63,9 @@ def main() -> None:
     ax_r.axvline(bragg_angle, color="tab:red", linestyle="--", linewidth=1.0, label="Bragg estimate")
     ax_r.axvline(peak_angle, color="tab:blue", linestyle="-", linewidth=1.0, label="peak")
     ax_r.set_ylabel("Reflectivity")
-    ax_r.set_title(f"C/[LNO/STO]x20 field map near first Bragg peak, {PHOTON_ENERGY_EV:.0f} eV")
+    ax_r.set_title(
+        f"C/[LaNiO3/SrTiO3]x20 field map near first Bragg peak, {PHOTON_ENERGY_EV:.0f} eV"
+    )
     ax_r.grid(True, which="both", alpha=0.25)
     ax_r.legend(loc="best")
 

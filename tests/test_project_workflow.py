@@ -34,6 +34,7 @@ def _write_opc(path: Path, delta: float = 0.1) -> None:
 def _write_imfp(path: Path) -> None:
     path.write_text(
         "energy imfp\n"
+        "400 4.0\n"
         "700 7.0\n"
         "900 9.0\n",
         encoding="utf-8",
@@ -49,18 +50,28 @@ def _write_curve(path: Path, column: str = "reflectivity") -> None:
     )
 
 
+def _write_synthetic_case_curve(path: Path) -> None:
+    path.write_text(
+        "angle_deg,reflectivity,la4d_rc,o1s_rc,ti2p_rc,c1s_rc\n"
+        "6.9,0.0010,1.00,1.01,0.99,1.02\n"
+        "7.0,0.0015,1.03,1.04,1.00,1.01\n",
+        encoding="utf-8",
+    )
+
+
 
 
 def _write_example_data_root(path: Path) -> Path:
     (path / "OPC").mkdir(parents=True, exist_ok=True)
     (path / "IMFP").mkdir(parents=True, exist_ok=True)
     (path / "curves").mkdir(parents=True, exist_ok=True)
+    _write_opc(path / "OPC" / "C.dat", 0.05)
     _write_opc(path / "OPC" / "LaNiO3.dat", 0.1)
     _write_opc(path / "OPC" / "SrTiO3.dat", 0.2)
+    _write_imfp(path / "IMFP" / "C.ANG")
     _write_imfp(path / "IMFP" / "LNO.ANG")
     _write_imfp(path / "IMFP" / "STO.ANG")
-    _write_curve(path / "curves" / "lno_sto_reflectivity.csv", "reflectivity")
-    _write_curve(path / "curves" / "la4d_rocking_curve.csv", "intensity")
+    _write_synthetic_case_curve(path / "curves" / "lno_sto_c_synthetic_data.csv")
     return path
 
 
@@ -248,10 +259,20 @@ def test_swanx_init_generated_project_validates_and_runs_from_different_cwd(monk
     assert (project_dir / "project.yaml").exists()
     assert (project_dir / "run_project.py").exists()
     assert (project_dir / "README.md").exists()
+    assert (project_dir / "synthetic_residual_factory.py").exists()
+    assert (project_dir / "data" / "OPC" / "C.dat").exists()
     assert (project_dir / "data" / "OPC" / "LaNiO3.dat").exists()
+    assert (project_dir / "data" / "IMFP" / "C.ANG").exists()
     assert (project_dir / "data" / "IMFP" / "LNO.ANG").exists()
+    assert (project_dir / "data" / "curves" / "lno_sto_c_synthetic_data.csv").exists()
     starter_yaml = (project_dir / "project.yaml").read_text(encoding="utf-8")
+    assert 'fit_method: "jax_least_squares"' in starter_yaml
+    assert 'residual_function_factory: "synthetic_residual_factory:build_residual_function"' in starter_yaml
+    assert 'opc_file: "data/OPC/C.dat"' in starter_yaml
     assert 'opc_file: "data/OPC/LaNiO3.dat"' in starter_yaml
+    assert 'times: 20' in starter_yaml
+    assert 'id: "carbon_cap"' in starter_yaml
+    assert 'name: "C 1s"' in starter_yaml
     assert validate_project(project_dir / "project.yaml").name == "my_project"
 
     other_cwd = tmp_path / "elsewhere"
@@ -265,11 +286,15 @@ def test_swanx_init_generated_project_validates_and_runs_from_different_cwd(monk
     )
 
     assert "[swanx] Reading ProjectSpec:" in completed.stdout
+    assert "[swanx] Loading JAX least-squares residual factory:" in completed.stdout
+    assert "[swanx] Running jax_least_squares" in completed.stdout
     assert "[swanx] Simulating final curves" in completed.stdout
     assert "SWANX results written to:" in completed.stdout
     outputs = list((project_dir / "runs").glob("my_project_*"))
     assert outputs
     assert (outputs[-1] / "report.md").exists()
+    assert (outputs[-1] / "fit" / "best_parameters.csv").exists()
+    assert (outputs[-1] / "plots" / "fit_overview.png").exists()
 
 
 def test_swanx_init_copy_example_data_and_data_root(tmp_path):
@@ -277,17 +302,25 @@ def test_swanx_init_copy_example_data_and_data_root(tmp_path):
 
     copied_project = tmp_path / "copied_project"
     assert cli_main(["init", str(copied_project), "--copy-example-data", "--data-root", str(data_root)]) == 0
+    assert (copied_project / "data" / "OPC" / "C.dat").exists()
     assert (copied_project / "data" / "OPC" / "LaNiO3.dat").exists()
+    assert (copied_project / "data" / "IMFP" / "C.ANG").exists()
     assert (copied_project / "data" / "IMFP" / "LNO.ANG").exists()
-    assert (copied_project / "data" / "curves" / "lno_sto_reflectivity.csv").exists()
+    assert (copied_project / "data" / "curves" / "lno_sto_c_synthetic_data.csv").exists()
     copied_yaml = (copied_project / "project.yaml").read_text(encoding="utf-8")
+    assert (copied_project / "synthetic_residual_factory.py").exists()
+    assert 'fit_method: "jax_least_squares"' in copied_yaml
+    assert 'opc_file: "data/OPC/C.dat"' in copied_yaml
     assert 'opc_file: "data/OPC/LaNiO3.dat"' in copied_yaml
+    assert 'times: 20' in copied_yaml
     assert validate_project(copied_project / "project.yaml").name == "copied_project"
 
     rooted_project = tmp_path / "rooted_project"
     assert cli_main(["init", str(rooted_project), "--data-root", str(data_root)]) == 0
     rooted_yaml = (rooted_project / "project.yaml").read_text(encoding="utf-8")
+    assert "../custom_data/OPC/C.dat" in rooted_yaml
     assert "../custom_data/OPC/LaNiO3.dat" in rooted_yaml
+    assert "../custom_data/curves/lno_sto_c_synthetic_data.csv" in rooted_yaml
     assert validate_project(rooted_project / "project.yaml").name == "rooted_project"
 
 
@@ -297,8 +330,8 @@ def test_swanx_init_templates_validate_and_minimal_runs(tmp_path):
         assert cli_main(["init", str(project_dir), "--template", template]) == 0
         spec = validate_project(project_dir / "project.yaml")
         assert spec.name == project_dir.name
-    output = run_project(tmp_path / "project_minimal" / "project.yaml")
-    assert output.parent == tmp_path / "project_minimal" / "runs"
+    output = run_project(tmp_path / "project_multilayer" / "project.yaml")
+    assert output.parent == tmp_path / "project_multilayer" / "runs"
 
 
 def test_swanx_inspect_prints_expected_sections(tmp_path, capsys):
@@ -552,9 +585,9 @@ def test_matplotlib_missing_plot_skip_is_recorded(monkeypatch, tmp_path):
 
     assert not (output / "plots").exists()
     report = (output / "report.md").read_text(encoding="utf-8")
-    assert "plots/fit_overview.png skipped because matplotlib is not installed" in report
-    assert "plots/reflectivity_fit.png skipped because matplotlib is not installed" in report
-    assert "plots/rocking_curves_fit.png skipped because matplotlib is not installed" in report
+    assert "plots/simulation_overview.png skipped because matplotlib is not installed" in report
+    assert "plots/reflectivity_simulation.png skipped because matplotlib is not installed" in report
+    assert "plots/rocking_curves_simulation.png skipped because matplotlib is not installed" in report
     assert "plots/stack_schematic.png skipped because matplotlib is not installed" in report
 
 
@@ -579,15 +612,15 @@ def test_plots_overlay_experimental_data_when_matplotlib_exists(tmp_path):
 
     output = run_project(path)
 
-    assert (output / "plots" / "fit_overview.png").exists()
-    assert (output / "plots" / "reflectivity_fit.png").exists()
-    assert (output / "plots" / "rocking_curves_fit.png").exists()
+    assert (output / "plots" / "simulation_overview.png").exists()
+    assert (output / "plots" / "reflectivity_simulation.png").exists()
+    assert (output / "plots" / "rocking_curves_simulation.png").exists()
     assert (output / "plots" / "stack_schematic.png").exists()
     assert not (output / "plots" / "residuals.png").exists()
     report = (output / "report.md").read_text(encoding="utf-8")
-    assert "plots/fit_overview.png written with experimental overlays: reflectivity, La 4d" in report
-    assert "plots/reflectivity_fit.png written with experimental overlay" in report
-    assert "plots/rocking_curves_fit.png written with experimental overlays: La 4d" in report
+    assert "plots/simulation_overview.png written with experimental overlays: reflectivity, La 4d" in report
+    assert "plots/reflectivity_simulation.png written with experimental overlay" in report
+    assert "plots/rocking_curves_simulation.png written with experimental overlays: La 4d" in report
     assert "plots/stack_schematic.png written from the final stack" in report
 
 
@@ -719,13 +752,16 @@ def test_readme_and_project_state_docs_are_current():
     assert "## Fitting" in readme
     assert "## Installation options" in readme
     assert "The generated project is self-contained" in readme
-    assert "copies packaged tutorial OPC, IMFP, and curve files" in readme
+    assert "copies" in readme
+    assert "packaged C/LaNiO3/SrTiO3 starter OPC, IMFP, and curve files" in readme
+    assert "C/LaNiO3/SrTiO3 starter OPC, IMFP, and curve files" in readme
     assert "thickness_A` and `roughness_A` are in Angstrom" in readme
     assert "repeat_index` is 1-based" in readme
     assert "JAX least-squares" in readme
     assert "optional global black-box baseline" in readme
     assert "BO is not the default fitting method and is not used as a fallback" in readme
-    assert "C cap on a 20-repeat LNO/STO superlattice" in readme
+    assert "carbon cap on a 20-repeat LaNiO3/SrTiO3 (LNO/STO)" in readme
+    assert "superlattice on a SrTiO3 (STO) substrate" in readme
     assert "benchmarks/synthetic_c_lno_sto" in readme
     assert "docs/user_guide.md" in readme
     assert "docs/projectspec_reference.md" in readme
@@ -737,8 +773,8 @@ def test_readme_and_project_state_docs_are_current():
     for heading in (
         "## Overview",
         "## Core Concepts",
-        "## Quickstart: Simulate-Only Project",
-        "## Add Experimental Data And Overlay Points",
+        "## Quickstart: Fitting Starter Project",
+        "## Simulate Only And Overlay Data",
         "## Fit Workflow",
         "## How To Inspect And Validate",
         "## How To Read Outputs",

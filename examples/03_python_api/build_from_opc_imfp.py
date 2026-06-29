@@ -1,4 +1,4 @@
-"""Quickstart: build the synthetic C/LNO/STO workflow from OPC and IMFP files."""
+"""Quickstart: build the synthetic C/LaNiO3/SrTiO3 workflow from OPC and IMFP files."""
 
 from __future__ import annotations
 

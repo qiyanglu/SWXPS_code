@@ -33,7 +33,11 @@ descriptions after ProjectSpec v1.2 landed.
 ## 2026-06-29 sweep notes
 
 - Rechecked maintained docs after the examples were realigned to the synthetic
-  C/[LNO/STO]x20/STO benchmark case.
+  C/[LaNiO3/SrTiO3 (LNO/STO)]x20/SrTiO3 benchmark case.
 - Left `docs/history/` and older `docs/plans/` snapshots historical when they
   already carry current-status notes, but corrected active README, architecture,
   roadmap, guide/reference wording, and mojibake in the public README.
+- Follow-up: changed `swanx init` from the older single-film starter to the
+  C/LaNiO3/SrTiO3 superlattice case, then made the default init project an
+  active JAX least-squares fitting starter. Also removed maintainer
+  storage-policy text from the examples README.

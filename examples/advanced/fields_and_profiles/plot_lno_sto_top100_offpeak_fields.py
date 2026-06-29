@@ -1,4 +1,4 @@
-"""Plot off-peak fields in the top 100 Angstrom of the C/LNO/STO stack."""
+"""Plot off-peak fields in the top 100 Angstrom of the C/LaNiO3/SrTiO3 stack."""
 
 from __future__ import annotations
 

@@ -7,7 +7,8 @@ XPS, reflectivity, fitting algorithms, or numerical behavior.
 
 ## Scope
 
-- Package minimal tutorial OPC, IMFP, and curve files with `swanx.project`.
+- Package C/LaNiO3/SrTiO3 starter OPC, IMFP, and curve files with
+  `swanx.project`.
 - Make default `swanx init my_project` self-contained and independent of process
   current working directory.
 - Add `--template minimal`, `--template multilayer`, and `--template fit-demo`.

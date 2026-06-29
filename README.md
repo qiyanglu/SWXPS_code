@@ -58,10 +58,10 @@ SWANX is inspired by standing-wave x-ray optics and SW-PES analysis workflows su
 
 ## Quickstart
 
-Install the project workflow and plotting extras:
+Install the project workflow, JAX least-squares, and plotting extras:
 
 ```bash
-python -m pip install -e ".[project,plot]"
+python -m pip install -e ".[project,least-squares,plot]"
 ```
 
 Create a starter project:
@@ -76,11 +76,15 @@ Run it:
 python my_project/run_project.py
 ```
 
-The generated project is self-contained. By default, `swanx init` copies packaged tutorial OPC, IMFP, and curve files into:
+The generated project is self-contained. By default, `swanx init` copies
+packaged C/LaNiO3/SrTiO3 starter OPC, IMFP, and curve files into:
 
 ```text
 my_project/data/
 ```
+
+It also writes a small `synthetic_residual_factory.py` so the starter project
+runs an actual JAX least-squares fit against the packaged synthetic data.
 
 Each run writes results under:
 
@@ -112,9 +116,9 @@ swanx init my_project --template fit-demo
 
 Use:
 
-- `minimal` for a small simulation-only project;
-- `multilayer` for a repeat-block multilayer example;
-- `fit-demo` for a project with example datasets and fitting placeholders.
+- `minimal` for the default C/LaNiO3/SrTiO3 JAX least-squares fitting starter;
+- `multilayer` for the same repeat-block stack as a simulation-only project;
+- `fit-demo` as an explicit alias for the fitting starter.
 
 To use your own data folder:
 
@@ -132,8 +136,9 @@ swanx init my_project --copy-example-data --data-root /path/to/data
 
 The user-facing examples are organized as a learning path in
 [`examples/`](examples/). They use the same introductory synthetic case as the
-main benchmark: a C cap on a 20-repeat LNO/STO superlattice on an STO substrate
-at 1000 eV, with reflectivity plus La 4d, O 1s, Ti 2p, and C 1s rocking curves.
+main benchmark: a carbon cap on a 20-repeat LaNiO3/SrTiO3 (LNO/STO)
+superlattice on a SrTiO3 (STO) substrate at 1000 eV, with reflectivity plus La
+4d, O 1s, Ti 2p, and C 1s rocking curves.
 
 The matching benchmark in [`benchmarks/synthetic_c_lno_sto/`](benchmarks/synthetic_c_lno_sto/)
 keeps the heavier fitting, slicing, JAX least-squares, and
@@ -156,7 +161,7 @@ datasets:
 report:
 ```
 
-A minimal stack looks like:
+A compact C/LaNiO3/SrTiO3 starter stack looks like:
 
 ```yaml
 stack:
@@ -165,16 +170,32 @@ stack:
     thickness_A: 0.0
     roughness_A: 0.0
 
-  - id: "lno_1"
-    material: "LNO"
-    tags: ["lno_layers"]
-    thickness_A: "$lno_thickness"
-    roughness_A: "$interface_roughness"
+  - id: "carbon_cap"
+    material: "C"
+    tags: ["carbon_cap"]
+    thickness_A: "$carbon_thickness"
+    roughness_A: "$carbon_roughness"
+
+  - repeat:
+      times: 20
+      layers:
+        - id: "lno_{repeat_index}"
+          material: "LNO"
+          tags: ["lno_layers"]
+          thickness_A: "$lno_thickness"
+          roughness_A: "$superlattice_roughness"
+
+        - id: "sto_{repeat_index}"
+          material: "STO"
+          tags: ["sto_layers"]
+          thickness_A: "$sto_thickness"
+          roughness_A: "$superlattice_roughness"
 
   - id: "sto_substrate"
     material: "STO"
+    tags: ["substrate"]
     thickness_A: 0.0
-    roughness_A: 0.0
+    roughness_A: "$substrate_roughness"
 ```
 
 A core level explicitly selects its emitting layers:
@@ -188,6 +209,8 @@ core_levels:
     concentration: 1.0
     emission_angle_deg: 0.0
 ```
+
+The material labels `LNO` and `STO` are abbreviations for LaNiO3 and SrTiO3.
 
 Common conventions:
 
@@ -231,12 +254,21 @@ report:
   save_plots: true
 ```
 
-SWANX writes plots such as:
+For fitting runs, SWANX writes plots such as:
 
 ```text
 plots/fit_overview.png
 plots/reflectivity_fit.png
 plots/rocking_curves_fit.png
+plots/stack_schematic.png
+```
+
+For `simulate_only` runs, the corresponding curve plots use simulation names:
+
+```text
+plots/simulation_overview.png
+plots/reflectivity_simulation.png
+plots/rocking_curves_simulation.png
 plots/stack_schematic.png
 ```
 
@@ -262,7 +294,9 @@ settings:
     estimate_covariance: true
 ```
 
-Current ProjectSpec fitting requires an explicit user-provided factory callback. SWANX does not automatically generate no-code JAX residual functions.
+ProjectSpec fitting requires an explicit factory callback. The default
+`swanx init` project includes one for the packaged synthetic starter case, but
+custom JAX fits still need their own fixed-shape residual factory.
 
 Bayesian optimization is available as an optional global black-box baseline:
 

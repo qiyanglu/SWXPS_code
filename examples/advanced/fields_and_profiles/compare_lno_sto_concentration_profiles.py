@@ -58,7 +58,7 @@ def main() -> None:
     plot_profiles(axes[1], stack, "linear", max_depth, "linear roughness")
     axes[0].set_ylabel("Depth below surface (Angstrom)")
     axes[1].legend(loc="lower right")
-    fig.suptitle("Synthetic C/[LNO/STO]x20 concentration profiles", y=0.995)
+    fig.suptitle("Synthetic C/[LaNiO3/SrTiO3]x20 concentration profiles", y=0.995)
     fig.tight_layout()
 
     output_path = Path(__file__).resolve().parent / "synthetic_c_lno_sto_concentration_profile_comparison.png"

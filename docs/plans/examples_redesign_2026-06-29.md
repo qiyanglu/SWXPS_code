@@ -10,8 +10,9 @@ benchmarks focused on timing, synthetic fitting, and method comparison.
 
 - Reorganize examples around user tasks rather than internal package modules.
 - Make ProjectSpec the first and most visible example path.
-- State clearly that the synthetic C/[LNO/STO]x20/STO benchmark system is the
-  recurring demonstration case used across examples and benchmarks.
+- State clearly that the synthetic C/[LaNiO3/SrTiO3 (LNO/STO)]x20/SrTiO3
+  benchmark system is the recurring demonstration case used across examples and
+  benchmarks.
 - Keep low-level field, roughness, profile, and XPS plotting scripts available
   as advanced examples, not beginner entry points.
 - Update root README, examples README, user guide, project state, TODO, and
@@ -49,7 +50,14 @@ examples/
 
 The introductory examples were initially simplified too far toward a single
 LNO/STO film. They should instead mimic the benchmark case: C cap on a
-20-repeat LNO/STO superlattice on an STO substrate, with reflectivity and La
-4d, O 1s, Ti 2p, and C 1s rocking curves. The examples now share that case
-through `examples/synthetic_case.py`, and the README/user-guide wording points
-users to the same case consistently.
+20-repeat LaNiO3/SrTiO3 (LNO/STO) superlattice on a SrTiO3 substrate, with
+reflectivity and La 4d, O 1s, Ti 2p, and C 1s rocking curves. The examples now
+share that case through `examples/synthetic_case.py`, and the README/user-guide
+wording points users to the same case consistently.
+
+## 2026-06-29 Follow-Up
+
+The generated `swanx init` project still used the older single-film starter.
+It now uses the same C/LaNiO3/SrTiO3 superlattice starter as the maintained
+examples, and user-facing docs introduce the LNO/STO abbreviations on first
+mention.

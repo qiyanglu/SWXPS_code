@@ -1,4 +1,4 @@
-"""Compare synthetic C/LNO/STO reflectivity with and without roughness."""
+"""Compare synthetic C/LaNiO3/SrTiO3 reflectivity with and without roughness."""
 
 from __future__ import annotations
 
@@ -66,7 +66,7 @@ def main() -> None:
     )
     ax.set_xlabel("Grazing incidence angle (deg)")
     ax.set_ylabel("Reflectivity")
-    ax.set_title("C/[LNO/STO]x20 roughness comparison")
+    ax.set_title("C/[LaNiO3/SrTiO3]x20 roughness comparison")
     ax.set_xlim(scan_angles.min(), scan_angles.max())
     ax.set_ylim(1e-6, 1.2)
     ax.grid(True, which="both", alpha=0.25)

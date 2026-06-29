@@ -1,4 +1,4 @@
-"""Plot reflectivity from the synthetic C/LNO/STO superlattice case."""
+"""Plot reflectivity from the synthetic C/LaNiO3/SrTiO3 superlattice case."""
 
 from __future__ import annotations
 

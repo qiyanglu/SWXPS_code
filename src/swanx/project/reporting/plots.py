@@ -11,12 +11,8 @@ from ..builder import BuiltProject
 
 
 def write_plots(output: Path, built: BuiltProject, simulation) -> list[str]:
-    expected = (
-        "plots/fit_overview.png",
-        "plots/reflectivity_fit.png",
-        "plots/rocking_curves_fit.png",
-        "plots/stack_schematic.png",
-    )
+    names = _plot_names(built)
+    expected = (*names.curve_plots, "plots/stack_schematic.png")
     if not built.spec.report.get("save_plots", False):
         return [f"{name} skipped because report.save_plots is false" for name in expected]
     try:
@@ -26,15 +22,44 @@ def write_plots(output: Path, built: BuiltProject, simulation) -> list[str]:
 
     notes: list[str] = []
     (output / "plots").mkdir(exist_ok=True)
-    notes.append(_write_fit_overview_plot(output, built, simulation, plt))
-    notes.append(_write_reflectivity_plot(output, built, simulation, plt))
-    notes.append(_write_rocking_curve_plot(output, built, simulation, plt))
+    notes.append(_write_fit_overview_plot(output, built, simulation, plt, names))
+    notes.append(_write_reflectivity_plot(output, built, simulation, plt, names))
+    notes.append(_write_rocking_curve_plot(output, built, simulation, plt, names))
     notes.append(_write_stack_schematic_plot(output, built, simulation))
     return notes
 
-def _write_fit_overview_plot(output: Path, built: BuiltProject, simulation, plt) -> str:
+
+class _PlotNames:
+    def __init__(self, *, overview: str, reflectivity: str, rocking_curves: str, model_label: str) -> None:
+        self.overview = overview
+        self.reflectivity = reflectivity
+        self.rocking_curves = rocking_curves
+        self.model_label = model_label
+
+    @property
+    def curve_plots(self) -> tuple[str, str, str]:
+        return (self.overview, self.reflectivity, self.rocking_curves)
+
+
+def _plot_names(built: BuiltProject) -> _PlotNames:
+    if built.spec.fit_method == "simulate_only":
+        return _PlotNames(
+            overview="plots/simulation_overview.png",
+            reflectivity="plots/reflectivity_simulation.png",
+            rocking_curves="plots/rocking_curves_simulation.png",
+            model_label="simulation",
+        )
+    return _PlotNames(
+        overview="plots/fit_overview.png",
+        reflectivity="plots/reflectivity_fit.png",
+        rocking_curves="plots/rocking_curves_fit.png",
+        model_label="fit",
+    )
+
+
+def _write_fit_overview_plot(output: Path, built: BuiltProject, simulation, plt, names: _PlotNames) -> str:
     if simulation.reflectivity is None and simulation.rocking_curves is None:
-        return "plots/fit_overview.png skipped because no simulated curves are available"
+        return f"{names.overview} skipped because no simulated curves are available"
     rocking_datasets = list(built.rocking_curve_data)
     simulated_rc = _simulated_rocking_curves(simulation)
     if not rocking_datasets and simulated_rc:
@@ -70,7 +95,7 @@ def _write_fit_overview_plot(output: Path, built: BuiltProject, simulation, plt)
             simulation.reflectivity.reflectivity,
             color="tab:red",
             linewidth=1.55,
-            label="fit",
+            label=names.model_label,
         )
         ax.set_ylabel("Reflectivity")
         ax.legend(frameon=False, loc="best")
@@ -96,7 +121,7 @@ def _write_fit_overview_plot(output: Path, built: BuiltProject, simulation, plt)
                 simulated_rc[data.name],
                 color="black",
                 linewidth=1.45,
-                label="fit",
+                label=names.model_label,
             )
         ax.axhline(1.0, color="0.35", linestyle=":", linewidth=0.9, alpha=0.6)
         ax.set_ylabel(data.name)
@@ -104,15 +129,15 @@ def _write_fit_overview_plot(output: Path, built: BuiltProject, simulation, plt)
         _style_axis(ax)
         axis_index += 1
     axes[-1].set_xlabel("Incident angle (deg)")
-    fig.savefig(output / "plots" / "fit_overview.png", dpi=220)
+    fig.savefig(output / names.overview, dpi=220)
     plt.close(fig)
     if overlays:
-        return "plots/fit_overview.png written with experimental overlays: " + ", ".join(overlays)
-    return "plots/fit_overview.png written without experimental overlay because no matching datasets were provided"
+        return f"{names.overview} written with experimental overlays: " + ", ".join(overlays)
+    return f"{names.overview} written without experimental overlay because no matching datasets were provided"
 
-def _write_reflectivity_plot(output: Path, built: BuiltProject, simulation, plt) -> str:
+def _write_reflectivity_plot(output: Path, built: BuiltProject, simulation, plt, names: _PlotNames) -> str:
     if simulation.reflectivity is None:
-        return "plots/reflectivity_fit.png skipped because no simulated reflectivity is available"
+        return f"{names.reflectivity} skipped because no simulated reflectivity is available"
     fig, ax = plt.subplots(figsize=(7.2, 4.4), constrained_layout=True)
     has_overlay = built.reflectivity_data is not None
     if has_overlay:
@@ -136,15 +161,15 @@ def _write_reflectivity_plot(output: Path, built: BuiltProject, simulation, plt)
     ax.set_ylabel("Reflectivity")
     ax.legend(frameon=False, loc="best")
     _style_axis(ax, semilog=True)
-    fig.savefig(output / "plots" / "reflectivity_fit.png", dpi=220)
+    fig.savefig(output / names.reflectivity, dpi=220)
     plt.close(fig)
     if has_overlay:
-        return "plots/reflectivity_fit.png written with experimental overlay"
-    return "plots/reflectivity_fit.png written without experimental overlay because no reflectivity dataset was provided"
+        return f"{names.reflectivity} written with experimental overlay"
+    return f"{names.reflectivity} written without experimental overlay because no reflectivity dataset was provided"
 
-def _write_rocking_curve_plot(output: Path, built: BuiltProject, simulation, plt) -> str:
+def _write_rocking_curve_plot(output: Path, built: BuiltProject, simulation, plt, names: _PlotNames) -> str:
     if simulation.rocking_curves is None:
-        return "plots/rocking_curves_fit.png skipped because no simulated rocking curves are available"
+        return f"{names.rocking_curves} skipped because no simulated rocking curves are available"
     fig, ax = plt.subplots(figsize=(7.2, 4.7), constrained_layout=True)
     simulated_by_name = _simulated_rocking_curves(simulation)
     overlaid = []
@@ -153,7 +178,13 @@ def _write_rocking_curve_plot(output: Path, built: BuiltProject, simulation, plt
             continue
         color = _plot_color(data.name)
         ax.plot(data.angles, data.intensity, "o", color=color, markersize=3.0, alpha=0.58, label=f"{data.name} data")
-        ax.plot(simulation.rocking_curves.angle, simulated_by_name[data.name], color=color, linewidth=1.45, label=f"{data.name} fit")
+        ax.plot(
+            simulation.rocking_curves.angle,
+            simulated_by_name[data.name],
+            color=color,
+            linewidth=1.45,
+            label=f"{data.name} {names.model_label}",
+        )
         overlaid.append(data.name)
     if not overlaid:
         for core in simulation.rocking_curves.core_levels:
@@ -164,11 +195,11 @@ def _write_rocking_curve_plot(output: Path, built: BuiltProject, simulation, plt
     ax.set_ylabel("Normalized intensity")
     ax.legend(frameon=False, loc="best", ncols=2 if len(simulated_by_name) > 2 else 1)
     _style_axis(ax)
-    fig.savefig(output / "plots" / "rocking_curves_fit.png", dpi=220)
+    fig.savefig(output / names.rocking_curves, dpi=220)
     plt.close(fig)
     if overlaid:
-        return "plots/rocking_curves_fit.png written with experimental overlays: " + ", ".join(overlaid)
-    return "plots/rocking_curves_fit.png written without experimental overlay because no matching rocking-curve dataset was provided"
+        return f"{names.rocking_curves} written with experimental overlays: " + ", ".join(overlaid)
+    return f"{names.rocking_curves} written without experimental overlay because no matching rocking-curve dataset was provided"
 
 def _write_stack_schematic_plot(output: Path, built: BuiltProject, simulation) -> str:
     try:

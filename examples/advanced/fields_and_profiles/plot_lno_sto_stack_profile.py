@@ -1,4 +1,4 @@
-"""Plot roughness-broadened concentration profiles for C/LNO/STO."""
+"""Plot roughness-broadened concentration profiles for C/LaNiO3/SrTiO3."""
 
 from __future__ import annotations
 
@@ -50,7 +50,7 @@ def main() -> None:
 
     ax.set_xlabel("Relative concentration")
     ax.set_ylabel("Depth below surface (Angstrom)")
-    ax.set_title("Synthetic C/[LNO/STO]x20 concentration profile")
+    ax.set_title("Synthetic C/[LaNiO3/SrTiO3]x20 concentration profile")
     ax.set_xlim(-0.05, 1.05)
     ax.set_ylim(0.0, max_depth)
     ax.invert_yaxis()

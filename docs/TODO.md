@@ -6,13 +6,16 @@
       aligned with `swanx`.
 - [ ] Keep `examples/` organized as a user learning path and avoid adding
       benchmark-style or regression-test material there.
-- [ ] Keep maintained examples aligned with the synthetic C/[LNO/STO]x20/STO
-      benchmark case unless a future user-facing case is intentionally chosen.
+- [ ] Keep maintained examples aligned with the synthetic
+      C/[LaNiO3/SrTiO3 (LNO/STO)]x20/SrTiO3 benchmark case unless a future
+      user-facing case is intentionally chosen.
 - [ ] Add richer ProjectSpec examples only when they reuse existing IO,
       simulation, fitting, and report APIs.
 - [ ] Validate root `data/OPC`, `data/IMFP`, benchmark CSV, and packaged
       starter-data workflows on tutorial inputs and local representative
       case-study inputs when available.
+- [ ] Keep the default `swanx init` JAX least-squares starter lightweight enough
+      for a first run while still demonstrating the full ProjectSpec workflow.
 - [ ] Continue validating RC preprocessing, weighting, angular offsets,
       parameter identifiability, fitted structures, and s/p/mixed polarization.
 - [ ] Add richer experimental-data formats only when real lab conventions
@@ -35,8 +38,8 @@
       BO convergence/surrogate diagnostics, and no default residual PNG.
 - [x] Add visible ProjectSpec run progress messages for `swanx run` and
       generated beginner scripts.
-- [x] Add a synthetic C/LNO/STO ProjectSpec JAX least-squares benchmark with
-      an explicit fixed-shape residual factory callback.
+- [x] Add a synthetic C/LaNiO3/SrTiO3 ProjectSpec JAX least-squares benchmark
+      with an explicit fixed-shape residual factory callback.
 - [x] Make default ProjectSpec run outputs project-local and write `report.md`.
 - [x] Add `templates/project_minimal.yaml` and `templates/run_project.py`.
 - [x] Support stack layer IDs/tags, repeat blocks, inline parameters, safe
@@ -61,10 +64,15 @@
       YAML reference, and copy-pasteable ProjectSpec examples.
 - [x] Redesign `examples/` around beginner ProjectSpec workflows, compact
       Python API scripts, fitting examples, and advanced visualizations.
-- [x] Realign maintained examples from the simple LNO/STO film tutorial to the
-      synthetic C/[LNO/STO]x20/STO benchmark case.
+- [x] Realign maintained examples from the older single-film tutorial to the
+      synthetic C/[LaNiO3/SrTiO3 (LNO/STO)]x20/SrTiO3 benchmark case.
 - [x] Sweep maintained docs for stale example-case wording, old public README
       mojibake, and outdated active guidance after the examples realignment.
+- [x] Change default `swanx init` from simulation-only to a packaged
+      C/LaNiO3/SrTiO3 JAX least-squares fitting starter with a local residual
+      factory entry point.
+- [x] Rename ProjectSpec `simulate_only` curve plots to simulation-specific
+      filenames while preserving fit-specific filenames for fitting runs.
 
 ## Deferred or out of scope
 

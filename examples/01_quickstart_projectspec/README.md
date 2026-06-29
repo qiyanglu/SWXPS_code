@@ -5,10 +5,10 @@ workflows. Paths are written relative to this folder, so validation works from
 any current working directory.
 
 The examples use the same introductory case as the synthetic benchmark:
-vacuum / C / [LNO/STO]x20 / STO at 1000 eV. Data-overlay and fitting examples
-read the benchmark CSV with reflectivity plus La 4d, O 1s, Ti 2p, and C 1s
-rocking curves, so the beginner YAML workflow matches the Python examples and
-benchmark scripts.
+vacuum / C / [LaNiO3/SrTiO3 (LNO/STO)]x20 / SrTiO3 (STO) at 1000 eV.
+Data-overlay and fitting examples read the benchmark CSV with reflectivity plus
+La 4d, O 1s, Ti 2p, and C 1s rocking curves, so the beginner YAML workflow
+matches the Python examples and benchmark scripts.
 
 ## Files
 
@@ -38,3 +38,7 @@ For the best beginner experience, start with:
 swanx init my_project
 python my_project/run_project.py
 ```
+
+That generated project is a self-contained JAX least-squares fitting starter.
+Use the YAML files in this folder when you want smaller simulation-only or
+configuration-focused examples.

@@ -24,8 +24,8 @@ workflow.
 
 ## Core Concepts
 
-- **Material**: a label such as `LNO` or `STO` that connects stack layers to OPC
-  and IMFP files.
+- **Material**: a label such as `LNO` for LaNiO3 or `STO` for SrTiO3 that
+  connects stack layers to OPC and IMFP files.
 - **Stack layer**: one physical layer in order from vacuum to substrate. Each
   concrete layer has a stable `id`.
 - **Optical constants (OPC)**: photon-energy-dependent `delta` and `beta` values
@@ -44,12 +44,12 @@ workflow.
 - **Report folder**: the project-local output directory containing `report.md`,
   CSVs, optional plots, and optimizer outputs.
 
-## Quickstart: Simulate-Only Project
+## Quickstart: Fitting Starter Project
 
 Create a self-contained starter project:
 
 ```bash
-python -m pip install -e ".[project,plot]"
+python -m pip install -e ".[project,least-squares,plot]"
 swanx init my_project
 python my_project/run_project.py
 ```
@@ -60,13 +60,15 @@ The generated project contains:
 my_project/
   project.yaml
   run_project.py
+  synthetic_residual_factory.py
   README.md
   data/
 ```
 
-The minimal generated YAML uses `fit_method: "simulate_only"`. That means SWANX
-builds the stack, simulates reflectivity and rocking curves, and writes a report
-without optimizing parameters.
+The default generated YAML uses `fit_method: "jax_least_squares"`. It builds the
+C/LaNiO3/SrTiO3 stack, loads the packaged synthetic reflectivity and rocking
+curves, fits selected stack parameters, simulates the best-fit curves, and
+writes a report.
 
 Typical first edits in `project.yaml` are:
 
@@ -77,12 +79,18 @@ Typical first edits in `project.yaml` are:
 - choose which layers emit each `core_level`;
 - set `report.save_plots: true` when matplotlib is installed.
 
+For a forward-modeling-only starter, use:
+
+```bash
+swanx init my_project --template multilayer
+```
+
 More complete syntax is documented in
 [projectspec_reference.md](projectspec_reference.md).
 Copy-pasteable starter YAML files are in
 [../examples/01_quickstart_projectspec](../examples/01_quickstart_projectspec).
 
-## Add Experimental Data And Overlay Points
+## Simulate Only And Overlay Data
 
 To compare simulations with data while still avoiding fitting, keep:
 
@@ -113,10 +121,10 @@ datasets:
 ```
 
 Dataset paths are resolved relative to `project.yaml`, not the process current
-working directory. The maintained examples use the synthetic C/LNO/STO
-benchmark CSV as a stand-in for measured data; replace the path and column
-names with your own measurements when needed. Rocking-curve names should match
-core-level names when you want overlays and residuals.
+working directory. The maintained examples use the synthetic C/LaNiO3/SrTiO3
+(C/LNO/STO) benchmark CSV as a stand-in for measured data; replace the path and
+column names with your own measurements when needed. Rocking-curve names should
+match core-level names when you want overlays and residuals.
 
 With datasets present, `simulate_only` reports can include experimental data
 CSVs, residuals, and plot overlays, but they still do not write
@@ -125,7 +133,9 @@ CSVs, residuals, and plot overlays, but they still do not write
 ## Fit Workflow
 
 JAX least-squares is the recommended fitting path for differentiable fixed-shape
-workflows. In YAML, it currently requires a user-provided factory callback:
+workflows. The default `swanx init` project already includes a factory for the
+packaged synthetic C/LaNiO3/SrTiO3 starter case. Custom YAML fits need their
+own factory callback:
 
 ```yaml
 settings:
@@ -137,10 +147,10 @@ settings:
 ```
 
 The factory module can live next to `project.yaml`; the ProjectSpec runner adds
-that folder to `PYTHONPATH` while loading the callback. SWANX does not generate a
-no-code JAX residual builder in the current ProjectSpec workflow. If the factory
-is missing, validation and run errors should point out the missing setting and
-there is no fallback to Bayesian optimization.
+that folder to `PYTHONPATH` while loading the callback. Outside the packaged
+starter case, SWANX does not generate no-code JAX residual builders. If the
+factory is missing, validation and run errors should point out the missing
+setting and there is no fallback to Bayesian optimization.
 
 Bayesian optimization is available as an optional global black-box baseline or
 robustness check:
@@ -230,7 +240,10 @@ Important files:
 - `optimizer/bayesian/`: evaluations, best-so-far, parameter samples, and stage
   summary.
 - `plots/`: overview, reflectivity, rocking curves, stack schematic, and
-  backend-specific diagnostics when available.
+  backend-specific diagnostics when available. Fitting runs use
+  `fit_overview.png`, `reflectivity_fit.png`, and `rocking_curves_fit.png`;
+  `simulate_only` runs use `simulation_overview.png`,
+  `reflectivity_simulation.png`, and `rocking_curves_simulation.png`.
 
 ## Advanced Python API
 
@@ -295,7 +308,8 @@ For JAX least-squares workflows, install:
 python -m pip install -e ".[least-squares]"
 ```
 
-The YAML still needs a residual factory callback.
+Custom YAML fits still need a residual factory callback; the generated starter
+project includes one for its packaged synthetic case.
 
 **Unknown layer tag**
 

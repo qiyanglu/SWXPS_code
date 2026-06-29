@@ -4,10 +4,10 @@ These examples are organized as a user learning path. Start with the YAML
 ProjectSpec workflow unless you need a custom Python script.
 
 All maintained examples use the same introductory synthetic case as the main
-benchmark: a C cap on a 20-repeat LNO/STO superlattice on an STO substrate at
-1000 eV. The shared case includes reflectivity plus La 4d, O 1s, Ti 2p, and
-C 1s rocking curves, so stack building, simulation, data overlay, and fitting
-examples all teach the same workflow.
+benchmark: a carbon cap on a 20-repeat LaNiO3/SrTiO3 (LNO/STO) superlattice on
+a SrTiO3 (STO) substrate at 1000 eV. The shared case includes reflectivity plus
+La 4d, O 1s, Ti 2p, and C 1s rocking curves, so stack building, simulation,
+data overlay, and fitting examples all teach the same workflow.
 
 ## Recommended Path
 
@@ -29,7 +29,3 @@ swanx run examples/01_quickstart_projectspec/minimal_simulate_only.yaml
 python examples/03_python_api/build_from_opc_imfp.py
 python examples/02_experimental_data/load_and_overlay_curves.py
 ```
-
-Private experimental fitting belongs in local ignored `case_studies/`.
-Heavy synthetic fitting and timing studies belong in `benchmarks/`. Generated
-run output belongs in local ignored `runs/` or project-local `runs/` folders.
