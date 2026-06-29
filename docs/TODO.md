@@ -2,7 +2,7 @@
 
 ## Current priorities
 
-- [ ] Keep README, user guide, templates, and maintained examples executable and
+- [ ] Keep README, user guide, and maintained examples executable and
       aligned with `swanx`.
 - [ ] Keep `examples/` organized as a user learning path and avoid adding
       benchmark-style or regression-test material there.
@@ -41,7 +41,8 @@
 - [x] Add a synthetic C/LaNiO3/SrTiO3 ProjectSpec JAX least-squares benchmark
       with an explicit fixed-shape residual factory callback.
 - [x] Make default ProjectSpec run outputs project-local and write `report.md`.
-- [x] Add `templates/project_minimal.yaml` and `templates/run_project.py`.
+- [x] Retire repository-local `templates/` now that `swanx init` and
+      examples are the starter surfaces.
 - [x] Support stack layer IDs/tags, repeat blocks, inline parameters, safe
       arithmetic expressions, and core-level layer/tag resolution.
 - [x] Implement `simulate_only` report folder outputs without best-fit parameter

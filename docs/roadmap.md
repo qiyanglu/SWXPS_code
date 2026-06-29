@@ -16,7 +16,7 @@ data files -> swanx.io -> simulation requests / fitting data -> simulation + fit
 
 The YAML ProjectSpec path is the main human-editable project input. Default
 initializer projects are self-contained from packaged tutorial data, with
-`minimal`, `multilayer`, and `fit-demo` templates. Direct Python APIs remain the
+`minimal`, `multilayer`, and `fit-demo` initializer choices. Direct Python APIs remain the
 right surface for custom fixed-shape JAX fitting, new diagnostics, and
 lower-level simulation experiments.
 
@@ -27,7 +27,7 @@ global black-box baseline/robustness check.
 
 ## Near-term priorities
 
-1. Keep README, user guide, templates, and maintained examples concise,
+1. Keep README, user guide, and maintained examples concise,
    executable, based on `swanx`, and aligned with the synthetic
    C/[LaNiO3/SrTiO3 (LNO/STO)]x20/SrTiO3 teaching case.
 2. Expand ProjectSpec examples only when they reuse existing IO, simulation,

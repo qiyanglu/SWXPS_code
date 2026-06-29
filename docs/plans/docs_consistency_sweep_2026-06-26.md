@@ -28,7 +28,9 @@ descriptions after ProjectSpec v1.2 landed.
 - Repaired stale validation text and Windows path escape artifacts in
   `docs/PROJECT_STATE.md`.
 
-- 2026-06-27: Refreshed active docs after ProjectSpec v1.2 so README starts with self-contained `swanx init`, user guide documents templates/inspect, and active plans avoid stale exact pytest counts.
+- 2026-06-27: Refreshed active docs after ProjectSpec v1.2 so README
+  starts with self-contained `swanx init`, user guide documents initializer
+  choices/inspect, and active plans avoid stale exact pytest counts.
 
 ## 2026-06-29 sweep notes
 
@@ -45,3 +47,5 @@ descriptions after ProjectSpec v1.2 landed.
   active docs so `rocking_curve_offpeak_mask` is described as shared by
   experimental and simulated rocking-curve mean normalization, not only as a
   scoring exclusion.
+- Follow-up: retired the repository-local `templates/` folder after `swanx init`
+  and the maintained ProjectSpec examples became the supported starter surfaces.

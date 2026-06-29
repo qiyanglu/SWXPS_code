@@ -37,7 +37,9 @@ examples/
 
 - `examples/`: runnable teaching material and compact user workflows.
 - `benchmarks/`: performance measurements and synthetic fitting comparisons.
-- `templates/`: repository-local starter template files retained for now.
+- Starter YAML now lives in `swanx init` and
+  `examples/01_quickstart_projectspec/`; the repository-local `templates/`
+  folder has been retired.
 - `tests/`: regression coverage only, not tutorial material.
 
 ## Validation

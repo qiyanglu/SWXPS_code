@@ -16,7 +16,7 @@ validated optics, XPS, reflectivity, fitting, and numerical code paths.
   baseline.
 - Clarify method-specific report outputs, plots, progress messages, and docs.
 - ProjectSpec v1.2: make default `swanx init` self-contained from packaged
-  tutorial data, add starter templates and `swanx inspect`, support copied
+  tutorial data, add starter initializer choices and `swanx inspect`, support copied
   example data and explicit data roots, keep default outputs under the project
   folder, and write `report.md` for every run.
 
@@ -26,8 +26,8 @@ Run focused ProjectSpec tests first, then the full test suite.
 
 - `python -m pytest tests/test_project_workflow.py -q`: run after ProjectSpec changes.
 - `python -m pytest -q`: run before handoff for substantial changes.
-- `python templates/run_project.py`: wrote a timestamped minimal project run.
-- `python -m swanx.cli validate/run templates/project_minimal.yaml`: passed.
+- Historical template smoke checks passed before `templates/` was retired in
+  favor of `swanx init` and maintained example YAMLs.
 - `python -m pip install -e ".[project]"`: refreshed the console script.
 - `swanx inspect`, `swanx validate`, `swanx run`, and `swanx init`: smoke-check after ProjectSpec changes.
 - Generated `run_project.py` from `swanx init`: passed.

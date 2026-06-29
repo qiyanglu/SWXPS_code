@@ -245,9 +245,6 @@ core_levels:
     assert spec.report == {}
 
 
-def test_template_project_minimal_validates():
-    spec = validate_project(Path("templates/project_minimal.yaml"))
-    assert spec.name == "minimal_yaml_project"
 
 
 def test_swanx_init_generated_project_validates_and_runs_from_different_cwd(monkeypatch, tmp_path):

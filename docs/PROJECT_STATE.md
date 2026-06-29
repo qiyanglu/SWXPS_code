@@ -47,8 +47,6 @@ when they need reflectivity and rocking-curve data.
 - `swanx inspect ...`, `swanx validate ...`, and `swanx run ...` are thin CLI
   wrappers for review, validation, and automation.
 - PyYAML is optional via `python -m pip install -e ".[project]"`.
-- `templates/project_minimal.yaml` and `templates/run_project.py` remain a
-  repository-local JAX least-squares fitting starter.
 - `docs/projectspec_reference.md` is the detailed YAML ProjectSpec reference,
   and `examples/01_quickstart_projectspec/` contains copy-pasteable ProjectSpec
   examples.
@@ -135,7 +133,6 @@ is 1-based inside repeat blocks.
 - `tests/` contains regression tests.
 - `examples/` contains compact tutorials built around the synthetic
   C/[LaNiO3/SrTiO3 (LNO/STO)]x20/SrTiO3 benchmark case.
-- `templates/` contains editable ProjectSpec starter files.
 - `case_studies/` is local/private experimental input and runner space ignored
   by Git.
 - `benchmarks/` contains synthetic fitting and performance benchmarks.
@@ -160,6 +157,10 @@ python runs/projectspec_smoke/run_project.py
 swanx inspect runs/projectspec_smoke/project.yaml
 swanx validate runs/projectspec_smoke/project.yaml
 ```
+
+Repository-local `templates/` were retired after `swanx init` became the
+supported starter workflow and `examples/01_quickstart_projectspec/` became the
+maintained copy-paste YAML surface.
 
 Default init JAX-fit smoke validation completed on 2026-06-29: a fresh
 `swanx init` project loaded `synthetic_residual_factory.py`, ran
