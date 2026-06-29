@@ -6,10 +6,13 @@
       aligned with `swanx`.
 - [ ] Keep `examples/` organized as a user learning path and avoid adding
       benchmark-style or regression-test material there.
+- [ ] Keep maintained examples aligned with the synthetic C/[LNO/STO]x20/STO
+      benchmark case unless a future user-facing case is intentionally chosen.
 - [ ] Add richer ProjectSpec examples only when they reuse existing IO,
       simulation, fitting, and report APIs.
-- [ ] Validate root `data/OPC`, `data/IMFP`, and `data/curves` workflows on
-      tutorial inputs and local representative case-study inputs when available.
+- [ ] Validate root `data/OPC`, `data/IMFP`, benchmark CSV, and packaged
+      starter-data workflows on tutorial inputs and local representative
+      case-study inputs when available.
 - [ ] Continue validating RC preprocessing, weighting, angular offsets,
       parameter identifiability, fitted structures, and s/p/mixed polarization.
 - [ ] Add richer experimental-data formats only when real lab conventions
@@ -58,6 +61,8 @@
       YAML reference, and copy-pasteable ProjectSpec examples.
 - [x] Redesign `examples/` around beginner ProjectSpec workflows, compact
       Python API scripts, fitting examples, and advanced visualizations.
+- [x] Realign maintained examples from the simple LNO/STO film tutorial to the
+      synthetic C/[LNO/STO]x20/STO benchmark case.
 
 ## Deferred or out of scope
 

@@ -24,9 +24,10 @@ OPC + IMFP + optional experimental curves
         -> simulation + fitting + diagnostics
 ```
 
-Tutorial starter data are packaged with `swanx.project` for `swanx init` and are
-also mirrored in the repository under `data/OPC/`, `data/IMFP/`, and
-`data/curves/` for examples.
+Starter data are packaged with `swanx.project` for `swanx init` and are also
+mirrored in the repository under `data/OPC/`, `data/IMFP/`, and `data/curves/`.
+Maintained examples use the synthetic C/LNO/STO benchmark CSV when they need
+reflectivity and rocking-curve data.
 
 ## Implemented workflow
 
@@ -49,7 +50,8 @@ also mirrored in the repository under `data/OPC/`, `data/IMFP/`, and
   examples.
 - `examples/` is organized as a user learning path: ProjectSpec quickstarts,
   experimental-data loading, compact Python API scripts, fitting examples, and
-  advanced low-level visualizations.
+  advanced low-level visualizations. All maintained examples share the
+  synthetic C/[LNO/STO]x20/STO case used by the benchmark folder.
 - `swanx.io` reads OPC, IMFP, reflectivity, and rocking-curve files and builds
   `SimulationStack` and `CoreLevelRequest` objects from material tables.
 - `swanx.preprocessing` owns rocking-curve normalization algorithms.
@@ -121,7 +123,8 @@ is 1-based inside repeat blocks.
 
 - `src/swanx/` is the maintained package and only supported Python namespace.
 - `tests/` contains regression tests.
-- `examples/` contains compact tutorials.
+- `examples/` contains compact tutorials built around the synthetic
+  C/[LNO/STO]x20/STO benchmark case.
 - `templates/` contains editable ProjectSpec starter files.
 - `case_studies/` is local/private experimental input and runner space ignored
   by Git.

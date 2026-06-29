@@ -96,7 +96,7 @@ and add datasets:
 ```yaml
 datasets:
   reflectivity:
-    path: "data/curves/lno_sto_reflectivity.csv"
+    path: "../../benchmarks/synthetic_c_lno_sto/lno_sto_c_synthetic_data.csv"
     name: "Reflectivity"
     angle_column: "angle_deg"
     intensity_column: "reflectivity"
@@ -104,17 +104,19 @@ datasets:
     log_floor: 1.0e-12
 
   rocking_curves:
-    - path: "data/curves/la4d_rocking_curve.csv"
+    - path: "../../benchmarks/synthetic_c_lno_sto/lno_sto_c_synthetic_data.csv"
       name: "La 4d"
       angle_column: "angle_deg"
-      intensity_column: "intensity"
+      intensity_column: "la4d_rc"
       normalization: "mean"
       weight: 1.0
 ```
 
 Dataset paths are resolved relative to `project.yaml`, not the process current
-working directory. Rocking-curve names should match core-level names when you
-want overlays and residuals.
+working directory. The maintained examples use the synthetic C/LNO/STO
+benchmark CSV as a stand-in for measured data; replace the path and column
+names with your own measurements when needed. Rocking-curve names should match
+core-level names when you want overlays and residuals.
 
 With datasets present, `simulate_only` reports can include experimental data
 CSVs, residuals, and plot overlays, but they still do not write

@@ -3,17 +3,18 @@
 These examples are organized as a user learning path. Start with the YAML
 ProjectSpec workflow unless you need a custom Python script.
 
-Most examples use the same compact LNO/STO tutorial system: LaNiO3 layers on
-SrTiO3 with tutorial OPC, IMFP, reflectivity, and rocking-curve data under
-`data/`. The larger C/LNO/STO synthetic case is used repeatedly in
-`benchmarks/` for fitting, slicing, and optimizer comparisons.
+All maintained examples use the same introductory synthetic case as the main
+benchmark: a C cap on a 20-repeat LNO/STO superlattice on an STO substrate at
+1000 eV. The shared case includes reflectivity plus La 4d, O 1s, Ti 2p, and
+C 1s rocking curves, so stack building, simulation, data overlay, and fitting
+examples all teach the same workflow.
 
 ## Recommended Path
 
 1. `01_quickstart_projectspec/`: copy-pasteable ProjectSpec YAML files for
    simulation, data overlays, repeats, and optional fitting settings.
-2. `02_experimental_data/`: a small Python example that loads tutorial
-   experimental curves and evaluates residuals.
+2. `02_experimental_data/`: a small Python example that loads the synthetic
+   benchmark CSV as data and evaluates the matching overlay.
 3. `03_python_api/`: compact Python API examples for users who need scripting
    instead of YAML.
 4. `04_fitting/`: standalone fitting examples and notes for JAX-based fitting.
@@ -30,5 +31,5 @@ python examples/02_experimental_data/load_and_overlay_curves.py
 ```
 
 Private experimental fitting belongs in local ignored `case_studies/`.
-Synthetic fitting and timing studies belong in `benchmarks/`. Generated run
-output belongs in local ignored `runs/` or project-local `runs/` folders.
+Heavy synthetic fitting and timing studies belong in `benchmarks/`. Generated
+run output belongs in local ignored `runs/` or project-local `runs/` folders.

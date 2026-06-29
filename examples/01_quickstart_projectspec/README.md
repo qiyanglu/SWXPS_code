@@ -4,19 +4,20 @@ These YAML files are copy-pasteable starting points for SWANX ProjectSpec
 workflows. Paths are written relative to this folder, so validation works from
 any current working directory.
 
-The examples use the recurring LNO/STO tutorial system: LaNiO3 on SrTiO3 with
-small packaged OPC, IMFP, reflectivity, and rocking-curve inputs. This keeps
-the beginner path close to the same physics used later in advanced examples and
-benchmarks.
+The examples use the same introductory case as the synthetic benchmark:
+vacuum / C / [LNO/STO]x20 / STO at 1000 eV. Data-overlay and fitting examples
+read the benchmark CSV with reflectivity plus La 4d, O 1s, Ti 2p, and C 1s
+rocking curves, so the beginner YAML workflow matches the Python examples and
+benchmark scripts.
 
 ## Files
 
-- `minimal_simulate_only.yaml`: single LNO film on STO substrate, no datasets,
+- `minimal_simulate_only.yaml`: C-capped 20-repeat LNO/STO superlattice,
   simulation and plots only.
-- `multilayer_repeat.yaml`: compact LNO/STO repeat block with layer tags and
-  `repeat_index`.
-- `compare_with_data.yaml`: simulation-only project that overlays tutorial
-  reflectivity and La 4d rocking-curve data and writes residuals.
+- `multilayer_repeat.yaml`: the same C/LNO/STO stack with explicit repeat-block
+  tags and `repeat_index`.
+- `compare_with_data.yaml`: simulation-only project that overlays the synthetic
+  reflectivity and four rocking-curve datasets and writes residuals.
 - `fit_jax_least_squares_placeholder.yaml`: shows the JAX least-squares factory
   settings required for fitting. This file validates, but it is not runnable
   until you provide `fit_factory.py` with `build_residual` next to the YAML file.

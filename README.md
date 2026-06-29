@@ -131,13 +131,13 @@ swanx init my_project --copy-example-data --data-root /path/to/data
 ## Examples and benchmarks
 
 The user-facing examples are organized as a learning path in
-[`examples/`](examples/). Most of them use a compact LNO/STO tutorial system:
-LaNiO3 layers on SrTiO3 with small OPC, IMFP, reflectivity, and rocking-curve
-inputs under `data/`.
+[`examples/`](examples/). They use the same introductory synthetic case as the
+main benchmark: a C cap on a 20-repeat LNO/STO superlattice on an STO substrate
+at 1000 eV, with reflectivity plus La 4d, O 1s, Ti 2p, and C 1s rocking curves.
 
-The larger C/LNO/STO synthetic case appears often in [`benchmarks/`](benchmarks/)
-because it is a useful repeatable target for fitting, slicing, JAX
-least-squares, and Bayesian-optimization comparisons.
+The matching benchmark in [`benchmarks/synthetic_c_lno_sto/`](benchmarks/synthetic_c_lno_sto/)
+keeps the heavier fitting, slicing, JAX least-squares, and
+Bayesian-optimization comparisons in one repeatable target.
 
 ## ProjectSpec overview
 

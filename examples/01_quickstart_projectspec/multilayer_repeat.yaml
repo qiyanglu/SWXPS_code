@@ -1,16 +1,19 @@
-﻿project:
-  name: "lno_sto_repeat_simulate_only"
+project:
+  name: "synthetic_c_lno_sto_repeat_simulate_only"
 
 settings:
-  photon_energy_ev: 900.0
-  angle_start_deg: 5.0
-  angle_stop_deg: 15.0
-  angle_count: 101
+  photon_energy_ev: 1000.0
+  angle_start_deg: 6.9
+  angle_stop_deg: 10.9
+  angle_count: 161
   polarization: "s"
   normalization: "mean"
   fit_method: "simulate_only"
 
 materials:
+  C:
+    opc_file: "../../data/OPC/C.dat"
+    imfp_file: "../../data/IMFP/C.ANG"
   LNO:
     opc_file: "../../data/OPC/LaNiO3.dat"
     imfp_file: "../../data/IMFP/LNO.ANG"
@@ -19,13 +22,22 @@ materials:
     imfp_file: "../../data/IMFP/STO.ANG"
 
 parameters:
+  carbon_thickness:
+    value: 10.0
+    vary: false
+  carbon_roughness:
+    value: 2.333333333333333
+    vary: false
   lno_thickness:
     value: 20.0
     vary: false
   sto_thickness:
     value: 20.0
     vary: false
-  interface_roughness:
+  superlattice_roughness:
+    value: 3.0
+    vary: false
+  substrate_roughness:
     value: 3.0
     vary: false
 
@@ -35,26 +47,32 @@ stack:
     thickness_A: 0.0
     roughness_A: 0.0
 
+  - id: "carbon_cap"
+    material: "C"
+    tags: ["carbon_cap", "surface"]
+    thickness_A: "$carbon_thickness"
+    roughness_A: "$carbon_roughness"
+
   - repeat:
-      times: 4
+      times: 20
       layers:
         - id: "lno_{repeat_index}"
           material: "LNO"
-          tags: ["lno_layers", "oxide_layers"]
+          tags: ["lno_layers", "oxide_layers", "superlattice"]
           thickness_A: "$lno_thickness"
-          roughness_A: "$interface_roughness"
+          roughness_A: "$superlattice_roughness"
 
         - id: "sto_{repeat_index}"
           material: "STO"
-          tags: ["sto_layers", "oxide_layers"]
+          tags: ["sto_layers", "oxide_layers", "superlattice"]
           thickness_A: "$sto_thickness"
-          roughness_A: "$interface_roughness"
+          roughness_A: "$superlattice_roughness"
 
   - id: "sto_substrate"
     material: "STO"
     tags: ["substrate", "sto_layers"]
     thickness_A: 0.0
-    roughness_A: 0.0
+    roughness_A: "$substrate_roughness"
 
 core_levels:
   - name: "La 4d"
@@ -64,10 +82,24 @@ core_levels:
     concentration: 1.0
     emission_angle_deg: 0.0
 
+  - name: "O 1s"
+    binding_energy_ev: 530.0
+    emit_from:
+      tags: ["oxide_layers", "substrate"]
+    concentration: 1.0
+    emission_angle_deg: 0.0
+
   - name: "Ti 2p"
     binding_energy_ev: 460.0
     emit_from:
       tags: ["sto_layers"]
+    concentration: 1.0
+    emission_angle_deg: 0.0
+
+  - name: "C 1s"
+    binding_energy_ev: 285.0
+    emit_from:
+      tags: ["carbon_cap"]
     concentration: 1.0
     emission_angle_deg: 0.0
 

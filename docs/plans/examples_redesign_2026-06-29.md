@@ -10,8 +10,8 @@ benchmarks focused on timing, synthetic fitting, and method comparison.
 
 - Reorganize examples around user tasks rather than internal package modules.
 - Make ProjectSpec the first and most visible example path.
-- State clearly that the LNO/STO synthetic/tutorial system is the recurring
-  demonstration case used across examples and benchmarks.
+- State clearly that the synthetic C/[LNO/STO]x20/STO benchmark system is the
+  recurring demonstration case used across examples and benchmarks.
 - Keep low-level field, roughness, profile, and XPS plotting scripts available
   as advanced examples, not beginner entry points.
 - Update root README, examples README, user guide, project state, TODO, and
@@ -44,3 +44,12 @@ examples/
 - Validate all maintained ProjectSpec YAML examples.
 - Run focused ProjectSpec tests after path updates.
 - Run the full pytest suite before final handoff if time allows.
+
+## 2026-06-29 Correction
+
+The introductory examples were initially simplified too far toward a single
+LNO/STO film. They should instead mimic the benchmark case: C cap on a
+20-repeat LNO/STO superlattice on an STO substrate, with reflectivity and La
+4d, O 1s, Ti 2p, and C 1s rocking curves. The examples now share that case
+through `examples/synthetic_case.py`, and the README/user-guide wording points
+users to the same case consistently.

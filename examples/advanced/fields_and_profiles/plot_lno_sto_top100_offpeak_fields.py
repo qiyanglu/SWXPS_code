@@ -1,4 +1,4 @@
-"""Plot off-peak electric-field intensity in the top 100 Angstrom."""
+"""Plot off-peak fields in the top 100 Angstrom of the C/LNO/STO stack."""
 
 from __future__ import annotations
 
@@ -9,130 +9,57 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
 SRC_DIR = REPO_ROOT / "src"
 if str(SRC_DIR) not in sys.path:
     sys.path.insert(0, str(SRC_DIR))
 
-from swanx.optics import (
-
-    energy_to_wavelength,
-
-    transfer_matrix_electric_field_profile,
-
-    transfer_matrix_reflectivity,
-
-)
-
-from swanx.stack import (
-
-    Layer,
-
-    LayerTemplate,
-
-    StackTemplate,
-
-    SuperlatticeTemplate,
-
-)
+from examples.synthetic_case import PHOTON_ENERGY_EV, bragg_angle_deg, build_stack  # noqa: E402
+from swanx.optics import transfer_matrix_electric_field_profile, transfer_matrix_reflectivity  # noqa: E402
 
 
-def make_lno_sto_superlattice(
-    energy_ev: float,
-    repeats: int,
-    layer_thickness: float,
-    roughness: float,
-) -> list[Layer]:
-    """Return vacuum / [LaNiO3 / SrTiO3]xN / SrTiO3 substrate."""
-
-    template = StackTemplate(
-        energy_ev=energy_ev,
-        base_dir=REPO_ROOT,
-        parts=(
-            LayerTemplate.vacuum(),
-            SuperlatticeTemplate(
-                repeats=repeats,
-                period=(
-                    LayerTemplate.from_file("LNO", "data/OPC/LaNiO3.dat", layer_thickness, roughness),
-                    LayerTemplate.from_file("STO", "data/OPC/SrTiO3.dat", layer_thickness, roughness),
-                ),
-            ),
-            LayerTemplate.from_file("STO", "data/OPC/SrTiO3.dat", 0.0, roughness),
-        ),
-    )
-    return template.build().optical_layers
-
-
-def shade_top_layers(ax: plt.Axes, layer_thickness: float, max_depth: float) -> None:
-    """Shade LNO/STO layers in the top depth window."""
-
+def shade_top_layers(ax: plt.Axes, stack, max_depth: float) -> None:
     depth = 0.0
-    layer_number = 0
-    while depth < max_depth:
-        is_lno = layer_number % 2 == 0
-        color = "tab:green" if is_lno else "tab:orange"
-        label = "LaNiO3" if layer_number == 0 else "SrTiO3" if layer_number == 1 else None
+    colors = ("tab:brown", "tab:green", "tab:orange")
+    for index, layer in enumerate(stack.optical_layers[1:-1]):
+        if depth >= max_depth:
+            break
+        color = colors[0] if index == 0 else colors[1] if index % 2 == 1 else colors[2]
         ax.axvspan(
             depth,
-            min(depth + layer_thickness, max_depth),
+            min(depth + layer.thickness, max_depth),
             color=color,
             alpha=0.08,
             linewidth=0,
-            label=label,
         )
-        depth += layer_thickness
-        layer_number += 1
+        depth += layer.thickness
 
 
 def main() -> None:
-    energy_ev = 1000.0
-    layer_thickness = 20.0
-    period = 2.0 * layer_thickness
-    roughness = 3.0
-    repeats = 20
+    stack = build_stack()
+    layers = stack.optical_layers
     max_depth = 100.0
+    bragg_angle = bragg_angle_deg()
 
-    wavelength = energy_to_wavelength(energy_ev)
-    bragg_estimate = np.rad2deg(np.arcsin(wavelength / (2.0 * period)))
-
-    layers = make_lno_sto_superlattice(
-        energy_ev=energy_ev,
-        repeats=repeats,
-        layer_thickness=layer_thickness,
-        roughness=roughness,
-    )
-
-    scan_angles = np.linspace(bragg_estimate - 1.5, bragg_estimate + 1.5, 500)
+    scan_angles = np.linspace(bragg_angle - 1.5, bragg_angle + 1.5, 500)
     reflectivity = np.array(
         [
-            transfer_matrix_reflectivity(
-                angle,
-                energy_ev,
-                layers,
-                roughness_step=1.0,
-            )
+            transfer_matrix_reflectivity(angle, PHOTON_ENERGY_EV, layers, roughness_step=1.0)
             for angle in scan_angles
         ]
     )
     peak_angle = scan_angles[np.argmax(reflectivity)]
-
     offpeak_angles = np.array(
-        [
-            peak_angle - 1.2,
-            peak_angle - 0.8,
-            peak_angle - 0.45,
-            peak_angle + 0.45,
-            peak_angle + 0.8,
-            peak_angle + 1.2,
-        ]
+        [peak_angle - 1.2, peak_angle - 0.8, peak_angle - 0.45, peak_angle + 0.45, peak_angle + 0.8, peak_angle + 1.2]
     )
     offpeak_angles = offpeak_angles[
         (offpeak_angles >= scan_angles.min()) & (offpeak_angles <= scan_angles.max())
     ]
-
     profiles = [
         transfer_matrix_electric_field_profile(
             angle_deg=angle,
-            energy_ev=energy_ev,
+            energy_ev=PHOTON_ENERGY_EV,
             layers=layers,
             step=0.25,
             roughness_step=1.0,
@@ -146,41 +73,21 @@ def main() -> None:
         figsize=(8.2, 7.0),
         gridspec_kw={"height_ratios": [1.0, 1.45]},
     )
-
     ax_r.semilogy(scan_angles, reflectivity, color="black", linewidth=1.3)
-    ax_r.axvline(
-        bragg_estimate,
-        color="tab:red",
-        linestyle="--",
-        linewidth=1.0,
-        label=f"Bragg estimate: {bragg_estimate:.2f} deg",
-    )
-    ax_r.scatter(
-        [peak_angle],
-        [reflectivity.max()],
-        color="tab:blue",
-        s=28,
-        zorder=3,
-        label=f"Peak maximum: {peak_angle:.2f} deg",
-    )
+    ax_r.axvline(bragg_angle, color="tab:red", linestyle="--", linewidth=1.0, label="Bragg estimate")
+    ax_r.axvline(peak_angle, color="tab:blue", linewidth=1.0, label="peak")
     for angle in offpeak_angles:
         ax_r.axvline(angle, color="tab:purple", alpha=0.35, linewidth=0.9)
     ax_r.set_ylabel("Reflectivity")
-    ax_r.set_title(f"Off-peak field profiles near first Bragg peak, {energy_ev:.0f} eV")
+    ax_r.set_title(f"Off-peak fields near first Bragg peak, {PHOTON_ENERGY_EV:.0f} eV")
     ax_r.grid(True, which="both", alpha=0.25)
     ax_r.legend(loc="best")
 
-    shade_top_layers(ax_e, layer_thickness, max_depth)
+    shade_top_layers(ax_e, stack, max_depth)
     colors = plt.cm.plasma(np.linspace(0.1, 0.9, len(profiles)))
     for angle, profile, color in zip(offpeak_angles, profiles, colors):
         mask = profile.depth <= max_depth
-        ax_e.plot(
-            profile.depth[mask],
-            profile.intensity[mask],
-            color=color,
-            linewidth=1.5,
-            label=f"{angle:.2f} deg",
-        )
+        ax_e.plot(profile.depth[mask], profile.intensity[mask], color=color, linewidth=1.5, label=f"{angle:.2f} deg")
 
     ax_e.set_xlabel("Depth below surface (Angstrom)")
     ax_e.set_ylabel("Field intensity |E|^2")
@@ -189,7 +96,7 @@ def main() -> None:
     ax_e.legend(loc="best", ncols=2)
     fig.tight_layout()
 
-    output_path = Path(__file__).resolve().parent / "lno_sto_top100_offpeak_fields.png"
+    output_path = Path(__file__).resolve().parent / "synthetic_c_lno_sto_top100_offpeak_fields.png"
     fig.savefig(output_path, dpi=200)
     print(f"Saved {output_path}")
 

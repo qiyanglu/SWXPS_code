@@ -45,10 +45,10 @@ A common simulation setup is:
 
 ```yaml
 settings:
-  photon_energy_ev: 900.0
-  angle_start_deg: 5.0
-  angle_stop_deg: 15.0
-  angle_count: 101
+  photon_energy_ev: 1000.0
+  angle_start_deg: 6.9
+  angle_stop_deg: 10.9
+  angle_count: 161
   polarization: "p"
   normalization: "mean"
   fit_method: "simulate_only"
@@ -58,8 +58,8 @@ You can also provide explicit angles:
 
 ```yaml
 settings:
-  photon_energy_ev: 900.0
-  angles_deg: [5.0, 5.1, 5.2]
+  photon_energy_ev: 1000.0
+  angles_deg: [6.9, 7.0, 7.1]
   polarization: "s"
   normalization: "mean"
   fit_method: "simulate_only"
@@ -298,7 +298,7 @@ Reflectivity dataset:
 ```yaml
 datasets:
   reflectivity:
-    path: "data/curves/lno_sto_reflectivity.csv"
+    path: "../../benchmarks/synthetic_c_lno_sto/lno_sto_c_synthetic_data.csv"
     name: "Reflectivity"
     angle_column: "angle_deg"
     intensity_column: "reflectivity"
@@ -312,10 +312,10 @@ Rocking-curve datasets:
 ```yaml
 datasets:
   rocking_curves:
-    - path: "data/curves/la4d_rocking_curve.csv"
+    - path: "../../benchmarks/synthetic_c_lno_sto/lno_sto_c_synthetic_data.csv"
       name: "La 4d"
       angle_column: "angle_deg"
-      intensity_column: "intensity"
+      intensity_column: "la4d_rc"
       sigma_column: "sigma"
       normalization: "mean"
       weight: 1.0
