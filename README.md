@@ -190,7 +190,7 @@ Common conventions:
 For details, see:
 
 - [`docs/projectspec_reference.md`](docs/projectspec_reference.md)
-- [`docs/projectspec_examples.md`](docs/projectspec_examples.md)
+- [`examples/projectspec/README.md`](examples/projectspec/README.md)
 
 ## Outputs
 
@@ -325,7 +325,7 @@ Start here:
 
 - [`docs/user_guide.md`](docs/user_guide.md) — practical walkthrough
 - [`docs/projectspec_reference.md`](docs/projectspec_reference.md) — YAML reference
-- [`docs/projectspec_examples.md`](docs/projectspec_examples.md) — copy-pasteable examples
+- [`examples/projectspec/README.md`](examples/projectspec/README.md) — copy-pasteable examples
 - [`docs/architecture.md`](docs/architecture.md) — package layout and design notes
 
 ## Background
@@ -345,10 +345,3 @@ Run tests with:
 python -m pytest
 ```
 
-The maintained Python namespace is:
-
-```python
-import swanx
-```
-
-The old `swxps` namespace is retired.
