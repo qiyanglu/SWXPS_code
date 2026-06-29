@@ -45,7 +45,11 @@ also mirrored in the repository under `data/OPC/`, `data/IMFP/`, and
 - `templates/project_minimal.yaml` and `templates/run_project.py` remain a
   repository-local simulation-only starter.
 - `docs/projectspec_reference.md` is the detailed YAML ProjectSpec reference,
-  and `examples/projectspec/` contains copy-pasteable ProjectSpec examples.
+  and `examples/01_quickstart_projectspec/` contains copy-pasteable ProjectSpec
+  examples.
+- `examples/` is organized as a user learning path: ProjectSpec quickstarts,
+  experimental-data loading, compact Python API scripts, fitting examples, and
+  advanced low-level visualizations.
 - `swanx.io` reads OPC, IMFP, reflectivity, and rocking-curve files and builds
   `SimulationStack` and `CoreLevelRequest` objects from material tables.
 - `swanx.preprocessing` owns rocking-curve normalization algorithms.

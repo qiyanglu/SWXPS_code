@@ -2,6 +2,9 @@
 
 > Current repository note (2026-06-26): `case_studies/` is local/private experimental space ignored by Git; any older wording about tracked case studies is historical context, not current policy.
 
+> Current examples note (2026-06-29): fitting demonstrations now live under
+> `examples/04_fitting/`.
+
 Status: Implemented and validated (2026-06-24).
 
 ## Goal
@@ -19,7 +22,7 @@ diagnostics behavior changes.
 
 ## Files to create or modify
 
-- Move the two tracked `scripts/` demonstrations to `examples/fitting/`.
+- Move the two tracked `scripts/` demonstrations to `examples/04_fitting/`.
 - Update them to use the `swanx` namespace.
 - Update example, root, roadmap, and handoff documentation.
 

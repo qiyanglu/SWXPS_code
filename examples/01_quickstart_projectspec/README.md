@@ -1,10 +1,15 @@
-﻿# ProjectSpec Examples
+# ProjectSpec Quickstart Examples
 
 These YAML files are copy-pasteable starting points for SWANX ProjectSpec
 workflows. Paths are written relative to this folder, so validation works from
 any current working directory.
 
-## Examples
+The examples use the recurring LNO/STO tutorial system: LaNiO3 on SrTiO3 with
+small packaged OPC, IMFP, reflectivity, and rocking-curve inputs. This keeps
+the beginner path close to the same physics used later in advanced examples and
+benchmarks.
+
+## Files
 
 - `minimal_simulate_only.yaml`: single LNO film on STO substrate, no datasets,
   simulation and plots only.
@@ -21,9 +26,9 @@ any current working directory.
 ## Useful Commands
 
 ```bash
-swanx validate examples/projectspec/minimal_simulate_only.yaml
-swanx run examples/projectspec/minimal_simulate_only.yaml
-swanx validate examples/projectspec/compare_with_data.yaml
+swanx validate examples/01_quickstart_projectspec/minimal_simulate_only.yaml
+swanx run examples/01_quickstart_projectspec/minimal_simulate_only.yaml
+swanx validate examples/01_quickstart_projectspec/compare_with_data.yaml
 ```
 
 For the best beginner experience, start with:

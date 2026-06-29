@@ -725,8 +725,11 @@ def test_readme_and_project_state_docs_are_current():
     assert "JAX least-squares" in readme
     assert "optional global black-box baseline" in readme
     assert "BO is not the default fitting method and is not used as a fallback" in readme
+    assert "Most of them use a compact LNO/STO tutorial system" in readme
+    assert "C/LNO/STO synthetic case" in readme
     assert "docs/user_guide.md" in readme
     assert "docs/projectspec_reference.md" in readme
+    assert "examples/README.md" in readme
     assert "swanx init my_project" in readme
     assert "swanx inspect" in readme
     assert "repository-level `data/`" not in readme
@@ -762,7 +765,7 @@ def test_readme_and_project_state_docs_are_current():
 
 
 def test_projectspec_example_yaml_files_validate():
-    examples = Path("examples/projectspec")
+    examples = Path("examples/01_quickstart_projectspec")
     expected = {
         "minimal_simulate_only.yaml",
         "multilayer_repeat.yaml",

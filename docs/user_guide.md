@@ -80,7 +80,7 @@ Typical first edits in `project.yaml` are:
 More complete syntax is documented in
 [projectspec_reference.md](projectspec_reference.md).
 Copy-pasteable starter YAML files are in
-[../examples/projectspec](../examples/projectspec).
+[../examples/01_quickstart_projectspec](../examples/01_quickstart_projectspec).
 
 ## Add Experimental Data And Overlay Points
 

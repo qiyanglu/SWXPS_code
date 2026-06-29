@@ -2,6 +2,11 @@
 
 > Current namespace note (2026-06-26): This plan is historical. Maintained code now lives under `src/swanx`, and `import swxps` is expected to fail; any `swxps` paths below are old planning context, not current guidance.
 
+> Current examples note (2026-06-29): the maintained example learning path now
+> lives under `examples/01_quickstart_projectspec/`,
+> `examples/02_experimental_data/`, `examples/03_python_api/`,
+> `examples/04_fitting/`, and `examples/advanced/`.
+
 ## Goal
 
 Complete the practical SWANX workflow from external OPC/IMFP/experimental curve files into simulation, fitting, and diagnostics without changing optics, XPS, reflectivity, or fitting physics algorithms.
@@ -19,11 +24,11 @@ Complete the practical SWANX workflow from external OPC/IMFP/experimental curve 
 ## Validation
 
 - `python -m pytest -q`
-- `python examples/io/opc_imfp_rocking_curve_quickstart.py`
-- `python examples/io/experimental_curve_loading.py`
-- `python examples/reflectivity/plot_lno_sto_reflectivity.py`
-- `python examples/xps/plot_lno_la4d_rocking_curve.py`
-- `python examples/fitting/jax_least_squares_reflectivity_fit.py`
+- `python examples/03_python_api/build_from_opc_imfp.py`
+- `python examples/02_experimental_data/load_and_overlay_curves.py`
+- `python examples/03_python_api/simulate_reflectivity.py`
+- `python examples/advanced/xps_rocking_curves/plot_lno_la4d_rocking_curve.py`
+- `python examples/04_fitting/jax_least_squares_reflectivity_fit.py`
 
 ## Non-goals
 

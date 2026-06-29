@@ -32,6 +32,10 @@ Thumbs.db
 examples/*.pdf
 examples/**/*.pdf
 
+# Generated example figures
+examples/*.png
+examples/**/*.png
+
 # Local reference paper copy; avoid uploading copyrighted PDFs by accident.
 references/*.pdf
 

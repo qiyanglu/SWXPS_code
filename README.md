@@ -128,6 +128,17 @@ To copy data into the project:
 swanx init my_project --copy-example-data --data-root /path/to/data
 ```
 
+## Examples and benchmarks
+
+The user-facing examples are organized as a learning path in
+[`examples/`](examples/). Most of them use a compact LNO/STO tutorial system:
+LaNiO3 layers on SrTiO3 with small OPC, IMFP, reflectivity, and rocking-curve
+inputs under `data/`.
+
+The larger C/LNO/STO synthetic case appears often in [`benchmarks/`](benchmarks/)
+because it is a useful repeatable target for fitting, slicing, JAX
+least-squares, and Bayesian-optimization comparisons.
+
 ## ProjectSpec overview
 
 A SWANX project is controlled by `project.yaml`.
@@ -190,7 +201,7 @@ Common conventions:
 For details, see:
 
 - [`docs/projectspec_reference.md`](docs/projectspec_reference.md)
-- [`examples/projectspec/README.md`](examples/projectspec/README.md)
+- [`examples/01_quickstart_projectspec/README.md`](examples/01_quickstart_projectspec/README.md)
 
 ## Outputs
 
@@ -325,7 +336,8 @@ Start here:
 
 - [`docs/user_guide.md`](docs/user_guide.md) — practical walkthrough
 - [`docs/projectspec_reference.md`](docs/projectspec_reference.md) — YAML reference
-- [`examples/projectspec/README.md`](examples/projectspec/README.md) — copy-pasteable examples
+- [`examples/README.md`](examples/README.md) — user learning path and example map
+- [`examples/01_quickstart_projectspec/README.md`](examples/01_quickstart_projectspec/README.md) — copy-pasteable ProjectSpec examples
 - [`docs/architecture.md`](docs/architecture.md) — package layout and design notes
 
 ## Background

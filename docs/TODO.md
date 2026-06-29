@@ -4,6 +4,8 @@
 
 - [ ] Keep README, user guide, templates, and maintained examples executable and
       aligned with `swanx`.
+- [ ] Keep `examples/` organized as a user learning path and avoid adding
+      benchmark-style or regression-test material there.
 - [ ] Add richer ProjectSpec examples only when they reuse existing IO,
       simulation, fitting, and report APIs.
 - [ ] Validate root `data/OPC`, `data/IMFP`, and `data/curves` workflows on
@@ -54,6 +56,8 @@
       keeping `swanx.project.reports` as the compatibility facade.
 - [x] Add a background-first README, practical ProjectSpec user guide, detailed
       YAML reference, and copy-pasteable ProjectSpec examples.
+- [x] Redesign `examples/` around beginner ProjectSpec workflows, compact
+      Python API scripts, fitting examples, and advanced visualizations.
 
 ## Deferred or out of scope
 

@@ -12,7 +12,8 @@ without changing optics, XPS, reflectivity, fitting algorithms, or numerical beh
 
 ## Scope
 
-- Move tutorial data from `examples/data/` to root-level `data/`.
+- Move tutorial data from the former example-local data folder to root-level
+  `data/`.
 - Update maintained examples, tests, README, and active docs to use `data/...`.
 - Keep `swanx.io` as the narrow public file-input API.
 - Keep rocking-curve normalization owned by `swanx.preprocessing`.

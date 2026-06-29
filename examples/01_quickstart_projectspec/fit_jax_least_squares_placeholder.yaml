@@ -1,4 +1,4 @@
-﻿# Non-runnable placeholder until you add examples/projectspec/fit_factory.py
+﻿# Non-runnable placeholder until you add fit_factory.py next to this YAML file
 # with a build_residual(problem) function. ProjectSpec does not generate a
 # no-code JAX residual automatically.
 project:
