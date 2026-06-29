@@ -35,7 +35,9 @@ Starter inputs live under `data/OPC/`, `data/IMFP/`, and `data/curves/` for
 `swanx.project.synthetic_lno_sto_jax` through a generated local callback module.
 Maintained examples use those OPC/IMFP tables plus the synthetic
 C/LaNiO3/SrTiO3 (C/LNO/STO) benchmark CSV when they need reflectivity and
-rocking-curve data.
+rocking-curve data. The numbered examples collectively cover the init tutorial
+scope, including a runnable ProjectSpec JAX least-squares fit in
+`examples/04_fitting/projectspec_jax_least_squares/`.
 OPC, IMFP, and experimental curve files are read before simulation/fitting.
 CXRO optical-constant tables are interpolated at photon energy, IMFP tables are
 interpolated at core-level kinetic energy, and the resulting numbers are used

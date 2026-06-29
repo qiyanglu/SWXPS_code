@@ -782,6 +782,10 @@ def test_readme_and_project_state_docs_are_current():
     user_guide = Path("docs/user_guide.md").read_text(encoding="utf-8")
     reference = Path("docs/projectspec_reference.md").read_text(encoding="utf-8")
     project_state = Path("docs/PROJECT_STATE.md").read_text(encoding="utf-8")
+    roadmap = Path("docs/roadmap.md").read_text(encoding="utf-8")
+    architecture = Path("docs/architecture.md").read_text(encoding="utf-8")
+    examples_readme = Path("examples/README.md").read_text(encoding="utf-8")
+    fitting_readme = Path("examples/04_fitting/README.md").read_text(encoding="utf-8")
 
     assert readme.index("## What problem does SWANX solve?") < readme.index("## Quickstart")
     assert "## What can I do with SWANX?" in readme
@@ -804,6 +808,8 @@ def test_readme_and_project_state_docs_are_current():
     assert "docs/user_guide.md" in readme
     assert "docs/projectspec_reference.md" in readme
     assert "examples/README.md" in readme
+    assert "examples/04_fitting/README.md" in readme
+    assert "examples/04_fitting/projectspec_jax_least_squares" in readme
     assert "swanx init my_project" in readme
     assert "swanx inspect" in readme
     assert "repository-level `data/`" not in readme
@@ -820,6 +826,7 @@ def test_readme_and_project_state_docs_are_current():
         "## Troubleshooting",
     ):
         assert heading in user_guide
+    assert "examples/04_fitting/projectspec_jax_least_squares" in user_guide
 
     for section in (
         "project",
@@ -833,6 +840,11 @@ def test_readme_and_project_state_docs_are_current():
     ):
         assert f"{section}:" in reference
     assert "BO is an optional global black-box baseline" in reference
+    assert "examples/04_fitting/projectspec_jax_least_squares" in reference
+
+    for text_block in (project_state, roadmap, architecture, examples_readme, fitting_readme):
+        assert "examples/04_fitting/projectspec_jax_least_squares" in text_block
+    assert "four numbered example folders" in examples_readme
 
     assert "C:\\Users" not in project_state
     assert "240 passed" not in project_state
@@ -851,3 +863,7 @@ def test_projectspec_example_yaml_files_validate():
 
     for name in expected:
         validate_project(examples / name)
+
+
+def test_projectspec_fitting_example_validates():
+    validate_project(Path("examples/04_fitting/projectspec_jax_least_squares/project.yaml"))

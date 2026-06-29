@@ -18,11 +18,14 @@ matches the Python examples and benchmark scripts.
   tags and `repeat_index`.
 - `compare_with_data.yaml`: simulation-only project that overlays the synthetic
   reflectivity and four rocking-curve datasets and writes residuals.
-- `fit_jax_least_squares_placeholder.yaml`: shows the JAX least-squares factory
-  settings required for fitting. This file validates, but it is not runnable
-  until you provide `fit_factory.py` with `build_residual` next to the YAML file.
+- `fit_jax_least_squares_placeholder.yaml`: shows the ProjectSpec settings for
+  a custom JAX least-squares fit. It validates, but it is not runnable until
+  you provide `fit_factory.py` with `build_residual` next to the YAML file.
 - `bo_optional_baseline.yaml`: small Bayesian-optimization baseline config. BO
   is optional, not the recommended default and not a fallback.
+
+For a runnable ProjectSpec fitting tutorial with an explicit residual factory,
+see `../04_fitting/projectspec_jax_least_squares/`.
 
 ## Useful Commands
 

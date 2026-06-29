@@ -140,6 +140,11 @@ main benchmark: a carbon cap on a 20-repeat LaNiO3/SrTiO3 (LNO/STO)
 superlattice on a SrTiO3 (STO) substrate at 1000 eV, with reflectivity plus La
 4d, O 1s, Ti 2p, and C 1s rocking curves.
 
+The four numbered example folders collectively cover the same tutorial scope as
+the default `swanx init` project: ProjectSpec setup, experimental-data overlay,
+Python API construction, and runnable JAX least-squares fitting through an
+explicit residual factory.
+
 The matching benchmark in [`benchmarks/synthetic_c_lno_sto/`](benchmarks/synthetic_c_lno_sto/)
 keeps the heavier fitting, slicing, JAX least-squares, and
 Bayesian-optimization comparisons in one repeatable target.
@@ -297,8 +302,10 @@ settings:
 ```
 
 ProjectSpec fitting requires an explicit factory callback. The default
-`swanx init` project includes one for the packaged synthetic starter case, but
-custom JAX fits still need their own fixed-shape residual factory.
+`swanx init` project and the runnable example in
+`examples/04_fitting/projectspec_jax_least_squares/` include one for the
+packaged synthetic starter case, but custom JAX fits still need their own
+fixed-shape residual factory.
 
 Bayesian optimization is available as an optional global black-box baseline:
 
@@ -374,6 +381,7 @@ Start here:
 - [`docs/projectspec_reference.md`](docs/projectspec_reference.md) - YAML reference
 - [`examples/README.md`](examples/README.md) - user learning path and example map
 - [`examples/01_quickstart_projectspec/README.md`](examples/01_quickstart_projectspec/README.md) - copy-pasteable ProjectSpec examples
+- [`examples/04_fitting/README.md`](examples/04_fitting/README.md) - runnable ProjectSpec fitting and custom fitting scripts
 - [`docs/architecture.md`](docs/architecture.md) - package layout and design notes
 
 ## Background
@@ -392,4 +400,3 @@ Run tests with:
 ```bash
 python -m pytest
 ```
-

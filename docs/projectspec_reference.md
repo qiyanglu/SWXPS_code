@@ -363,7 +363,7 @@ Skipped plot reasons are written to `report.md`.
 
 ## Fitting Settings
 
-JAX least-squares placeholder:
+JAX least-squares with an explicit factory:
 
 ```yaml
 settings:
@@ -374,9 +374,11 @@ settings:
     estimate_covariance: true
 ```
 
-The factory module can live next to `project.yaml`. ProjectSpec does not
-auto-generate JAX residual functions, and SWANX does not fall back to BO when the
-factory is missing.
+The factory module can live next to `project.yaml`. The default `swanx init`
+project and `examples/04_fitting/projectspec_jax_least_squares/` include a
+factory for the packaged synthetic C/LaNiO3/SrTiO3 starter case. ProjectSpec
+does not auto-generate JAX residual functions for arbitrary custom models, and
+SWANX does not fall back to BO when the factory is missing.
 
 BO optional baseline:
 

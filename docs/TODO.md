@@ -76,6 +76,11 @@
       filenames while preserving fit-specific filenames for fitting runs.
 - [x] Fix ProjectSpec off-peak rocking-curve normalization so experimental
       datasets and simulated/fitted curves use the same denominator.
+- [x] Add a runnable ProjectSpec JAX least-squares fitting example under
+      `examples/04_fitting/` so the four numbered example folders collectively
+      match the default `swanx init` tutorial scope.
+- [x] Re-sweep active docs after adding the runnable ProjectSpec fitting example
+      and keep status, roadmap, examples, and callback-factory guidance aligned.
 
 ## Deferred or out of scope
 

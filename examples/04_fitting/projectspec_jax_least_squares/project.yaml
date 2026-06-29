@@ -1,0 +1,177 @@
+project:
+  name: "projectspec_jax_least_squares_example"
+
+settings:
+  photon_energy_ev: 1000.0
+  angle_start_deg: 6.9
+  angle_stop_deg: 10.9
+  angle_count: 161
+  polarization: "s"
+  normalization: "mean"
+  fit_method: "jax_least_squares"
+  rocking_curve_offpeak_mask:
+    mode: "exclude_reflectivity_peak"
+    half_width_deg: 1.25
+  slicing:
+    mode: "fixed_grid"
+    min_slices: 10
+    max_slice_thickness_A: 2.0
+    reference_values:
+      carbon_thickness: 16.0
+      lno_thickness: 22.0
+      sto_thickness: 22.0
+  optimizer:
+    residual_function_factory: "synthetic_residual_factory:build_residual_function"
+    max_nfev: 40
+    ftol: 1.0e-9
+    xtol: 1.0e-9
+    gtol: 1.0e-8
+    estimate_covariance: true
+  # Bayesian optimization is available as an optional global black-box baseline,
+  # but it is not the default or a fallback.
+
+materials:
+  C:
+    opc_file: "../../../data/OPC/C.dat"
+    imfp_file: "../../../data/IMFP/C.ANG"
+  LNO:
+    opc_file: "../../../data/OPC/LaNiO3.dat"
+    imfp_file: "../../../data/IMFP/LNO.ANG"
+  STO:
+    opc_file: "../../../data/OPC/SrTiO3.dat"
+    imfp_file: "../../../data/IMFP/STO.ANG"
+
+parameters:
+  carbon_thickness:
+    initial: 9.6
+    lower: 5.0
+    upper: 16.0
+    vary: true
+  carbon_roughness_fraction:
+    initial: 0.33
+    lower: 0.0
+    upper: 1.0
+    vary: true
+  lno_thickness:
+    initial: 19.7
+    lower: 18.0
+    upper: 22.0
+    vary: true
+  sto_thickness:
+    initial: 20.3
+    lower: 18.0
+    upper: 22.0
+    vary: true
+  superlattice_roughness:
+    initial: 2.8
+    lower: 1.0
+    upper: 5.0
+    vary: true
+  substrate_roughness:
+    initial: 3.2
+    lower: 1.0
+    upper: 5.0
+    vary: true
+  angle_offset:
+    initial: 0.03
+    lower: -0.25
+    upper: 0.25
+    vary: true
+
+stack:
+  - id: "vacuum"
+    material: "vacuum"
+    thickness_A: 0.0
+    roughness_A: 0.0
+
+  - id: "carbon_cap"
+    material: "C"
+    tags: ["carbon_cap", "surface"]
+    thickness_A: "$carbon_thickness"
+    roughness_A: "1.0 + carbon_roughness_fraction * 4.0"
+
+  - repeat:
+      times: 20
+      layers:
+        - id: "lno_{repeat_index}"
+          material: "LNO"
+          tags: ["lno_layers", "oxide_layers", "superlattice"]
+          thickness_A: "$lno_thickness"
+          roughness_A: "$superlattice_roughness"
+        - id: "sto_{repeat_index}"
+          material: "STO"
+          tags: ["sto_layers", "oxide_layers", "superlattice"]
+          thickness_A: "$sto_thickness"
+          roughness_A: "$superlattice_roughness"
+
+  - id: "sto_substrate"
+    material: "STO"
+    tags: ["substrate", "sto_layers"]
+    thickness_A: 0.0
+    roughness_A: "$substrate_roughness"
+
+core_levels:
+  - name: "La 4d"
+    binding_energy_ev: 105.0
+    emit_from:
+      tags: ["lno_layers"]
+    concentration: 1.0
+    emission_angle_deg: 0.0
+
+  - name: "O 1s"
+    binding_energy_ev: 530.0
+    emit_from:
+      tags: ["oxide_layers", "substrate"]
+    concentration: 1.0
+    emission_angle_deg: 0.0
+
+  - name: "Ti 2p"
+    binding_energy_ev: 460.0
+    emit_from:
+      tags: ["sto_layers"]
+    concentration: 1.0
+    emission_angle_deg: 0.0
+
+  - name: "C 1s"
+    binding_energy_ev: 285.0
+    emit_from:
+      tags: ["carbon_cap"]
+    concentration: 1.0
+    emission_angle_deg: 0.0
+
+datasets:
+  reflectivity:
+    path: "../../../data/curves/lno_sto_c_synthetic_data.csv"
+    name: "Reflectivity"
+    angle_column: "angle_deg"
+    intensity_column: "reflectivity"
+    log_floor: 1.0e-12
+    weight: 0.2709975524929604
+  rocking_curves:
+    - path: "../../../data/curves/lno_sto_c_synthetic_data.csv"
+      name: "La 4d"
+      angle_column: "angle_deg"
+      intensity_column: "la4d_rc"
+      normalization: "mean"
+      weight: 5.0
+    - path: "../../../data/curves/lno_sto_c_synthetic_data.csv"
+      name: "O 1s"
+      angle_column: "angle_deg"
+      intensity_column: "o1s_rc"
+      normalization: "mean"
+      weight: 5.0
+    - path: "../../../data/curves/lno_sto_c_synthetic_data.csv"
+      name: "Ti 2p"
+      angle_column: "angle_deg"
+      intensity_column: "ti2p_rc"
+      normalization: "mean"
+      weight: 5.0
+    - path: "../../../data/curves/lno_sto_c_synthetic_data.csv"
+      name: "C 1s"
+      angle_column: "angle_deg"
+      intensity_column: "c1s_rc"
+      normalization: "mean"
+      weight: 5.0
+
+report:
+  save_plots: true

@@ -49,3 +49,8 @@ descriptions after ProjectSpec v1.2 landed.
   scoring exclusion.
 - Follow-up: retired the repository-local `templates/` folder after `swanx init`
   and the maintained ProjectSpec examples became the supported starter surfaces.
+
+- Follow-up: after adding the runnable ProjectSpec fitting example under
+  `examples/04_fitting/projectspec_jax_least_squares/`, re-swept active docs so
+  README, user guide, ProjectSpec reference, architecture, roadmap, project
+  state, TODO, and docs consistency tests describe the same init/tutorial scope.

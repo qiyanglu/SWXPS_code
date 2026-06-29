@@ -52,9 +52,11 @@ when they need reflectivity and rocking-curve data.
   examples.
 - `examples/` is organized as a user learning path: ProjectSpec quickstarts,
   experimental-data loading, compact Python API scripts, fitting examples, and
-  advanced low-level visualizations. All maintained examples share the
-  synthetic C/[LaNiO3/SrTiO3 (LNO/STO)]x20/SrTiO3 case used by the benchmark
-  folder.
+  advanced low-level visualizations. The four numbered example folders now
+  collectively cover the same tutorial scope as the default `swanx init`
+  starter, including a runnable ProjectSpec JAX least-squares fit with an
+  explicit residual factory. All maintained examples share the synthetic
+  C/[LaNiO3/SrTiO3 (LNO/STO)]x20/SrTiO3 case used by the benchmark folder.
 - `swanx.io` reads OPC, IMFP, reflectivity, and rocking-curve files and builds
   `SimulationStack` and `CoreLevelRequest` objects from material tables.
 - `swanx.preprocessing` owns rocking-curve normalization algorithms.
@@ -178,3 +180,19 @@ hard-coded peak window. Re-running `myproject/run_project.py` reduced the final
 objective from `0.0029710860635918292` in `myproject_20260629_194603` to
 `8.906614807793117e-08` in `myproject_20260629_195454`; full validation passed
 with `250 passed, 1 xfailed`.
+
+Examples fitting-scope sweep completed on 2026-06-29: added
+`examples/04_fitting/projectspec_jax_least_squares/` as a runnable ProjectSpec
+JAX least-squares example matching the default init tutorial's data scope,
+factory callback, off-peak rocking-curve normalization, fixed-grid slicing, and
+report outputs. Example docs and workflow validation tests now point to it.
+
+Repository documentation sweep completed on 2026-06-29: README, user guide,
+ProjectSpec reference, architecture, roadmap, example docs, active plan notes,
+PROJECT_STATE, TODO, and docs consistency tests were rechecked against the
+current init workflow, retired `templates/` folder, and four-folder examples
+scope.
+
+Validation after this docs sweep: `python -m pytest tests\test_project_workflow.py -q`
+passed with `27 passed`, and `python -m pytest -q` passed with `250 passed,
+1 xfailed`.

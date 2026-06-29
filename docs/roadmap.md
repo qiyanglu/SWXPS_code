@@ -16,9 +16,12 @@ data files -> swanx.io -> simulation requests / fitting data -> simulation + fit
 
 The YAML ProjectSpec path is the main human-editable project input. Default
 initializer projects are self-contained from packaged tutorial data, with
-`minimal`, `multilayer`, and `fit-demo` initializer choices. Direct Python APIs remain the
-right surface for custom fixed-shape JAX fitting, new diagnostics, and
-lower-level simulation experiments.
+`minimal`, `multilayer`, and `fit-demo` initializer choices. The maintained
+examples now include `examples/04_fitting/projectspec_jax_least_squares/`, a
+runnable ProjectSpec JAX least-squares fitting project that mirrors the default
+init tutorial. Direct Python APIs remain the right surface for custom
+fixed-shape JAX fitting, new diagnostics, and lower-level simulation
+experiments.
 
 Unified slicing is the default high-level simulation path. JAX-based automatic
 differentiation and least-squares are the recommended fitting strategy for
@@ -32,8 +35,8 @@ global black-box baseline/robustness check.
    C/[LaNiO3/SrTiO3 (LNO/STO)]x20/SrTiO3 teaching case.
 2. Expand ProjectSpec examples only when they reuse existing IO, simulation,
    and fitting APIs without introducing new physics paths.
-3. Improve fixed-shape JAX least-squares fitting documentation and show how it
-   relates to ProjectSpec callback factories.
+3. Keep fixed-shape JAX least-squares fitting docs and examples aligned with
+   ProjectSpec callback factories.
 4. Preserve NumPy/JAX numerical parity and source-location tests.
 5. Continue validating RC preprocessing, shared experimental/simulated
    normalization, weighting, angular offsets, parameter identifiability, and

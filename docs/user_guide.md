@@ -89,6 +89,10 @@ More complete syntax is documented in
 [projectspec_reference.md](projectspec_reference.md).
 Copy-pasteable starter YAML files are in
 [../examples/01_quickstart_projectspec](../examples/01_quickstart_projectspec).
+The runnable example in
+[../examples/04_fitting/projectspec_jax_least_squares](../examples/04_fitting/projectspec_jax_least_squares)
+shows the same fitting scope as the default init project without generating a
+new project folder first.
 
 ## Simulate Only And Overlay Data
 
@@ -149,10 +153,12 @@ settings:
 ```
 
 The factory module can live next to `project.yaml`; the ProjectSpec runner adds
-that folder to `PYTHONPATH` while loading the callback. Outside the packaged
-starter case, SWANX does not generate no-code JAX residual builders. If the
-factory is missing, validation and run errors should point out the missing
-setting and there is no fallback to Bayesian optimization.
+that folder to `PYTHONPATH` while loading the callback. The generated init
+project and `examples/04_fitting/projectspec_jax_least_squares/` show this
+layout for the packaged synthetic starter case. Outside that case, SWANX does
+not generate no-code JAX residual builders. If the factory is missing,
+validation and run errors should point out the missing setting and there is no
+fallback to Bayesian optimization.
 
 Bayesian optimization is available as an optional global black-box baseline or
 robustness check:

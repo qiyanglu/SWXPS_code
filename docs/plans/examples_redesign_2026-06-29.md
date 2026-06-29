@@ -63,3 +63,11 @@ The generated `swanx init` project still used the older single-film starter.
 It now uses the same C/LaNiO3/SrTiO3 superlattice starter as the maintained
 examples, and user-facing docs introduce the LNO/STO abbreviations on first
 mention.
+
+## 2026-06-29 Runnable Fitting Example
+
+`examples/04_fitting/projectspec_jax_least_squares/` now provides the runnable
+ProjectSpec JAX least-squares counterpart to the default `swanx init` tutorial.
+The four numbered example folders collectively cover ProjectSpec setup, data
+overlay, Python API construction, and full synthetic fitting with an explicit
+factory callback.
