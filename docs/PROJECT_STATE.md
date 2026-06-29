@@ -168,3 +168,12 @@ plots. A simulation-only ProjectSpec smoke wrote `simulation_overview.png`,
 `reflectivity_simulation.png`, and `rocking_curves_simulation.png`. Focused
 ProjectSpec workflow tests and the full suite passed afterward; the full suite
 kept its expected xfail and one existing diagnostics warning.
+
+ProjectSpec rocking-curve normalization fix completed on 2026-06-29: configured
+`rocking_curve_offpeak_mask` now normalizes experimental rocking-curve datasets
+with the same off-peak denominator used for simulated curves, and the packaged
+C/LaNiO3/SrTiO3 JAX starter residual uses `problem.offpeak_mask` instead of a
+hard-coded peak window. Re-running `myproject/run_project.py` reduced the final
+objective from `0.0029710860635918292` in `myproject_20260629_194603` to
+`8.906614807793117e-08` in `myproject_20260629_195454`; full validation passed
+with `250 passed, 1 xfailed`.

@@ -17,6 +17,7 @@ from swanx.io import (
     read_rocking_curve_data,
     stack_from_layer_specs,
 )
+from swanx.preprocessing import normalize_rocking_curve
 from swanx.stack import SimulationStack
 from swanx.stack.slicing import LayerSlicingPolicy, fixed_layer_grid_plan
 from swanx.workflows.simulate import CoreLevelRequest
@@ -42,6 +43,7 @@ def build_project(spec: ProjectSpec, values: dict[str, float] | None = None) -> 
     stack = _build_stack(spec, values, tables)
     core_levels = _build_core_levels(spec, stack, tables)
     reflectivity_data, rocking_curve_data = _read_datasets(spec)
+    offpeak_mask = _offpeak_mask_from_settings(spec, reflectivity_data, rocking_curve_data)
     problem = None
     if reflectivity_data is not None or rocking_curve_data:
         parameters = tuple(
@@ -67,7 +69,7 @@ def build_project(spec: ProjectSpec, values: dict[str, float] | None = None) -> 
             roughness_profile=str(spec.settings.get("roughness_profile", "erf")),
             polarization=project_polarization(str(spec.settings.get("polarization", "s"))),
             slicing=_slicing_from_settings(spec, tables),
-            offpeak_mask=_offpeak_mask_from_settings(spec, reflectivity_data, rocking_curve_data),
+            offpeak_mask=offpeak_mask,
             rocking_curve_normalization=str(spec.settings.get("normalization", "mean")),
             simulation_backend=str(spec.settings.get("simulation_backend", "numpy")),
         )
@@ -200,10 +202,32 @@ def _read_datasets(spec: ProjectSpec) -> tuple[ReflectivityData | None, tuple[Ro
             angle_column=fields.get("angle_column", "angle_deg"),
             intensity_column=fields.get("intensity_column", "intensity"),
             sigma_column=fields.get("sigma_column"),
-            normalization_mode=fields.get("normalization", spec.settings.get("normalization")),
         )
         rocking.append(replace(curve, weight=float(fields.get("weight", curve.weight))))
-    return reflectivity, tuple(rocking)
+    rocking_tuple = tuple(rocking)
+    offpeak_mask = _offpeak_mask_from_settings(spec, reflectivity, rocking_tuple)
+    return reflectivity, _normalize_rocking_datasets(spec, rocking_tuple, offpeak_mask)
+
+
+def _normalize_rocking_datasets(
+    spec: ProjectSpec,
+    rocking: tuple[RockingCurveData, ...],
+    offpeak_mask: np.ndarray | None,
+) -> tuple[RockingCurveData, ...]:
+    normalized = []
+    for fields, curve in zip(spec.datasets.get("rocking_curves", ()) or (), rocking):
+        mode = fields.get("normalization", spec.settings.get("normalization"))
+        if mode is None:
+            normalized.append(curve)
+            continue
+        values, _ = normalize_rocking_curve(
+            curve.angles,
+            curve.intensity,
+            mode=mode,
+            offpeak_mask=offpeak_mask,
+        )
+        normalized.append(replace(curve, intensity=values))
+    return tuple(normalized)
 
 
 def _slicing_from_settings(spec: ProjectSpec, tables: MaterialTables):
@@ -263,3 +287,4 @@ def _offpeak_mask_from_settings(
 def _resolve(spec: ProjectSpec, value: Any) -> Path:
     path = Path(str(value))
     return path if path.is_absolute() else spec.root_dir / path
+

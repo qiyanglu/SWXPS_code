@@ -73,6 +73,8 @@
       factory entry point.
 - [x] Rename ProjectSpec `simulate_only` curve plots to simulation-specific
       filenames while preserving fit-specific filenames for fitting runs.
+- [x] Fix ProjectSpec off-peak rocking-curve normalization so experimental
+      datasets and simulated/fitted curves use the same denominator.
 
 ## Deferred or out of scope
 

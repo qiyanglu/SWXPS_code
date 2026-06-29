@@ -94,8 +94,8 @@ settings:
       lno_thickness: 40.0
 ```
 
-Optional rocking-curve masking can exclude the reflectivity peak region from RC
-scoring:
+Optional rocking-curve masking can exclude the reflectivity peak region from
+mean normalization and RC scoring:
 
 ```yaml
 settings:
@@ -330,6 +330,9 @@ Rules:
 - `sigma_column` is optional.
 - Normalization can be set globally in `settings.normalization` or per rocking
   curve.
+- With `normalization: "mean"`, a configured `rocking_curve_offpeak_mask` is
+  applied to both experimental dataset normalization and simulated rocking
+  curves.
 - Weights must be non-negative.
 - Reflectivity `log_floor` must be positive.
 

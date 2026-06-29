@@ -124,7 +124,9 @@ Dataset paths are resolved relative to `project.yaml`, not the process current
 working directory. The maintained examples use the synthetic C/LaNiO3/SrTiO3
 (C/LNO/STO) benchmark CSV as a stand-in for measured data; replace the path and
 column names with your own measurements when needed. Rocking-curve names should
-match core-level names when you want overlays and residuals.
+match core-level names when you want overlays and residuals. If the project
+defines `settings.rocking_curve_offpeak_mask`, SWANX uses that same mask when
+mean-normalizing experimental rocking curves and simulated rocking curves.
 
 With datasets present, `simulate_only` reports can include experimental data
 CSVs, residuals, and plot overlays, but they still do not write

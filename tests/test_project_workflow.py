@@ -53,6 +53,7 @@ def _write_curve(path: Path, column: str = "reflectivity") -> None:
 def _write_synthetic_case_curve(path: Path) -> None:
     path.write_text(
         "angle_deg,reflectivity,la4d_rc,o1s_rc,ti2p_rc,c1s_rc\n"
+        "5.5,0.0008,1.00,1.01,0.99,1.02\n"
         "6.9,0.0010,1.00,1.01,0.99,1.02\n"
         "7.0,0.0015,1.03,1.04,1.00,1.01\n",
         encoding="utf-8",
@@ -544,6 +545,46 @@ def test_default_output_goes_under_project_folder_and_report_contains_fields(tmp
     assert "- lno_thickness: 40.0" in text
     assert "simulation/reflectivity_simulated.csv" in text
 
+
+def test_projectspec_offpeak_mask_normalizes_experimental_rocking_data(tmp_path):
+    (tmp_path / "reflectivity.csv").write_text(
+        "angle_deg,reflectivity\n"
+        "5.0,1.0\n"
+        "6.0,10.0\n"
+        "7.0,1.0\n",
+        encoding="utf-8",
+    )
+    (tmp_path / "la4d.csv").write_text(
+        "angle_deg,intensity\n"
+        "5.0,2.0\n"
+        "6.0,100.0\n"
+        "7.0,4.0\n",
+        encoding="utf-8",
+    )
+    datasets = '''
+  reflectivity:
+    path: "reflectivity.csv"
+    name: "R"
+  rocking_curves:
+    - path: "la4d.csv"
+      name: "La 4d"
+      normalization: "mean"
+'''
+    path = _project_yaml(tmp_path, datasets=datasets)
+    text = path.read_text(encoding="utf-8").replace(
+        '  fit_method: "simulate_only"\n',
+        '  fit_method: "simulate_only"\n'
+        '  rocking_curve_offpeak_mask:\n'
+        '    mode: "exclude_reflectivity_peak"\n'
+        '    half_width_deg: 0.1\n',
+    )
+    path.write_text(text, encoding="utf-8")
+
+    built = build_project(load_project_spec(path))
+
+    assert built.fitting_problem is not None
+    np.testing.assert_array_equal(built.fitting_problem.offpeak_mask, [True, False, True])
+    np.testing.assert_allclose(built.rocking_curve_data[0].intensity, [2.0 / 3.0, 100.0 / 3.0, 4.0 / 3.0])
 
 def test_run_project_writes_experimental_data_and_residuals(tmp_path):
     _write_curve(tmp_path / "reflectivity.csv", "reflectivity")

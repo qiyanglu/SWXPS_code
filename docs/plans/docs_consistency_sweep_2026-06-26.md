@@ -41,3 +41,7 @@ descriptions after ProjectSpec v1.2 landed.
   C/LaNiO3/SrTiO3 superlattice case, then made the default init project an
   active JAX least-squares fitting starter. Also removed maintainer
   storage-policy text from the examples README.
+- Follow-up: after the ProjectSpec off-peak RC normalization fix, clarified
+  active docs so `rocking_curve_offpeak_mask` is described as shared by
+  experimental and simulated rocking-curve mean normalization, not only as a
+  scoring exclusion.

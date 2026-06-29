@@ -219,6 +219,8 @@ Common conventions:
 - `repeat_index` is 1-based inside repeat blocks.
 - Only parameters with `vary: true` are fitted.
 - Dataset paths are resolved relative to `project.yaml`.
+- If `rocking_curve_offpeak_mask` is set, mean-normalized experimental and
+  simulated rocking curves use the same off-peak denominator.
 - Core levels should use `emit_from.layer_ids`, `emit_from.tags`, or `emit_from.all: true`.
 
 For details, see:

@@ -52,8 +52,11 @@ def build_residual_function(problem):
         )
     )
     angles = np.asarray(problem.reflectivity.angles, dtype=float)
-    peak_angle = angles[int(np.argmax(problem.reflectivity.reflectivity))]
-    offpeak_mask = np.abs(angles - peak_angle) > 1.25
+    offpeak_mask = (
+        np.ones(angles.shape, dtype=bool)
+        if problem.offpeak_mask is None
+        else np.asarray(problem.offpeak_mask, dtype=bool)
+    )
     model = _StarterSyntheticJaxModel(
         angles=angles,
         offpeak_mask=offpeak_mask,

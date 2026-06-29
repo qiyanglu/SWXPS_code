@@ -35,8 +35,9 @@ global black-box baseline/robustness check.
 3. Improve fixed-shape JAX least-squares fitting documentation and show how it
    relates to ProjectSpec callback factories.
 4. Preserve NumPy/JAX numerical parity and source-location tests.
-5. Continue validating RC preprocessing, weighting, angular offsets, parameter
-   identifiability, and fitted structures.
+5. Continue validating RC preprocessing, shared experimental/simulated
+   normalization, weighting, angular offsets, parameter identifiability, and
+   fitted structures.
 6. Keep s/p/mixed polarization examples and tests aligned with representative
    multilayer and superlattice cases.
 

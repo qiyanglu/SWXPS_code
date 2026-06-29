@@ -49,7 +49,8 @@ The YAML ProjectSpec workflow is the main human-editable wrapper over the same I
 Rocking-curve normalization algorithms live in `swanx.preprocessing`.
 `swanx.io.read_rocking_curve_data(...)` may call those algorithms when a
 normalization mode is requested, but preprocessing functions are not exported
-from `swanx.io`.
+from `swanx.io`. ProjectSpec applies a configured off-peak mask consistently
+when normalizing experimental rocking-curve datasets and simulated curves.
 
 ## Core physics
 
