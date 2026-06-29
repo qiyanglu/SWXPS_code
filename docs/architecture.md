@@ -30,7 +30,9 @@ internal code should use the maintained subpackages instead:
 
 ## IO boundary
 
-Tutorial inputs live under `data/OPC/`, `data/IMFP/`, and `data/curves/`.
+Starter inputs live under `data/OPC/`, `data/IMFP/`, and `data/curves/` for
+`swanx init`. Maintained examples use those OPC/IMFP tables plus the synthetic
+C/LNO/STO benchmark CSV when they need reflectivity and rocking-curve data.
 OPC, IMFP, and experimental curve files are read before simulation/fitting.
 CXRO optical-constant tables are interpolated at photon energy, IMFP tables are
 interpolated at core-level kinetic energy, and the resulting numbers are used

@@ -334,11 +334,11 @@ Root modules such as `swanx.bo`, `swanx.jax_gradient`, `swanx.jax_least_squares`
 
 Start here:
 
-- [`docs/user_guide.md`](docs/user_guide.md) — practical walkthrough
-- [`docs/projectspec_reference.md`](docs/projectspec_reference.md) — YAML reference
-- [`examples/README.md`](examples/README.md) — user learning path and example map
-- [`examples/01_quickstart_projectspec/README.md`](examples/01_quickstart_projectspec/README.md) — copy-pasteable ProjectSpec examples
-- [`docs/architecture.md`](docs/architecture.md) — package layout and design notes
+- [`docs/user_guide.md`](docs/user_guide.md) - practical walkthrough
+- [`docs/projectspec_reference.md`](docs/projectspec_reference.md) - YAML reference
+- [`examples/README.md`](examples/README.md) - user learning path and example map
+- [`examples/01_quickstart_projectspec/README.md`](examples/01_quickstart_projectspec/README.md) - copy-pasteable ProjectSpec examples
+- [`docs/architecture.md`](docs/architecture.md) - package layout and design notes
 
 ## Background
 
@@ -346,8 +346,8 @@ SWANX builds on ideas from standing-wave x-ray optics and SW-XPS analysis while 
 
 Related background:
 
-- S.-H. Yang et al., “Making use of x-ray optical effects in photoelectron-, Auger electron-, and x-ray emission spectroscopies,” *Journal of Applied Physics* 113, 073513 (2013).
-- O. Karslıoğlu et al., “An Efficient Algorithm for Automatic Structure Optimization in X-ray Standing-Wave Experiments,” *Journal of Electron Spectroscopy and Related Phenomena* 230, 10–20 (2019).
+- S.-H. Yang et al., "Making use of x-ray optical effects in photoelectron-, Auger electron-, and x-ray emission spectroscopies," *Journal of Applied Physics* 113, 073513 (2013).
+- O. Karslioglu et al., "An Efficient Algorithm for Automatic Structure Optimization in X-ray Standing-Wave Experiments," *Journal of Electron Spectroscopy and Related Phenomena* 230, 10-20 (2019).
 
 ## Development
 

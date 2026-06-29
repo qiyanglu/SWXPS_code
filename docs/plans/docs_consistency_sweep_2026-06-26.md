@@ -29,3 +29,11 @@ descriptions after ProjectSpec v1.2 landed.
   `docs/PROJECT_STATE.md`.
 
 - 2026-06-27: Refreshed active docs after ProjectSpec v1.2 so README starts with self-contained `swanx init`, user guide documents templates/inspect, and active plans avoid stale exact pytest counts.
+
+## 2026-06-29 sweep notes
+
+- Rechecked maintained docs after the examples were realigned to the synthetic
+  C/[LNO/STO]x20/STO benchmark case.
+- Left `docs/history/` and older `docs/plans/` snapshots historical when they
+  already carry current-status notes, but corrected active README, architecture,
+  roadmap, guide/reference wording, and mojibake in the public README.

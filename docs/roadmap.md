@@ -28,7 +28,8 @@ global black-box baseline/robustness check.
 ## Near-term priorities
 
 1. Keep README, user guide, templates, and maintained examples concise,
-   executable, and based on `swanx`.
+   executable, based on `swanx`, and aligned with the synthetic
+   C/[LNO/STO]x20/STO teaching case.
 2. Expand ProjectSpec examples only when they reuse existing IO, simulation,
    and fitting APIs without introducing new physics paths.
 3. Improve fixed-shape JAX least-squares fitting documentation and show how it

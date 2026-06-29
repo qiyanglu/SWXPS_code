@@ -151,7 +151,8 @@ swanx inspect runs/projectspec_smoke/project.yaml
 swanx validate runs/projectspec_smoke/project.yaml
 ```
 
-ProjectSpec report/progress, v1.3 package-layout, and documentation-reference
-validation completed on 2026-06-28 with focused workflow/import/docs tests and
-the full pytest suite passing; the full suite keeps its expected xfail. Exact
-counts are intentionally not pinned here because they become stale quickly.
+Documentation consistency validation completed on 2026-06-29 with Markdown link
+checking across maintained docs and focused ProjectSpec workflow tests passing.
+The latest full-suite validation remains the examples realignment run from
+2026-06-29; the full suite keeps its expected xfail. Exact counts are
+intentionally not pinned here because they become stale quickly.

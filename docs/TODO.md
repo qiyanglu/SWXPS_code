@@ -63,6 +63,8 @@
       Python API scripts, fitting examples, and advanced visualizations.
 - [x] Realign maintained examples from the simple LNO/STO film tutorial to the
       synthetic C/[LNO/STO]x20/STO benchmark case.
+- [x] Sweep maintained docs for stale example-case wording, old public README
+      mojibake, and outdated active guidance after the examples realignment.
 
 ## Deferred or out of scope
 
