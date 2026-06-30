@@ -93,6 +93,7 @@ class ProjectSpec:
         for layer in self.stack:
             variables = dict(values)
             variables["repeat_index"] = 0.0 if layer.repeat_index is None else float(layer.repeat_index)
+            variables["repeat_index0"] = 0.0 if layer.repeat_index is None else float(layer.repeat_index - 1)
             variables["layer_index"] = float(layer.layer_index)
             specs.append(
                 {
@@ -343,7 +344,7 @@ def _parse_layer(
 
 
 def _validate_expression_names(value: Any, parameter_names: set[str], label: str) -> None:
-    allowed = set(parameter_names) | {"repeat_index", "layer_index"}
+    allowed = set(parameter_names) | {"repeat_index", "repeat_index0", "layer_index"}
     try:
         names = names_in_expression(value)
     except ExpressionError as error:

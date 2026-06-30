@@ -22,6 +22,15 @@
       require them.
 - [ ] Add another ProjectSpec JAX callback example using real experimental data
       once the lab-facing fitting conventions settle.
+- [ ] For Sample 12, test reduced-v3 with separate reflectivity/rocking-curve
+      angle offsets and a simpler superlattice model, such as period start,
+      period delta, and constant LNO fraction.
+- [ ] For Sample 13, test a reduced-v2 ProjectSpec with separate
+      reflectivity/rocking-curve angle offsets but a physical superlattice
+      parameterization such as total period plus LNO fraction. Also review
+      whether the angle-offset bounds should be widened or the raw angle grids
+      should be pre-aligned, since reduced-v1 pushed both offsets to the upper
+      bound.
 
 ## Recently completed
 
@@ -45,6 +54,25 @@
       examples are the starter surfaces.
 - [x] Support stack layer IDs/tags, repeat blocks, inline parameters, safe
       arithmetic expressions, and core-level layer/tag resolution.
+- [x] Add safe ProjectSpec expression functions and `repeat_index0` for
+      SWOPT-style layer-gradient and transition formulas without enabling
+      arbitrary Python execution.
+- [x] Add a local CLI-runnable Sample 12 ProjectSpec JAX least-squares workflow
+      that mirrors the maintained bounded TRF script through a project-local
+      residual factory.
+- [x] Add local Sample 12 least-squares identifiability diagnostics and a
+      reduced-v1 ProjectSpec experiment that fixes weak roughness/split-cap
+      parameters.
+- [x] Test Sample 12 reduced-v2 with tied angle offset and period/fraction
+      superlattice parameters; it ran cleanly but was less favorable than
+      reduced-v1.
+- [x] Add a local CLI-runnable Sample 13 ProjectSpec JAX least-squares workflow
+      mirroring the maintained all-RC TRF script, diagnose its scaled Jacobian,
+      and test a reduced-v1 fit that removes weak roughness/profile/transition
+      directions.
+- [x] Complete a full handoff-oriented repo sweep after the Sample 12/13
+      ProjectSpec and identifiability work, update status docs, validate active
+      benchmark ProjectSpecs, and rerun focused plus full test suites.
 - [x] Implement `simulate_only` report folder outputs without best-fit parameter
       tables.
 - [x] Add method-specific report writers for least-squares, gradient, and BO

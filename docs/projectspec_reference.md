@@ -75,8 +75,23 @@ Fields:
 - `"unpolarized"` maps to a 50/50 s/p mixture.
 - Circular polarization is not implemented.
 - `normalization`: default rocking-curve normalization mode, commonly `"mean"`.
+  `"edge_polynomial"` is also supported for workflows that normalize both
+  experimental and simulated rocking curves by a fitted edge background.
+- `normalization_edge_fraction`: edge fraction for `"edge_polynomial"`
+  normalization; default `0.10`.
+- `normalization_polynomial_order`: polynomial order for `"edge_polynomial"`
+  normalization; default `2`.
 - `fit_method`: `"simulate_only"`, `"jax_least_squares"`, `"jax_gradient"`, or
   `"bayesian_optimization"`.
+- `angle_offset_parameter`: one parameter name used for both reflectivity and
+  rocking-curve calculation-angle offsets. Set it to empty/null when using
+  separate offsets.
+- `reflectivity_angle_offset_parameter`: optional parameter name for only the
+  reflectivity angle offset.
+- `rocking_curve_angle_offset_parameter`: optional parameter name for only the
+  rocking-curve angle offset.
+- `field_step` and `roughness_step`: legacy-grid step sizes in Angstrom when
+  `slicing: "legacy"` is selected.
 
 JAX methods require callback factories when datasets are used. Bayesian
 optimization is an optional global black-box baseline, not a default and not a
@@ -206,9 +221,33 @@ Safe arithmetic expression:
 thickness_A: "A_LNO + B_LNO * repeat_index"
 ```
 
-Expression variables are parameter names, `repeat_index`, and `layer_index`.
+Safe function expression:
+
+```yaml
+roughness_A: "linear_map(repeat_index0, 0, 19, roughness_top, roughness_bottom)"
+```
+
+Expression variables are parameter names, `repeat_index`, `repeat_index0`, and
+`layer_index`. `repeat_index` is 1-based inside repeat blocks; `repeat_index0`
+is the matching zero-based convenience variable for formulas that naturally use
+zero-based coordinates. Outside repeat blocks, both repeat-index variables
+resolve to `0`.
+
 Expressions use an AST whitelist, not raw `eval`. Allowed operators are `+`,
-`-`, `*`, `/`, and parentheses.
+`-`, `*`, `/`, and parentheses. Allowed functions are:
+
+- `min(...)`
+- `max(...)`
+- `sqrt(x)`
+- `erf(x)`
+- `linear_map(x, x0, x1, y0, y1)`
+- `transition_erf(x, start, end, center, width)`
+
+For example, a smooth transition across repeated layers can be written as:
+
+```yaml
+thickness_A: "transition_erf(repeat_index0, sto_start, sto_end, transition_center, transition_width)"
+```
 
 ## Repeat Block
 
@@ -243,6 +282,8 @@ stack:
 Rules:
 
 - `repeat_index` is 1-based.
+- `repeat_index0` is 0-based and is provided only for expression convenience;
+  `repeat_index - 1` is equivalent.
 - Generated IDs must be unique.
 - Use tags for all repeated layer groups so core levels can select layer groups.
 
@@ -252,6 +293,7 @@ Rules:
 core_levels:
   - name: "La 4d"
     binding_energy_ev: 105.0
+    vacuum_imfp_from_material: "C"
     emit_from:
       tags: ["lno_layers"]
     concentration: 1.0
@@ -285,6 +327,10 @@ Rules:
 $$E_\mathrm{kin} = h\nu - E_B$$
 
 - Every emitting material needs an IMFP table.
+- `vacuum_imfp_from_material` is optional. When present, SWANX uses that
+  material's IMFP for the vacuum entry of this core level instead of the
+  default infinite vacuum IMFP. This is mainly for reproducing legacy workflows
+  that treated the vacuum attenuation entry as a material-specific value.
 
 ## `datasets`
 
@@ -421,12 +467,14 @@ Every core level must explicitly specify `layer_ids`, `tags`, or `all: true`.
 **Bad parameter expression**
 
 Expressions can only use numbers, parameter names, `repeat_index`,
-`layer_index`, arithmetic operators, and parentheses.
+`repeat_index0`, `layer_index`, arithmetic operators, parentheses, and the
+documented safe functions. Imports, attributes, indexing, lambdas, and arbitrary
+Python calls are rejected.
 
 **Using `repeat_index` outside a repeat block**
 
-`repeat_index` is available only inside repeated layers. Use a constant or
-parameter outside repeat blocks.
+Outside repeat blocks, `repeat_index` and `repeat_index0` resolve to `0`.
+Use a constant or named parameter when that is clearer for non-repeated layers.
 
 **Switching to `jax_least_squares` without a factory**
 

@@ -187,6 +187,8 @@ class FittingProblem:
     rocking_curves: tuple[RockingCurveData, ...] = ()
     core_levels: tuple[CoreLevelRequest, ...] = ()
     angle_offset_parameter: str | None = "angle_offset"
+    reflectivity_angle_offset_parameter: str | None = None
+    rocking_curve_angle_offset_parameter: str | None = None
     field_step: float = 1.0
     roughness_step: float | Sequence[float] = 1.0
     roughness_profile: Literal["erf", "linear"] = "erf"
@@ -249,7 +251,18 @@ class FittingProblem:
         if self.validate_roughness:
             validate_finite_layer_roughness(stack)
         stack_seconds = perf_counter() - stack_start
-        angle_offset = _angle_offset(all_values, self.angle_offset_parameter)
+        reflectivity_angle_offset = _angle_offset(
+            all_values,
+            self.reflectivity_angle_offset_parameter
+            if self.reflectivity_angle_offset_parameter is not None
+            else self.angle_offset_parameter,
+        )
+        rocking_curve_angle_offset = _angle_offset(
+            all_values,
+            self.rocking_curve_angle_offset_parameter
+            if self.rocking_curve_angle_offset_parameter is not None
+            else self.angle_offset_parameter,
+        )
 
         contributions: list[FitContribution] = []
         reflectivity_seconds = 0.0
@@ -262,7 +275,7 @@ class FittingProblem:
                     angles=self.reflectivity.angles,
                     energy_ev=self.photon_energy_ev,
                     stack=stack,
-                    angle_offset=angle_offset,
+                    angle_offset=reflectivity_angle_offset,
                     roughness_step=self.roughness_step,
                     roughness_profile=self.roughness_profile,
                     polarization=self.polarization,
@@ -290,7 +303,7 @@ class FittingProblem:
                     photon_energy_ev=self.photon_energy_ev,
                     stack=stack,
                     core_levels=self.core_levels,
-                    angle_offset=angle_offset,
+                    angle_offset=rocking_curve_angle_offset,
                     field_step=self.field_step,
                     roughness_step=self.roughness_step,
                     roughness_profile=self.roughness_profile,
@@ -338,7 +351,18 @@ class FittingProblem:
         stack = self.stack_builder(all_values)
         if self.validate_roughness:
             validate_finite_layer_roughness(stack)
-        angle_offset = _angle_offset(all_values, self.angle_offset_parameter)
+        reflectivity_angle_offset = _angle_offset(
+            all_values,
+            self.reflectivity_angle_offset_parameter
+            if self.reflectivity_angle_offset_parameter is not None
+            else self.angle_offset_parameter,
+        )
+        rocking_curve_angle_offset = _angle_offset(
+            all_values,
+            self.rocking_curve_angle_offset_parameter
+            if self.rocking_curve_angle_offset_parameter is not None
+            else self.angle_offset_parameter,
+        )
         reflectivity_result = None
         if self.reflectivity is not None:
             reflectivity_result = self._simulate_reflectivity(
@@ -346,7 +370,7 @@ class FittingProblem:
                     angles=self.reflectivity.angles,
                     energy_ev=self.photon_energy_ev,
                     stack=stack,
-                    angle_offset=angle_offset,
+                    angle_offset=reflectivity_angle_offset,
                     roughness_step=self.roughness_step,
                     roughness_profile=self.roughness_profile,
                     polarization=self.polarization,
@@ -361,7 +385,7 @@ class FittingProblem:
                     photon_energy_ev=self.photon_energy_ev,
                     stack=stack,
                     core_levels=self.core_levels,
-                    angle_offset=angle_offset,
+                    angle_offset=rocking_curve_angle_offset,
                     field_step=self.field_step,
                     roughness_step=self.roughness_step,
                     roughness_profile=self.roughness_profile,

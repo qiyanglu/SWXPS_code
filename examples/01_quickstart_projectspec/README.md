@@ -15,7 +15,8 @@ matches the Python examples and benchmark scripts.
 - `minimal_simulate_only.yaml`: C-capped 20-repeat LNO/STO superlattice,
   simulation and plots only.
 - `multilayer_repeat.yaml`: the same C/LNO/STO stack with explicit repeat-block
-  tags and `repeat_index`.
+  tags and `repeat_index`. Use `repeat_index0` in expressions when a
+  zero-based repeat coordinate is clearer.
 - `compare_with_data.yaml`: simulation-only project that overlays the synthetic
   reflectivity and four rocking-curve datasets and writes residuals.
 - `fit_jax_least_squares_placeholder.yaml`: shows the ProjectSpec settings for

@@ -27,7 +27,10 @@ def write_input_files(output: Path, built: BuiltProject, timestamp: str) -> None
                 "roughness_A on layer j means roughness/interdiffusion at the upper "
                 "interface of layer j, i.e. interface between layer j-1 and layer j."
             ),
-            "repeat_index_convention": "repeat_index is 1-based inside repeat blocks.",
+            "repeat_index_convention": (
+                "repeat_index is 1-based inside repeat blocks; repeat_index0 is "
+                "available for zero-based expression formulas."
+            ),
         },
     )
 

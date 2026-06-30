@@ -534,6 +534,8 @@ Notes:
 - `thickness_A` and `roughness_A` are in Angstrom.
 - `roughness_A` means upper-interface roughness/interdiffusion for that layer.
 - `repeat_index` is 1-based inside repeat blocks.
+- `repeat_index0` is available for formulas that read better with zero-based
+  repeat coordinates.
 - JAX least-squares is the active fitting path in this starter project.
 - Bayesian optimization is available as an optional global black-box baseline.
 - ProjectSpec JAX fitting uses explicit factory callbacks; this starter already

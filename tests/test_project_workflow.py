@@ -4,6 +4,7 @@ import builtins
 import csv
 from dataclasses import dataclass
 import importlib
+import math
 from pathlib import Path
 import subprocess
 import sys
@@ -202,6 +203,61 @@ def test_yaml_parsing_validation_repeat_and_expressions(tmp_path):
     assert layers[2]["thickness"] == pytest.approx(10.0)
     assert layers[4]["thickness"] == pytest.approx(11.0)
     assert layers[2]["roughness"] == pytest.approx(1.5)
+
+
+def test_projectspec_safe_expression_functions_and_repeat_index0(tmp_path):
+    extra = '''  - repeat:
+      times: 2
+      layers:
+        - id: "lno_{repeat_index}"
+          material: "LNO"
+          tags: ["lno_layers"]
+          thickness_A: "transition_erf(repeat_index0, lno_thickness, lno_thickness + 4, 0, 1)"
+          roughness_A: "linear_map(repeat_index0, 0, 1, min(interface_roughness, 4), max(interface_roughness / 2, 2))"
+        - id: "sto_{repeat_index}"
+          material: "STO"
+          tags: ["sto_layers"]
+          thickness_A: "sto_thickness + repeat_index0 + sqrt(4) + erf(0)"
+          roughness_A: "$interface_roughness"
+'''
+    path = _project_yaml(tmp_path, extra_stack=extra)
+    spec = load_project_spec(path)
+
+    layers = spec.layer_specs_for_values(spec.default_parameter_values())
+    expected_transition_0 = 0.5 * (1.0 + math.erf(0.0 / math.sqrt(2.0)))
+    expected_transition_1 = 0.5 * (1.0 + math.erf(1.0 / math.sqrt(2.0)))
+    assert layers[1]["thickness"] == pytest.approx(40.0 + 4.0 * expected_transition_0)
+    assert layers[3]["thickness"] == pytest.approx(40.0 + 4.0 * expected_transition_1)
+    assert layers[1]["roughness"] == pytest.approx(3.0)
+    assert layers[3]["roughness"] == pytest.approx(2.0)
+    assert layers[2]["thickness"] == pytest.approx(12.0)
+    assert layers[4]["thickness"] == pytest.approx(13.0)
+
+
+def test_projectspec_rejects_unknown_or_unsafe_expression_functions(tmp_path):
+    path = _project_yaml(
+        tmp_path,
+        extra_stack='''  - id: "film"
+    material: "LNO"
+    tags: ["lno_layers"]
+    thickness_A: "unknown_function(1)"
+    roughness_A: 1.0
+''',
+    )
+    with pytest.raises(ProjectValidationError, match="unknown function"):
+        load_project_spec(path)
+
+    path = _project_yaml(
+        tmp_path,
+        extra_stack='''  - id: "film"
+    material: "LNO"
+    tags: ["lno_layers"]
+    thickness_A: "__import__('os').system('echo unsafe')"
+    roughness_A: 1.0
+''',
+    )
+    with pytest.raises(ProjectValidationError, match="unknown function|may contain only"):
+        load_project_spec(path)
 
 
 def test_optional_sections_default_correctly(tmp_path):
@@ -445,6 +501,60 @@ def test_core_level_layer_tag_resolution_and_polarization(tmp_path):
     assert project_polarization("s") == "s"
     assert project_polarization("p") == "p"
     assert project_polarization("unpolarized") == {"s": 0.5, "p": 0.5}
+
+
+def test_projectspec_advanced_fitting_settings_flow_to_problem(tmp_path):
+    _write_curve(tmp_path / "reflectivity.csv", "reflectivity")
+    (tmp_path / "la4d.csv").write_text(
+        "angle_deg,intensity\n"
+        "5.0,1.0\n"
+        "6.0,1.1\n"
+        "7.0,1.0\n",
+        encoding="utf-8",
+    )
+    datasets = '''
+  reflectivity:
+    path: "reflectivity.csv"
+    name: "reflectivity"
+  rocking_curves:
+    - path: "la4d.csv"
+      name: "La 4d"
+      normalization: "edge_polynomial"
+'''
+    path = _project_yaml(tmp_path, datasets=datasets, fit_method="bayesian_optimization")
+    text = path.read_text(encoding="utf-8")
+    text = text.replace(
+        '  fit_method: "bayesian_optimization"\n',
+        '  fit_method: "bayesian_optimization"\n'
+        '  angle_offset_parameter:\n'
+        '  reflectivity_angle_offset_parameter: "reflectivity_angle_offset"\n'
+        '  rocking_curve_angle_offset_parameter: "rc_angle_offset"\n'
+        '  normalization_edge_fraction: 0.2\n'
+        '  normalization_polynomial_order: 1\n',
+    )
+    text = text.replace(
+        '  repeat_center:\n    value: 20.0\n    vary: false\n',
+        '  repeat_center:\n    value: 20.0\n    vary: false\n'
+        '  reflectivity_angle_offset:\n    initial: 0.01\n    lower: -0.1\n    upper: 0.1\n'
+        '  rc_angle_offset:\n    initial: -0.02\n    lower: -0.1\n    upper: 0.1\n',
+    )
+    text = text.replace(
+        '    binding_energy_ev: 105.0\n',
+        '    binding_energy_ev: 105.0\n    vacuum_imfp_from_material: "LNO"\n',
+    )
+    path.write_text(text, encoding="utf-8")
+
+    built = build_project(load_project_spec(path))
+
+    assert built.fitting_problem is not None
+    assert built.fitting_problem.angle_offset_parameter is None
+    assert built.fitting_problem.reflectivity_angle_offset_parameter == "reflectivity_angle_offset"
+    assert built.fitting_problem.rocking_curve_angle_offset_parameter == "rc_angle_offset"
+    assert built.fitting_problem.normalization_edge_fraction == pytest.approx(0.2)
+    assert built.fitting_problem.normalization_polynomial_order == 1
+    assert built.core_levels[0].imfp_by_material["vacuum"] == pytest.approx(
+        built.core_levels[0].imfp_by_material["LNO"]
+    )
 
 
 def test_optimizer_factory_imports_relative_to_project_yaml(tmp_path, monkeypatch):
@@ -799,6 +909,7 @@ def test_readme_and_project_state_docs_are_current():
     assert "C/LaNiO3/SrTiO3 starter OPC, IMFP, and curve files" in readme
     assert "thickness_A` and `roughness_A` are in Angstrom" in readme
     assert "repeat_index` is 1-based" in readme
+    assert "repeat_index0" in readme
     assert "JAX least-squares" in readme
     assert "optional global black-box baseline" in readme
     assert "BO is not the default fitting method and is not used as a fallback" in readme
@@ -840,6 +951,8 @@ def test_readme_and_project_state_docs_are_current():
     ):
         assert f"{section}:" in reference
     assert "BO is an optional global black-box baseline" in reference
+    assert "transition_erf" in reference
+    assert "repeat_index0" in reference
     assert "examples/04_fitting/projectspec_jax_least_squares" in reference
 
     for text_block in (project_state, roadmap, architecture, examples_readme, fitting_readme):

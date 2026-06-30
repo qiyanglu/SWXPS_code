@@ -79,6 +79,12 @@ Typical first edits in `project.yaml` are:
 - choose which layers emit each `core_level`;
 - set `report.save_plots: true` when matplotlib is installed.
 
+Stack `thickness_A` and `roughness_A` fields can be numbers, parameter
+references such as `$lno_thickness`, or safe expressions. Inside repeat blocks,
+`repeat_index` is 1-based and `repeat_index0` is available for zero-based
+formulas. Expressions may use arithmetic plus `min`, `max`, `sqrt`, `erf`,
+`linear_map`, and `transition_erf`; arbitrary Python calls are rejected.
+
 For a forward-modeling-only starter, use:
 
 ```bash
@@ -160,6 +166,14 @@ not generate no-code JAX residual builders. If the factory is missing,
 validation and run errors should point out the missing setting and there is no
 fallback to Bayesian optimization.
 
+Advanced fitting projects can set separate
+`settings.reflectivity_angle_offset_parameter` and
+`settings.rocking_curve_angle_offset_parameter` when reflectivity and
+rocking-curve scans need independent angular offsets. Edge-polynomial
+rocking-curve normalization can be controlled with
+`settings.normalization_edge_fraction` and
+`settings.normalization_polynomial_order`.
+
 Bayesian optimization is available as an optional global black-box baseline or
 robustness check:
 
@@ -202,6 +216,7 @@ Common validation errors include:
 - unknown layer tag or layer id in `emit_from`;
 - missing `emit_from`;
 - unknown parameter name in an expression;
+- unsafe or unknown function in an expression;
 - dataset path not found;
 - missing JAX factory for a JAX fit method.
 

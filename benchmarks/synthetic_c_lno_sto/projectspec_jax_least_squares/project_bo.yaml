@@ -86,11 +86,7 @@ stack:
     material: "C"
     tags: ["carbon_layer"]
     thickness_A: "$carbon_thickness"
-    # The original synthetic benchmark uses:
-    # carbon_roughness = 1 + carbon_roughness_fraction * (min(5, carbon_thickness) - 1)
-    # YAML expressions intentionally keep only arithmetic, so this ProjectSpec uses
-    # the carbon_thickness >= 5 branch and bounds carbon_thickness at 5 A.
-    roughness_A: "1.0 + 4.0 * carbon_roughness_fraction"
+    roughness_A: "1.0 + carbon_roughness_fraction * (min(5.0, carbon_thickness) - 1.0)"
 
   - repeat:
       times: 20

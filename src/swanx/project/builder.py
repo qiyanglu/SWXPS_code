@@ -70,7 +70,16 @@ def build_project(spec: ProjectSpec, values: dict[str, float] | None = None) -> 
             polarization=project_polarization(str(spec.settings.get("polarization", "s"))),
             slicing=_slicing_from_settings(spec, tables),
             offpeak_mask=offpeak_mask,
+            angle_offset_parameter=_optional_string(spec.settings.get("angle_offset_parameter", "angle_offset")),
+            reflectivity_angle_offset_parameter=_optional_string(
+                spec.settings.get("reflectivity_angle_offset_parameter")
+            ),
+            rocking_curve_angle_offset_parameter=_optional_string(
+                spec.settings.get("rocking_curve_angle_offset_parameter")
+            ),
             rocking_curve_normalization=str(spec.settings.get("normalization", "mean")),
+            normalization_edge_fraction=float(spec.settings.get("normalization_edge_fraction", 0.10)),
+            normalization_polynomial_order=int(spec.settings.get("normalization_polynomial_order", 2)),
             simulation_backend=str(spec.settings.get("simulation_backend", "numpy")),
         )
     return BuiltProject(
@@ -147,6 +156,7 @@ def _build_core_levels(
             for index in candidate_indices
             if stack.layers[index].material.lower() != "vacuum"
         }
+        extra_imfp = _core_extra_imfp(raw, tables, spec.photon_energy_ev, float(raw["binding_energy_ev"]))
         cores.append(
             core_level_from_tables(
                 name=name,
@@ -156,9 +166,29 @@ def _build_core_levels(
                 imfp_tables=tables.imfp,
                 emission_angle_deg=float(raw.get("emission_angle_deg", 0.0)),
                 emitting_layer_indices=indices,
+                extra_imfp_by_material=extra_imfp,
             )
         )
     return tuple(cores)
+
+
+def _core_extra_imfp(
+    raw: dict[str, Any],
+    tables: MaterialTables,
+    photon_energy_ev: float,
+    binding_energy_ev: float,
+) -> dict[str, float] | None:
+    source = raw.get("vacuum_imfp_from_material")
+    if source is None:
+        return None
+    material = str(source)
+    if material not in tables.imfp:
+        raise ProjectValidationError(
+            f"core level {raw.get('name', '<unnamed>')!r} requested "
+            f"vacuum_imfp_from_material={material!r}, but that material has no IMFP table"
+        )
+    kinetic_energy_ev = float(photon_energy_ev) - float(binding_energy_ev)
+    return {"vacuum": tables.imfp[material].at_kinetic_energy(kinetic_energy_ev)}
 
 
 def resolve_emitting_layer_indices(
@@ -225,9 +255,17 @@ def _normalize_rocking_datasets(
             curve.intensity,
             mode=mode,
             offpeak_mask=offpeak_mask,
+            edge_fraction=float(spec.settings.get("normalization_edge_fraction", 0.10)),
+            polynomial_order=int(spec.settings.get("normalization_polynomial_order", 2)),
         )
         normalized.append(replace(curve, intensity=values))
     return tuple(normalized)
+
+
+def _optional_string(value: Any) -> str | None:
+    if value is None:
+        return None
+    return str(value)
 
 
 def _slicing_from_settings(spec: ProjectSpec, tables: MaterialTables):

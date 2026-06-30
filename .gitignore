@@ -42,3 +42,6 @@ references/*.pdf
 
 # Local cross-section database copy; cross-section support is future work.
 /Yeh_Lindau_1985_Xsection_CSV_Database/
+
+# Local SWOPT MATLAB source copy; reference-only and never tracked.
+/SWOPT/

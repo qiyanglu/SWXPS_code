@@ -222,6 +222,8 @@ Common conventions:
 - `thickness_A` and `roughness_A` are in Angstrom.
 - `roughness_A` is the upper-interface roughness of that layer.
 - `repeat_index` is 1-based inside repeat blocks.
+- `repeat_index0` is also available for formulas that are clearer with
+  zero-based repeat coordinates.
 - Only parameters with `vary: true` are fitted.
 - Dataset paths are resolved relative to `project.yaml`.
 - If `rocking_curve_offpeak_mask` is set, mean-normalized experimental and

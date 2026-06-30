@@ -30,11 +30,8 @@ The YAML mirrors the existing synthetic case in
 - fitted parameters: carbon thickness, carbon roughness fraction, LNO/STO
   thicknesses, superlattice roughness, substrate roughness, and angle offset
 
-Note: ProjectSpec arithmetic intentionally does not include functions such as
-`min(...)`. The visible YAML stack uses the `carbon_thickness >= 5 A` branch for
-carbon roughness, so the YAML fitting examples bound carbon thickness at `5 A` to
-avoid invalid roughness-greater-than-thickness candidates. The JAX residual factory uses the exact original benchmark
-formula during least-squares fitting:
+ProjectSpec expressions support the exact original benchmark carbon-roughness
+formula directly:
 
 ```text
 carbon_roughness = 1 + carbon_roughness_fraction * (min(5, carbon_thickness) - 1)

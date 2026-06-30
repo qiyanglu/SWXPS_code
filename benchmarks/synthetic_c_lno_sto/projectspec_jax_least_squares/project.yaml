@@ -90,12 +90,7 @@ stack:
     material: "C"
     tags: ["carbon_layer"]
     thickness_A: "$carbon_thickness"
-    # The original synthetic benchmark uses:
-    # carbon_roughness = 1 + carbon_roughness_fraction * (min(5, carbon_thickness) - 1)
-    # YAML expressions intentionally keep only arithmetic, so this visible stack uses
-    # the carbon_thickness >= 5 branch. The JAX residual factory below uses the exact
-    # original formula during least-squares fitting.
-    roughness_A: "1.0 + 4.0 * carbon_roughness_fraction"
+    roughness_A: "1.0 + carbon_roughness_fraction * (min(5.0, carbon_thickness) - 1.0)"
 
   - repeat:
       times: 20
