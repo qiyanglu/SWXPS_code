@@ -2,7 +2,9 @@ import numpy as np
 import pytest
 
 from swanx.diagnostics import (
+    IdentifiabilityParameter,
     compute_parameter_diagnostics,
+    analyze_identifiability,
     diagnostics_from_least_squares_result,
     plot_correlation_matrix,
     plot_parameter_estimates,
@@ -73,6 +75,27 @@ def test_rank_deficient_jacobian_is_supported_and_reports_infinite_condition():
     assert np.all(np.isfinite(diagnostics.stderr))
     assert np.isinf(diagnostics.condition_number)
     assert diagnostics.singular_values[-1] < 1.0e-12
+
+
+def test_identifiability_scales_jacobian_and_reports_dataset_sensitivity():
+    parameters = (
+        IdentifiabilityParameter("strong", 0.5, 0.0, 1.0, 0.5),
+        IdentifiabilityParameter("weak", 5.0, 0.0, 10.0, 5.0),
+    )
+    analysis = analyze_identifiability(
+        parameters,
+        residuals=np.array([0.1, -0.1, 0.05]),
+        jacobian=np.array([[2.0, 0.0], [0.0, 0.0], [1.0, 0.001]]),
+        dataset_labels=("R", "R", "RC"),
+    )
+
+    assert analysis.relative_sensitivity[0] == pytest.approx(1.0)
+    assert analysis.relative_sensitivity[1] < 0.01
+    assert analysis.suggestions[1].startswith("fix_or_profile_candidate")
+    assert analysis.condition_number > 100.0
+    rows = analysis.dataset_sensitivity_rows
+    assert rows[0][0] == "dataset"
+    assert any(row[0] == "R" and row[2] == "strong" for row in rows[1:])
 
 
 def test_supplied_covariance_handles_zero_uncertainty_correlation():

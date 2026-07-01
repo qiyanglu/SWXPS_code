@@ -13,8 +13,8 @@ from ..builder import BuiltProject
 def write_plots(output: Path, built: BuiltProject, simulation) -> list[str]:
     names = _plot_names(built)
     expected = (*names.curve_plots, "plots/stack_schematic.png")
-    if not built.spec.report.get("save_plots", False):
-        return [f"{name} skipped because report.save_plots is false" for name in expected]
+    if not built.spec.save_plots:
+        return [f"{name} skipped because run.outputs.plots/report.save_plots is false" for name in expected]
     try:
         import matplotlib.pyplot as plt
     except ImportError:
@@ -116,10 +116,11 @@ def _write_fit_overview_plot(output: Path, built: BuiltProject, simulation, plt,
             )
             overlays.append(str(data.name))
         if data.name in simulated_rc:
+            model_color = "black" if getattr(data, "intensity", None) is not None else color
             ax.plot(
                 simulation.rocking_curves.angle,
                 simulated_rc[data.name],
-                color="black",
+                color=model_color,
                 linewidth=1.45,
                 label=names.model_label,
             )

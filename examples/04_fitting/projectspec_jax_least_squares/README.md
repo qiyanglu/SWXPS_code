@@ -3,7 +3,10 @@
 This folder is the runnable ProjectSpec fitting counterpart to the default
 `swanx init` tutorial. It uses the shared C/LaNiO3/SrTiO3 synthetic data, loads
 reflectivity plus La 4d, O 1s, Ti 2p, and C 1s rocking curves, and fits the
-same fixed-shape JAX least-squares model through an explicit residual factory.
+same fixed-shape JAX least-squares model through the internal
+`run.optimizer.residual: "auto_fixed_grid"` path. Its ProjectSpec uses the
+maintained edge-polynomial rocking-curve normalization default: first and last
+10 percent, polynomial order 2.
 
 ```powershell
 swanx validate examples/04_fitting/projectspec_jax_least_squares/project.yaml

@@ -57,8 +57,6 @@ def simulate_comparison(
         max_slice_thickness=max_slice_thickness,
     )
     plan = fixed_layer_grid_plan(capacity_stack.optical_layers, policy)
-    peak_angle = angles[np.argmax(data["reflectivity"])]
-    offpeak_mask = np.abs(angles - peak_angle) > 1.25
     core_levels = case.core_level_requests()
 
     legacy_start = perf_counter()
@@ -79,7 +77,9 @@ def simulate_comparison(
             core_levels=core_levels,
             field_step=1.0,
             roughness_step=1.0,
-            offpeak_mask=offpeak_mask,
+            normalization_mode=case.RC_NORMALIZATION,
+            normalization_edge_fraction=case.RC_EDGE_FRACTION,
+            normalization_polynomial_order=case.RC_POLYNOMIAL_ORDER,
             slicing=None,
         )
     )
@@ -100,7 +100,9 @@ def simulate_comparison(
             photon_energy_ev=case.PHOTON_ENERGY_EV,
             stack=stack,
             core_levels=core_levels,
-            offpeak_mask=offpeak_mask,
+            normalization_mode=case.RC_NORMALIZATION,
+            normalization_edge_fraction=case.RC_EDGE_FRACTION,
+            normalization_polynomial_order=case.RC_POLYNOMIAL_ORDER,
             slicing=plan,
         )
     )

@@ -33,10 +33,12 @@ when they need reflectivity and rocking-curve data.
 
 - `swanx.project` validates and runs YAML ProjectSpec files.
 - `swanx init my_project` creates `project.yaml`, `run_project.py`, a project
-  README, a project-local `synthetic_residual_factory.py`, and by default a
-  local `data/` copy of packaged C/LaNiO3/SrTiO3 starter data. The default
-  project runs a JAX least-squares fit against the packaged synthetic
-  reflectivity and four rocking-curve datasets.
+  README, and by default a local `data/` copy of packaged C/LaNiO3/SrTiO3
+  starter data. The default project runs a JAX least-squares fit against the
+  packaged synthetic reflectivity and four rocking-curve datasets using the
+  internal ProjectSpec fixed-grid residual builder. Generated starters use the
+  unified `run:` YAML section for execution mode, optimizer settings, and output
+  switches.
 - `swanx init --template minimal`, `--template multilayer`, and
   `--template fit-demo` generate beginner starters for the default fitting
   workflow, a simulation-only repeated multilayer, and an explicit fitting
@@ -48,14 +50,16 @@ when they need reflectivity and rocking-curve data.
   wrappers for review, validation, and automation.
 - PyYAML is optional via `python -m pip install -e ".[project]"`.
 - `docs/projectspec_reference.md` is the detailed YAML ProjectSpec reference,
-  and `examples/01_quickstart_projectspec/` contains copy-pasteable ProjectSpec
+  including `run:` controls, normalization options, slicing modes, datasets,
+  optimizer settings, output files, and common validation mistakes.
+  `examples/01_quickstart_projectspec/` contains copy-pasteable ProjectSpec
   examples.
 - `examples/` is organized as a user learning path: ProjectSpec quickstarts,
   experimental-data loading, compact Python API scripts, fitting examples, and
   advanced low-level visualizations. The four numbered example folders now
   collectively cover the same tutorial scope as the default `swanx init`
-  starter, including a runnable ProjectSpec JAX least-squares fit with an
-  explicit residual factory. All maintained examples share the synthetic
+  starter, including a runnable ProjectSpec JAX least-squares fit with the
+  internal fixed-grid residual. All maintained examples share the synthetic
   C/[LaNiO3/SrTiO3 (LNO/STO)]x20/SrTiO3 case used by the benchmark folder.
 - `swanx.io` reads OPC, IMFP, reflectivity, and rocking-curve files and builds
   `SimulationStack` and `CoreLevelRequest` objects from material tables.
@@ -66,10 +70,13 @@ when they need reflectivity and rocking-curve data.
 
 ## YAML ProjectSpec notes
 
-The current YAML ProjectSpec supports sections for `project`, `settings`, `materials`,
-`parameters`, `stack`, `core_levels`, `datasets`, and `report`. The required
-sections are `project`, `settings`, `materials`, `stack`, and `core_levels`;
-`parameters`, `datasets`, and `report` default to empty mappings.
+The current YAML ProjectSpec supports sections for `project`, `run`, `settings`,
+`materials`, `parameters`, `stack`, `core_levels`, `datasets`, and `report`. The
+required sections are `project`, `settings`, `materials`, `stack`, and
+`core_levels`; `run`, `parameters`, `datasets`, and `report` default to empty
+mappings. `run.mode`, `run.optimizer`, and `run.outputs` are the preferred
+execution controls; legacy `settings.fit_method`, `settings.optimizer`, and
+`report.save_plots` remain supported when they do not conflict with `run`.
 
 Supported YAML workflow features include:
 
@@ -91,7 +98,9 @@ Supported YAML workflow features include:
 - method-aware plot filenames: fitting runs write `fit_overview.png`,
   `reflectivity_fit.png`, and `rocking_curves_fit.png`; `simulate_only` runs
   write `simulation_overview.png`, `reflectivity_simulation.png`, and
-  `rocking_curves_simulation.png`;
+  `rocking_curves_simulation.png`; simulation-only rocking-curve overview
+  panels use the same core-level color scheme as fitting-mode rocking-curve
+  plots;
 - stack schematic plots for all run methods;
 - least-squares convergence, parameter-range, and correlation plot images when
   diagnostics are available;
@@ -102,9 +111,20 @@ Supported YAML workflow features include:
 - optional separate reflectivity and rocking-curve angle-offset parameters for
   ProjectSpec fitting, plus edge-polynomial normalization controls and
   per-core-level `vacuum_imfp_from_material` for legacy workflow parity;
+- internal `run.optimizer.residual: "auto_fixed_grid"` residual building for
+  ProjectSpec `jax_least_squares` fits with fixed stack topology and
+  `settings.slicing.mode: "fixed_grid"`;
+- edge-polynomial rocking-curve normalization as the maintained ProjectSpec
+  default, with first/last edge fractions applied consistently to experimental
+  data, simulation outputs, BO/generic fitting, and auto fixed-grid JAX
+  least-squares;
 - complete `simulate_only` report output without best-fit parameter tables;
 - method-specific report writers for least-squares, gradient, and BO result
   objects.
+- optional `run.outputs.identifiability` for `jax_least_squares` ProjectSpec
+  runs, writing `identifiability_analysis/` with range-scaled parameter
+  sensitivity, singular values, weak SVD modes, strong correlations, dataset
+  sensitivity, plots when matplotlib is available, and a Markdown summary.
 
 All thickness, roughness, depth, and IMFP values are in Angstrom. In YAML,
 `roughness_A` on layer j means roughness/interdiffusion at the upper interface
@@ -127,10 +147,10 @@ convenience and is equivalent to `repeat_index - 1` inside repeats.
   such as `{"s": 0.7, "p": 0.3}`.
 - JAX least-squares/autodiff is the recommended fitting path for differentiable
   fixed-shape workflows; BO remains an optional global black-box baseline.
-- YAML ProjectSpec fitting still requires user-provided factories for
-  `jax_least_squares` and `jax_gradient`; no automatic no-code JAX residual
-  builder is implemented. The packaged init starter includes an explicit
-  factory for the synthetic C/LaNiO3/SrTiO3 case.
+- YAML ProjectSpec `jax_least_squares` can build a fixed-grid residual directly
+  from YAML with `run.optimizer.residual: "auto_fixed_grid"`. Explicit residual
+  factories remain supported for custom least-squares residuals, and
+  `jax_gradient` still requires a user-provided value-and-gradient factory.
 - ProjectSpec v1.3 package layout cleanup moves maintained backend
   implementations under `swanx.fitting` and report implementations under
   `swanx.project.reporting`; root backend modules and `swanx.project.reports`
@@ -353,17 +373,98 @@ passed with `30 passed`; and
 rank-deficient covariance projection warning.
 
 Synthetic benchmark ProjectSpec least-squares identifiability analysis was
-added on 2026-07-01. The new tracked script
-`benchmarks/synthetic_c_lno_sto/projectspec_jax_least_squares/analyze_lsq_identifiability.py`
-mirrors the local case-study Jacobian/SVD sensitivity workflow for the public
-synthetic C/LaNiO3/SrTiO3 benchmark. It reads an existing ProjectSpec
-least-squares run, scales Jacobian columns by parameter ranges, writes
-parameter/dataset sensitivity CSVs, singular-value and weak-mode diagnostics,
-correlation summaries, plots, and `summary.md` under the run-local
-`identifiability_analysis/` folder. Validation on existing run
+promoted into packaged ProjectSpec reporting on 2026-07-01. The public
+synthetic C/LaNiO3/SrTiO3 benchmark now uses `run.outputs.identifiability: true`
+instead of a benchmark-local analyzer script. The packaged report scales
+Jacobian columns by parameter ranges, writes parameter/dataset sensitivity CSVs,
+singular-value and weak-mode diagnostics, correlation summaries, plots, and
+`summary.md` under the run-local `identifiability_analysis/` folder. Validation on existing run
 `synthetic_c_lno_sto_projectspec_jax_ls_20260628_191108` passed with 805
 residuals and 7 fitted parameters; the scaled Jacobian was singular because
 `substrate_roughness` was effectively invisible, followed by weak
-`carbon_roughness_fraction` sensitivity. The analyzer script compiled cleanly
-with `python -m py_compile`, and `git diff --check` passed for the README
-documentation update.
+`carbon_roughness_fraction` sensitivity.
+
+ProjectSpec no-code fixed-grid JAX least-squares residuals were added on
+2026-07-01. `run.optimizer.residual: "auto_fixed_grid"` now builds the
+fixed-shape residual internally from the ProjectSpec stack, parameter
+expressions, datasets, core levels, and `settings.slicing.mode: "fixed_grid"`.
+New `swanx init` projects and maintained synthetic C/LaNiO3/SrTiO3 examples no
+longer write or require project-local residual factory scripts; the
+`residual_function_factory` hook remains available for custom residuals and old
+projects. Validation after this change:
+`python -m pytest tests\test_project_workflow.py --basetemp runs\pytest_projectspec_auto_residual_workflow`
+passed with `33 passed`, and
+`python -m pytest --basetemp runs\pytest_projectspec_auto_residual_full` passed
+with `257 passed, 1 xfailed, 1 warning`.
+
+Maintained examples were swept on 2026-07-01 to use the unified `run:` section.
+All YAML examples under `examples/01_quickstart_projectspec/` and
+`examples/04_fitting/projectspec_jax_least_squares/project.yaml` now place
+execution mode, optimizer settings, and plot switches under `run:` and no
+longer reference project-local factory scripts. Validation and execution passed
+for the simulation-only, data-overlay, fixed-grid JAX least-squares, and
+optional BO ProjectSpec examples. The Python example scripts under
+`examples/02_experimental_data/`, `examples/03_python_api/`,
+`examples/04_fitting/`, and `examples/advanced/` also ran successfully; plotting
+scripts wrote their expected PNG outputs under ignored example locations.
+Focused ProjectSpec workflow validation passed with
+`python -m pytest tests\test_project_workflow.py --basetemp runs\pytest_examples_run_sweep_workflow`
+(`33 passed`), and the full suite passed with
+`python -m pytest --basetemp runs\pytest_examples_run_sweep_full`
+(`257 passed, 1 xfailed, 1 warning`).
+
+Benchmark ProjectSpec files were swept on 2026-07-01 to use the unified `run:`
+section as well. The synthetic C/LaNiO3/SrTiO3 ProjectSpec benchmark now keeps
+`jax_least_squares`, BO, and simulate-only mode choices under `run.mode`, moves
+optimizer settings under `run.optimizer`, moves plot/identifiability switches
+under `run.outputs`, and no longer includes benchmark-local factory or analyzer
+scripts. Old generated benchmark `runs/` and `__pycache__/` folders were
+removed. Validation passed for `project.yaml`, `project_bo.yaml`, and
+`project_simulate_only.yaml`.
+
+ProjectSpec YAML reference was expanded on 2026-07-01 to document the current
+no-code fixed-grid JAX workflow in detail. It now explains the modern `run:`
+section, legacy compatibility and conflict rules, RC mean/off-peak and
+edge-polynomial normalization choices, fixed-grid slicing, dataset defaults,
+report/output switches, optimizer settings, output files, and common user
+mistakes.
+
+ProjectSpec edge-polynomial rocking-curve normalization became the maintained
+default on 2026-07-01. The no-code fixed-grid JAX residual now supports the
+same `settings.normalization: "edge_polynomial"` mode as experimental data
+preprocessing, simulation-only reports, BO, and generic fitting. Generated
+`swanx init` projects, maintained ProjectSpec examples, and benchmark YAMLs now
+use first/last 10 percent edge-polynomial normalization with polynomial order 2
+by default. Mean normalization and `rocking_curve_offpeak_mask` remain available
+for backward compatibility and specialized workflows. Focused validation passed
+with `5 passed` in `runs\pytest_edge_poly_focused`. Follow-up validation:
+`python -m pytest tests\test_project_workflow.py --basetemp runs\pytest_edge_poly_project_workflow`
+passed with `34 passed`; benchmark ProjectSpec YAML validation passed for
+`project.yaml`, `project_bo.yaml`, and `project_simulate_only.yaml`; and
+`python -m pytest --basetemp runs\pytest_edge_poly_full` passed with
+`258 passed, 1 xfailed, 1 warning`.
+
+Active docs, examples, and benchmarks were swept again on 2026-07-01 after the
+edge-polynomial default became universal. `docs/projectspec_reference.md` now
+spells out `run:` controls, edge-polynomial defaults, per-dataset
+normalization overrides, auto fixed-grid JAX requirements, `report: {}`, output
+files, and common normalization mistakes in more detail. Maintained example
+helpers and synthetic benchmarks now request edge-polynomial RC normalization
+explicitly, normalize loaded RC data with the same first/last 10 percent
+polynomial rule, and avoid presenting peak-exclusion masks as the default
+denominator. `swanx.io.read_rocking_curve_data` now uses `edge_fraction=0.10`
+when edge-polynomial normalization is requested without an explicit fraction.
+Focused validation passed with `25 passed` in
+`runs\pytest_docs_examples_benchmarks_sweep_focused`; the experimental-data and
+Python-API examples ran successfully; and benchmark ProjectSpec YAML validation
+passed for `project.yaml`, `project_bo.yaml`, and `project_simulate_only.yaml`.
+Full-suite validation passed with
+`python -m pytest --basetemp runs\pytest_docs_examples_benchmarks_sweep_full`
+(`259 passed, 1 xfailed, 1 warning`), and `git diff --check` reported only
+Windows LF-to-CRLF notices with no whitespace errors.
+
+Simulation-only ProjectSpec overview plots were corrected on 2026-07-01 so
+rocking curves without experimental overlays are drawn with the maintained
+core-level color scheme instead of all-black model lines. Focused plot
+regression tests passed with `3 passed`, and the full ProjectSpec workflow
+test file passed with `35 passed`.

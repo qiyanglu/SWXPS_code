@@ -2,8 +2,9 @@
 
 Start with `projectspec_jax_least_squares/` when you want the same scope as the
 default `swanx init` tutorial: ProjectSpec input, reflectivity plus four
-rocking-curve datasets, off-peak normalization, fixed-grid slicing, an explicit
-JAX least-squares residual factory, and the normal report folder output.
+rocking-curve datasets, edge-polynomial RC normalization, fixed-grid slicing,
+`run.optimizer.residual: "auto_fixed_grid"`, and the normal report folder
+output.
 
 The standalone scripts demonstrate fitting APIs directly from Python on the
 same C/[LaNiO3/SrTiO3 (LNO/STO)]x20/SrTiO3 geometry used by the examples and

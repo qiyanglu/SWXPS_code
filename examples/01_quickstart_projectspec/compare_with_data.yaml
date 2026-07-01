@@ -1,14 +1,20 @@
 project:
   name: "synthetic_c_lno_sto_compare_with_data"
 
+run:
+  mode: "simulate_only"
+  outputs:
+    plots: true
+
 settings:
   photon_energy_ev: 1000.0
   angle_start_deg: 6.9
   angle_stop_deg: 10.9
   angle_count: 161
   polarization: "s"
-  normalization: "mean"
-  fit_method: "simulate_only"
+  normalization: "edge_polynomial"
+  normalization_edge_fraction: 0.10
+  normalization_polynomial_order: 2
 
 materials:
   C:
@@ -109,26 +115,21 @@ datasets:
       name: "La 4d"
       angle_column: "angle_deg"
       intensity_column: "la4d_rc"
-      normalization: "mean"
       weight: 1.0
     - path: "../../benchmarks/synthetic_c_lno_sto/lno_sto_c_synthetic_data.csv"
       name: "O 1s"
       angle_column: "angle_deg"
       intensity_column: "o1s_rc"
-      normalization: "mean"
       weight: 1.0
     - path: "../../benchmarks/synthetic_c_lno_sto/lno_sto_c_synthetic_data.csv"
       name: "Ti 2p"
       angle_column: "angle_deg"
       intensity_column: "ti2p_rc"
-      normalization: "mean"
       weight: 1.0
     - path: "../../benchmarks/synthetic_c_lno_sto/lno_sto_c_synthetic_data.csv"
       name: "C 1s"
       angle_column: "angle_deg"
       intensity_column: "c1s_rc"
-      normalization: "mean"
       weight: 1.0
 
-report:
-  save_plots: true
+report: {}

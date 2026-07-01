@@ -83,8 +83,8 @@ packaged C/LaNiO3/SrTiO3 starter OPC, IMFP, and curve files into:
 my_project/data/
 ```
 
-It also writes a small `synthetic_residual_factory.py` so the starter project
-runs an actual JAX least-squares fit against the packaged synthetic data.
+The starter project runs an actual JAX least-squares fit against the packaged
+synthetic data using an internal fixed-grid residual built from `project.yaml`.
 
 Each run writes results under:
 
@@ -117,8 +117,8 @@ swanx init my_project --template fit-demo
 Use:
 
 - `minimal` for the default C/LaNiO3/SrTiO3 JAX least-squares fitting starter;
-- `multilayer` for the same repeat-block stack as a simulation-only project;
-- `fit-demo` as an explicit alias for the fitting starter.
+- `fit-demo` as an explicit alias for the same fitting starter;
+- `multilayer` for the same repeat-block stack as a simulation-only project.
 
 To use your own data folder:
 
@@ -143,11 +143,14 @@ superlattice on a SrTiO3 (STO) substrate at 1000 eV, with reflectivity plus La
 The four numbered example folders collectively cover the same tutorial scope as
 the default `swanx init` project: ProjectSpec setup, experimental-data overlay,
 Python API construction, and runnable JAX least-squares fitting through an
-explicit residual factory.
+internal fixed-grid residual.
 
 The matching benchmark in [`benchmarks/synthetic_c_lno_sto/`](benchmarks/synthetic_c_lno_sto/)
 keeps the heavier fitting, slicing, JAX least-squares, and
 Bayesian-optimization comparisons in one repeatable target.
+
+The runnable ProjectSpec least-squares example lives in
+[`examples/04_fitting/projectspec_jax_least_squares/`](examples/04_fitting/projectspec_jax_least_squares/).
 
 ## ProjectSpec overview
 
@@ -157,6 +160,7 @@ The top-level YAML sections are:
 
 ```yaml
 project:
+run:
 settings:
 materials:
 parameters:
@@ -226,8 +230,9 @@ Common conventions:
   zero-based repeat coordinates.
 - Only parameters with `vary: true` are fitted.
 - Dataset paths are resolved relative to `project.yaml`.
-- If `rocking_curve_offpeak_mask` is set, mean-normalized experimental and
-  simulated rocking curves use the same off-peak denominator.
+- ProjectSpec rocking curves default to `normalization: "edge_polynomial"` with
+  the first and last 10 percent used for a quadratic background fit.
+- `rocking_curve_offpeak_mask` remains available for mean-normalized workflows.
 - Core levels should use `emit_from.layer_ids`, `emit_from.tags`, or `emit_from.all: true`.
 
 For details, see:
@@ -256,11 +261,12 @@ If experimental datasets are provided, SWANX also writes experimental-data and r
 
 If fitting is performed, SWANX writes best-fit parameters and optimizer-specific outputs.
 
-If plotting is enabled with
+Enable plots with:
 
 ```yaml
-report:
-  save_plots: true
+run:
+  outputs:
+    plots: true
 ```
 
 For fitting runs, SWANX writes plots such as:
@@ -281,6 +287,9 @@ plots/rocking_curves_simulation.png
 plots/stack_schematic.png
 ```
 
+Rocking-curve plots use the same core-level color scheme in fitting and
+simulation-only modes.
+
 Skipped optional outputs are recorded in `report.md`.
 
 ## Fitting
@@ -288,32 +297,38 @@ Skipped optional outputs are recorded in `report.md`.
 Simulation-only projects use:
 
 ```yaml
-settings:
-  fit_method: "simulate_only"
+run:
+  mode: "simulate_only"
 ```
 
 The recommended fitting path is JAX least-squares for differentiable fixed-shape workflows:
 
 ```yaml
-settings:
-  fit_method: "jax_least_squares"
+run:
+  mode: "jax_least_squares"
   optimizer:
-    residual_function_factory: "fit_factory:build_residual"
+    residual: "auto_fixed_grid"
     max_nfev: 100
     estimate_covariance: true
+  outputs:
+    identifiability: true
 ```
 
-ProjectSpec fitting requires an explicit factory callback. The default
-`swanx init` project and the runnable example in
-`examples/04_fitting/projectspec_jax_least_squares/` include one for the
-packaged synthetic starter case, but custom JAX fits still need their own
-fixed-shape residual factory.
+The auto fixed-grid residual uses the YAML stack topology, parameter
+expressions, datasets, core levels, and `settings.slicing.mode: "fixed_grid"`.
+Advanced custom JAX fits can still use
+`residual_function_factory: "module:function"` when the residual cannot be
+described by the ProjectSpec stack.
+
+With `run.outputs.identifiability: true`, least-squares runs also write an
+`identifiability_analysis/` folder with parameter sensitivity, weak-mode,
+correlation, and dataset-sensitivity diagnostics.
 
 Bayesian optimization is available as an optional global black-box baseline:
 
 ```yaml
-settings:
-  fit_method: "bayesian_optimization"
+run:
+  mode: "bayesian_optimization"
   optimizer:
     n_calls: 40
     n_initial_points: 10

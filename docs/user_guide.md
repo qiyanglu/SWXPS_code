@@ -60,15 +60,28 @@ The generated project contains:
 my_project/
   project.yaml
   run_project.py
-  synthetic_residual_factory.py
   README.md
   data/
 ```
 
-The default generated YAML uses `fit_method: "jax_least_squares"`. It builds the
+The default generated YAML uses `run.mode: "jax_least_squares"`. It builds the
 C/LaNiO3/SrTiO3 stack, loads the packaged synthetic reflectivity and rocking
 curves, fits selected stack parameters, simulates the best-fit curves, and
 writes a report.
+
+Rocking curves use edge-polynomial normalization by default:
+
+```yaml
+settings:
+  normalization: "edge_polynomial"
+  normalization_edge_fraction: 0.10
+  normalization_polynomial_order: 2
+```
+
+This fits a second-order background to the first and last 10 percent of each
+rocking curve and applies the same normalization to experimental data,
+simulation-only curves, BO/generic fitting, and auto fixed-grid JAX
+least-squares.
 
 Typical first edits in `project.yaml` are:
 
@@ -77,7 +90,7 @@ Typical first edits in `project.yaml` are:
 - update `materials` paths;
 - edit `stack` thicknesses and roughnesses;
 - choose which layers emit each `core_level`;
-- set `report.save_plots: true` when matplotlib is installed.
+- set `run.outputs.plots: true` when matplotlib is installed.
 
 Stack `thickness_A` and `roughness_A` fields can be numbers, parameter
 references such as `$lno_thickness`, or safe expressions. Inside repeat blocks,
@@ -105,9 +118,11 @@ new project folder first.
 To compare simulations with data while still avoiding fitting, keep:
 
 ```yaml
-settings:
-  fit_method: "simulate_only"
+run:
+  mode: "simulate_only"
 ```
+
+Legacy `settings.fit_method: "simulate_only"` is still accepted.
 
 and add datasets:
 
@@ -126,7 +141,6 @@ datasets:
       name: "La 4d"
       angle_column: "angle_deg"
       intensity_column: "la4d_rc"
-      normalization: "mean"
       weight: 1.0
 ```
 
@@ -134,9 +148,11 @@ Dataset paths are resolved relative to `project.yaml`, not the process current
 working directory. The maintained examples use the synthetic C/LaNiO3/SrTiO3
 (C/LNO/STO) benchmark CSV as a stand-in for measured data; replace the path and
 column names with your own measurements when needed. Rocking-curve names should
-match core-level names when you want overlays and residuals. If the project
-defines `settings.rocking_curve_offpeak_mask`, SWANX uses that same mask when
-mean-normalizing experimental rocking curves and simulated rocking curves.
+match core-level names when you want overlays and residuals. If a rocking-curve
+dataset omits `normalization`, it uses `settings.normalization`; setting a
+dataset normalization to empty/null leaves that experimental curve as read.
+`settings.rocking_curve_offpeak_mask` remains available for mean-normalized
+workflows, but it is not needed for the default edge-polynomial normalization.
 
 With datasets present, `simulate_only` reports can include experimental data
 CSVs, residuals, and plot overlays, but they still do not write
@@ -145,32 +161,33 @@ CSVs, residuals, and plot overlays, but they still do not write
 ## Fit Workflow
 
 JAX least-squares is the recommended fitting path for differentiable fixed-shape
-workflows. The default `swanx init` project already includes a factory for the
-packaged synthetic C/LaNiO3/SrTiO3 starter case. Custom YAML fits need their
-own factory callback:
+workflows. For YAML stacks with fixed topology, use the internal fixed-grid
+residual builder:
 
 ```yaml
-settings:
-  fit_method: "jax_least_squares"
+run:
+  mode: "jax_least_squares"
   optimizer:
-    residual_function_factory: "fit_factory:build_residual"
+    residual: "auto_fixed_grid"
     max_nfev: 100
     estimate_covariance: true
+  outputs:
+    plots: true
+    identifiability: true
 ```
 
-The factory module can live next to `project.yaml`; the ProjectSpec runner adds
-that folder to `PYTHONPATH` while loading the callback. The generated init
-project and `examples/04_fitting/projectspec_jax_least_squares/` show this
-layout for the packaged synthetic starter case. Outside that case, SWANX does
-not generate no-code JAX residual builders. If the factory is missing,
-validation and run errors should point out the missing setting and there is no
-fallback to Bayesian optimization.
+This path reads the stack, expressions, parameters, datasets, core levels, and
+`settings.slicing.mode: "fixed_grid"` directly from `project.yaml`; no
+project-local factory script is needed. For unusual fixed-shape residuals that
+cannot be expressed by the ProjectSpec stack, advanced users can still set
+`run.optimizer.residual_function_factory: "module:function"`. SWANX does not
+fall back to Bayesian optimization when a JAX configuration is invalid.
 
 Advanced fitting projects can set separate
 `settings.reflectivity_angle_offset_parameter` and
 `settings.rocking_curve_angle_offset_parameter` when reflectivity and
 rocking-curve scans need independent angular offsets. Edge-polynomial
-rocking-curve normalization can be controlled with
+rocking-curve normalization is the ProjectSpec default and can be controlled with
 `settings.normalization_edge_fraction` and
 `settings.normalization_polynomial_order`.
 
@@ -178,8 +195,8 @@ Bayesian optimization is available as an optional global black-box baseline or
 robustness check:
 
 ```yaml
-settings:
-  fit_method: "bayesian_optimization"
+run:
+  mode: "bayesian_optimization"
   optimizer:
     n_calls: 40
     n_initial_points: 10
@@ -218,7 +235,7 @@ Common validation errors include:
 - unknown parameter name in an expression;
 - unsafe or unknown function in an expression;
 - dataset path not found;
-- missing JAX factory for a JAX fit method.
+- missing fixed-grid slicing for the auto JAX residual.
 
 ## How To Read Outputs
 
@@ -331,8 +348,9 @@ For JAX least-squares workflows, install:
 python -m pip install -e ".[least-squares]"
 ```
 
-Custom YAML fits still need a residual factory callback; the generated starter
-project includes one for its packaged synthetic case.
+The default YAML path uses `run.optimizer.residual: "auto_fixed_grid"` and
+requires `settings.slicing.mode: "fixed_grid"`. Install JAX/SciPy with the
+least-squares extra before running it.
 
 **Unknown layer tag**
 
@@ -349,11 +367,13 @@ Every concrete layer needs a unique `id`. In repeat blocks, include
 Every core level must explicitly say where it emits from with `layer_ids`,
 `tags`, or `all: true`.
 
-**jax_least_squares without factory**
+**jax_least_squares without fixed-grid slicing**
 
-Add `settings.optimizer.residual_function_factory: "module:function"` or use
-`fit_method: "simulate_only"` while preparing the project. SWANX does not fall
-back to BO.
+Use `run.optimizer.residual: "auto_fixed_grid"` with
+`settings.slicing.mode: "fixed_grid"`, or provide
+`run.optimizer.residual_function_factory: "module:function"` for a custom JAX
+residual. The legacy `settings.optimizer` and `settings.fit_method` fields
+remain supported. SWANX does not fall back to BO.
 
 **BO not installed**
 

@@ -20,8 +20,8 @@
       parameter identifiability, fitted structures, and s/p/mixed polarization.
 - [ ] Add richer experimental-data formats only when real lab conventions
       require them.
-- [ ] Add another ProjectSpec JAX callback example using real experimental data
-      once the lab-facing fitting conventions settle.
+- [ ] Add another ProjectSpec JAX custom-residual example using real
+      experimental data once the lab-facing fitting conventions settle.
 - [ ] For Sample 12, test reduced-v3 with separate reflectivity/rocking-curve
       angle offsets and a simpler superlattice model, such as period start,
       period delta, and constant LNO fraction.
@@ -48,7 +48,7 @@
 - [x] Add visible ProjectSpec run progress messages for `swanx run` and
       generated beginner scripts.
 - [x] Add a synthetic C/LaNiO3/SrTiO3 ProjectSpec JAX least-squares benchmark
-      with an explicit fixed-shape residual factory callback.
+      using fixed-shape least-squares residuals.
 - [x] Make default ProjectSpec run outputs project-local and write `report.md`.
 - [x] Retire repository-local `templates/` now that `swanx init` and
       examples are the starter surfaces.
@@ -112,6 +112,31 @@
       match the default `swanx init` tutorial scope.
 - [x] Re-sweep active docs after adding the runnable ProjectSpec fitting example
       and keep status, roadmap, examples, and callback-factory guidance aligned.
+- [x] Add unified ProjectSpec `run:` controls for mode, optimizer settings, and
+      output switches while preserving legacy `settings`/`report` compatibility.
+- [x] Promote least-squares identifiability analysis into packaged ProjectSpec
+      reporting via `run.outputs.identifiability`, including scaled sensitivity,
+      weak-mode, correlation, dataset-sensitivity, plot, and summary outputs.
+- [x] Add internal ProjectSpec `run.optimizer.residual: "auto_fixed_grid"` for
+      fixed-topology JAX least-squares fits and stop generating project-local
+      residual factory scripts in `swanx init`.
+- [x] Sweep maintained examples so ProjectSpec YAML uses unified `run:`
+      controls, remove factory-script guidance from examples, and rerun the
+      maintained YAML and Python examples.
+- [x] Sweep benchmark ProjectSpec YAMLs so they use unified `run:` controls,
+      remove obsolete benchmark-local factory/analyzer files, and delete old
+      generated benchmark runs/caches.
+- [x] Expand the ProjectSpec YAML reference with detailed `run:` controls,
+      normalization, slicing, datasets, optimizer, report/output, and common
+      mistake guidance.
+- [x] Make edge-polynomial rocking-curve normalization the ProjectSpec default
+      across experimental data, simulation outputs, BO/generic fitting, and
+      auto fixed-grid JAX least-squares.
+- [x] Sweep active docs, examples, and benchmarks after the edge-polynomial
+      default; align Python examples and synthetic benchmark scripts with the
+      first/last 10 percent polynomial RC normalization convention.
+- [x] Use the fitting-mode core-level color scheme for simulation-only
+      ProjectSpec rocking-curve overview plots.
 
 ## Deferred or out of scope
 

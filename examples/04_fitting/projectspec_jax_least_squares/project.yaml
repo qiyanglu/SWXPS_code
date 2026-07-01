@@ -1,17 +1,28 @@
 project:
   name: "projectspec_jax_least_squares_example"
 
+run:
+  mode: "jax_least_squares"
+  optimizer:
+    residual: "auto_fixed_grid"
+    max_nfev: 40
+    ftol: 1.0e-9
+    xtol: 1.0e-9
+    gtol: 1.0e-8
+    estimate_covariance: true
+  outputs:
+    plots: true
+    identifiability: true
+
 settings:
   photon_energy_ev: 1000.0
   angle_start_deg: 6.9
   angle_stop_deg: 10.9
   angle_count: 161
   polarization: "s"
-  normalization: "mean"
-  fit_method: "jax_least_squares"
-  rocking_curve_offpeak_mask:
-    mode: "exclude_reflectivity_peak"
-    half_width_deg: 1.25
+  normalization: "edge_polynomial"
+  normalization_edge_fraction: 0.10
+  normalization_polynomial_order: 2
   slicing:
     mode: "fixed_grid"
     min_slices: 10
@@ -20,13 +31,6 @@ settings:
       carbon_thickness: 16.0
       lno_thickness: 22.0
       sto_thickness: 22.0
-  optimizer:
-    residual_function_factory: "synthetic_residual_factory:build_residual_function"
-    max_nfev: 40
-    ftol: 1.0e-9
-    xtol: 1.0e-9
-    gtol: 1.0e-8
-    estimate_covariance: true
   # Bayesian optimization is available as an optional global black-box baseline,
   # but it is not the default or a fallback.
 
@@ -152,26 +156,21 @@ datasets:
       name: "La 4d"
       angle_column: "angle_deg"
       intensity_column: "la4d_rc"
-      normalization: "mean"
       weight: 5.0
     - path: "../../../data/curves/lno_sto_c_synthetic_data.csv"
       name: "O 1s"
       angle_column: "angle_deg"
       intensity_column: "o1s_rc"
-      normalization: "mean"
       weight: 5.0
     - path: "../../../data/curves/lno_sto_c_synthetic_data.csv"
       name: "Ti 2p"
       angle_column: "angle_deg"
       intensity_column: "ti2p_rc"
-      normalization: "mean"
       weight: 5.0
     - path: "../../../data/curves/lno_sto_c_synthetic_data.csv"
       name: "C 1s"
       angle_column: "angle_deg"
       intensity_column: "c1s_rc"
-      normalization: "mean"
       weight: 5.0
 
-report:
-  save_plots: true
+report: {}

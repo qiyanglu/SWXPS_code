@@ -60,6 +60,8 @@ from swanx.imfp import imfp_from_file
 
 from swanx.optics import energy_to_wavelength
 
+from swanx.preprocessing import normalize_rocking_curve
+
 from swanx.stack import (
 
     LayerTemplate,
@@ -89,6 +91,9 @@ SUPERLATTICE_REPEATS = 20
 DATA_FILE = CASE_DIR / "lno_sto_c_synthetic_data.csv"
 DATA_PLOT = CASE_DIR / "lno_sto_c_synthetic_data.png"
 DEFAULT_OUTPUT_PREFIX = "lno_sto_c_joint_bo"
+RC_NORMALIZATION = "edge_polynomial"
+RC_EDGE_FRACTION = 0.10
+RC_POLYNOMIAL_ORDER = 2
 
 TRUE_VALUES = {
     "carbon_thickness": 10.0,
@@ -285,7 +290,6 @@ def generate_synthetic_data(
         )
     ).reflectivity
     peak_angle = angles[np.argmax(reflectivity)]
-    offpeak_mask = np.abs(angles - peak_angle) > 1.25
     rc_result = simulate_rocking_curves(
         RockingCurveRequest(
             angles=angles,
@@ -294,7 +298,9 @@ def generate_synthetic_data(
             core_levels=core_level_requests(),
             field_step=1.0,
             roughness_step=1.0,
-            offpeak_mask=offpeak_mask,
+            normalization_mode=RC_NORMALIZATION,
+            normalization_edge_fraction=RC_EDGE_FRACTION,
+            normalization_polynomial_order=RC_POLYNOMIAL_ORDER,
             slicing=None,
         )
     )
@@ -368,8 +374,6 @@ def make_problem(
 
     rc_weights = RC_WEIGHTS if rc_weights is None else rc_weights
     angles = data["angle_deg"]
-    peak_angle = angles[np.argmax(data["reflectivity"])]
-    offpeak_mask = np.abs(angles - peak_angle) > 1.25
     reflectivity = ReflectivityData(
         name="reflectivity",
         angles=angles,
@@ -381,7 +385,7 @@ def make_problem(
         RockingCurveData(
             name=name,
             angles=angles,
-            intensity=data[column],
+            intensity=normalized_rocking_curve(angles, data[column]),
             weight=rc_weights[name],
         )
         for name, column in RC_COLUMN_BY_NAME.items()
@@ -397,8 +401,23 @@ def make_problem(
         field_step=1.0,
         roughness_step=1.0,
         slicing=None,
-        offpeak_mask=offpeak_mask,
+        rocking_curve_normalization=RC_NORMALIZATION,
+        normalization_edge_fraction=RC_EDGE_FRACTION,
+        normalization_polynomial_order=RC_POLYNOMIAL_ORDER,
     )
+
+
+def normalized_rocking_curve(angles: np.ndarray, values: np.ndarray) -> np.ndarray:
+    """Apply the maintained edge-polynomial RC normalization to data columns."""
+
+    normalized, _ = normalize_rocking_curve(
+        angles,
+        values,
+        mode=RC_NORMALIZATION,
+        edge_fraction=RC_EDGE_FRACTION,
+        polynomial_order=RC_POLYNOMIAL_ORDER,
+    )
+    return normalized
 
 
 def initial_values() -> dict[str, float]:

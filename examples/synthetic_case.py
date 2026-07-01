@@ -19,6 +19,7 @@ if str(SRC_DIR) not in sys.path:
 from swanx.fitting import FittingProblem, ReflectivityData, RockingCurveData
 from swanx.imfp import imfp_from_file
 from swanx.optics import energy_to_wavelength
+from swanx.preprocessing import normalize_rocking_curve
 from swanx.stack import LayerTemplate, StackTemplate, SuperlatticeTemplate
 from swanx.workflows import (
     CoreLevelRequest,
@@ -31,6 +32,9 @@ from swanx.workflows import (
 PHOTON_ENERGY_EV = 1000.0
 SUPERLATTICE_REPEATS = 20
 DATA_FILE = REPO_ROOT / "benchmarks" / "synthetic_c_lno_sto" / "lno_sto_c_synthetic_data.csv"
+RC_NORMALIZATION = "edge_polynomial"
+RC_EDGE_FRACTION = 0.10
+RC_POLYNOMIAL_ORDER = 2
 
 TRUE_VALUES = {
     "carbon_thickness": 10.0,
@@ -207,8 +211,6 @@ def simulate_case(values: dict[str, float] | None = None, angle_grid: np.ndarray
             slicing=None,
         )
     )
-    peak_angle = scan_angles[np.argmax(reflectivity.reflectivity)]
-    offpeak_mask = np.abs(scan_angles - peak_angle) > 1.25
     rocking_curves = simulate_rocking_curves(
         RockingCurveRequest(
             angles=scan_angles,
@@ -217,7 +219,9 @@ def simulate_case(values: dict[str, float] | None = None, angle_grid: np.ndarray
             core_levels=core_level_requests(),
             field_step=1.0,
             roughness_step=1.0,
-            offpeak_mask=offpeak_mask,
+            normalization_mode=RC_NORMALIZATION,
+            normalization_edge_fraction=RC_EDGE_FRACTION,
+            normalization_polynomial_order=RC_POLYNOMIAL_ORDER,
             slicing=None,
         )
     )
@@ -229,8 +233,6 @@ def make_data_problem(data: dict[str, np.ndarray] | None = None) -> FittingProbl
 
     loaded = load_synthetic_data() if data is None else data
     scan_angles = loaded["angle_deg"]
-    peak_angle = scan_angles[np.argmax(loaded["reflectivity"])]
-    offpeak_mask = np.abs(scan_angles - peak_angle) > 1.25
     return FittingProblem(
         parameters=(),
         stack_builder=lambda values: build_stack(),
@@ -245,7 +247,7 @@ def make_data_problem(data: dict[str, np.ndarray] | None = None) -> FittingProbl
             RockingCurveData(
                 name=name,
                 angles=scan_angles,
-                intensity=loaded[column],
+                intensity=normalized_rocking_curve(scan_angles, loaded[column]),
             )
             for name, column in RC_COLUMN_BY_NAME.items()
         ),
@@ -253,5 +255,20 @@ def make_data_problem(data: dict[str, np.ndarray] | None = None) -> FittingProbl
         field_step=1.0,
         roughness_step=1.0,
         slicing=None,
-        offpeak_mask=offpeak_mask,
+        rocking_curve_normalization=RC_NORMALIZATION,
+        normalization_edge_fraction=RC_EDGE_FRACTION,
+        normalization_polynomial_order=RC_POLYNOMIAL_ORDER,
     )
+
+
+def normalized_rocking_curve(angles: np.ndarray, values: np.ndarray) -> np.ndarray:
+    """Apply the maintained edge-polynomial RC normalization to data columns."""
+
+    normalized, _ = normalize_rocking_curve(
+        angles,
+        values,
+        mode=RC_NORMALIZATION,
+        edge_fraction=RC_EDGE_FRACTION,
+        polynomial_order=RC_POLYNOMIAL_ORDER,
+    )
+    return normalized

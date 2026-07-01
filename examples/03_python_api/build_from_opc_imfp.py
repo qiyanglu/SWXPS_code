@@ -5,8 +5,6 @@ from __future__ import annotations
 from pathlib import Path
 import sys
 
-import numpy as np
-
 REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
@@ -16,6 +14,9 @@ if str(SRC_DIR) not in sys.path:
 
 from examples.synthetic_case import (  # noqa: E402
     PHOTON_ENERGY_EV,
+    RC_EDGE_FRACTION,
+    RC_NORMALIZATION,
+    RC_POLYNOMIAL_ORDER,
     build_stack,
     core_level_requests,
     load_synthetic_data,
@@ -58,14 +59,15 @@ def main() -> None:
             slicing=None,
         )
     )
-    peak_angle = angles[np.argmax(reflectivity.reflectivity)]
     rocking_curves = simulate_rocking_curves(
         RockingCurveRequest(
             angles=angles,
             photon_energy_ev=PHOTON_ENERGY_EV,
             stack=stack,
             core_levels=core_level_requests(),
-            offpeak_mask=np.abs(angles - peak_angle) > 1.25,
+            normalization_mode=RC_NORMALIZATION,
+            normalization_edge_fraction=RC_EDGE_FRACTION,
+            normalization_polynomial_order=RC_POLYNOMIAL_ORDER,
             field_step=1.0,
             roughness_step=1.0,
             slicing=None,

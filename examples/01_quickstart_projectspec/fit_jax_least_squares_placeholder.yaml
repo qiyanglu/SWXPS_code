@@ -1,8 +1,16 @@
-# Non-runnable placeholder until you add fit_factory.py next to this YAML file
-# with a build_residual(problem) function. ProjectSpec does not generate a
-# no-code JAX residual automatically.
+# Runnable fixed-grid JAX least-squares example using the internal ProjectSpec
+# residual builder.
 project:
   name: "synthetic_c_lno_sto_jax_least_squares_placeholder"
+
+run:
+  mode: "jax_least_squares"
+  optimizer:
+    residual: "auto_fixed_grid"
+    max_nfev: 100
+    estimate_covariance: true
+  outputs:
+    plots: true
 
 settings:
   photon_energy_ev: 1000.0
@@ -10,12 +18,17 @@ settings:
   angle_stop_deg: 10.9
   angle_count: 161
   polarization: "s"
-  normalization: "mean"
-  fit_method: "jax_least_squares"
-  optimizer:
-    residual_function_factory: "fit_factory:build_residual"
-    max_nfev: 100
-    estimate_covariance: true
+  normalization: "edge_polynomial"
+  normalization_edge_fraction: 0.10
+  normalization_polynomial_order: 2
+  slicing:
+    mode: "fixed_grid"
+    min_slices: 10
+    max_slice_thickness_A: 2.0
+    reference_values:
+      carbon_thickness: 16.0
+      lno_thickness: 22.0
+      sto_thickness: 22.0
 
 materials:
   C:
@@ -124,26 +137,21 @@ datasets:
       name: "La 4d"
       angle_column: "angle_deg"
       intensity_column: "la4d_rc"
-      normalization: "mean"
       weight: 1.0
     - path: "../../benchmarks/synthetic_c_lno_sto/lno_sto_c_synthetic_data.csv"
       name: "O 1s"
       angle_column: "angle_deg"
       intensity_column: "o1s_rc"
-      normalization: "mean"
       weight: 1.0
     - path: "../../benchmarks/synthetic_c_lno_sto/lno_sto_c_synthetic_data.csv"
       name: "Ti 2p"
       angle_column: "angle_deg"
       intensity_column: "ti2p_rc"
-      normalization: "mean"
       weight: 1.0
     - path: "../../benchmarks/synthetic_c_lno_sto/lno_sto_c_synthetic_data.csv"
       name: "C 1s"
       angle_column: "angle_deg"
       intensity_column: "c1s_rc"
-      normalization: "mean"
       weight: 1.0
 
-report:
-  save_plots: true
+report: {}

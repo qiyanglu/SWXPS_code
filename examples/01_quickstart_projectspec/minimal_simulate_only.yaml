@@ -1,14 +1,20 @@
 project:
   name: "synthetic_c_lno_sto_simulate_only"
 
+run:
+  mode: "simulate_only"
+  outputs:
+    plots: true
+
 settings:
   photon_energy_ev: 1000.0
   angle_start_deg: 6.9
   angle_stop_deg: 10.9
   angle_count: 161
   polarization: "s"
-  normalization: "mean"
-  fit_method: "simulate_only"
+  normalization: "edge_polynomial"
+  normalization_edge_fraction: 0.10
+  normalization_polynomial_order: 2
 
 materials:
   C:
@@ -105,5 +111,4 @@ core_levels:
 
 datasets: {}
 
-report:
-  save_plots: true
+report: {}

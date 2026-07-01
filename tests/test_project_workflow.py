@@ -15,7 +15,12 @@ import pytest
 from swanx.fitting import FitContribution, JointObjective, FitParameter, evaluation_from_contributions
 from swanx.project import init_project, inspect_project
 from swanx.project.builder import build_project, project_polarization
-from swanx.project.reports import write_fit_files, write_method_outputs
+from swanx.project.reports import (
+    write_fit_files,
+    write_identifiability_outputs,
+    write_method_outputs,
+)
+from swanx.project.jax_fixed_grid import build_projectspec_jax_residual_function
 from swanx.project.runner import _load_callable, run_project, validate_project
 from swanx.project.spec import ProjectValidationError, load_project_spec
 from swanx.project.yaml_io import YAML_INSTALL_MESSAGE, read_yaml
@@ -52,13 +57,18 @@ def _write_curve(path: Path, column: str = "reflectivity") -> None:
 
 
 def _write_synthetic_case_curve(path: Path) -> None:
-    path.write_text(
-        "angle_deg,reflectivity,la4d_rc,o1s_rc,ti2p_rc,c1s_rc\n"
-        "5.5,0.0008,1.00,1.01,0.99,1.02\n"
-        "6.9,0.0010,1.00,1.01,0.99,1.02\n"
-        "7.0,0.0015,1.03,1.04,1.00,1.01\n",
-        encoding="utf-8",
-    )
+    rows = ["angle_deg,reflectivity,la4d_rc,o1s_rc,ti2p_rc,c1s_rc"]
+    for index in range(21):
+        angle = 5.5 + 0.1 * index
+        rows.append(
+            f"{angle:.1f},"
+            f"{0.0008 + 0.00002 * index:.8f},"
+            f"{1.00 + 0.01 * np.sin(index / 3):.8f},"
+            f"{1.01 + 0.01 * np.cos(index / 4):.8f},"
+            f"{0.99 + 0.01 * np.sin(index / 5):.8f},"
+            f"{1.02 + 0.01 * np.cos(index / 6):.8f}"
+        )
+    path.write_text("\n".join(rows) + "\n", encoding="utf-8")
 
 
 
@@ -205,6 +215,47 @@ def test_yaml_parsing_validation_repeat_and_expressions(tmp_path):
     assert layers[2]["roughness"] == pytest.approx(1.5)
 
 
+def test_run_section_controls_mode_optimizer_and_outputs(tmp_path):
+    path = _project_yaml(tmp_path)
+    text = path.read_text(encoding="utf-8")
+    text = text.replace('  fit_method: "simulate_only"\n', "")
+    text = text.replace("report:\n  save_plots: false\n", "report: {}\n")
+    text = text.replace(
+        "settings:\n",
+        "run:\n"
+        '  mode: "jax_least_squares"\n'
+        "  optimizer:\n"
+        '    residual_function_factory: "factory:build_residual"\n'
+        "  outputs:\n"
+        "    plots: true\n"
+        "    identifiability:\n"
+        "      enabled: true\n"
+        "      weak_modes: 3\n"
+        "settings:\n",
+    )
+    path.write_text(text, encoding="utf-8")
+
+    spec = load_project_spec(path)
+
+    assert spec.fit_method == "jax_least_squares"
+    assert spec.optimizer_settings["residual_function_factory"] == "factory:build_residual"
+    assert spec.save_plots is True
+    assert spec.identifiability_options["enabled"] is True
+    assert spec.identifiability_options["weak_modes"] == 3
+
+
+def test_run_section_conflicting_legacy_mode_fails(tmp_path):
+    path = _project_yaml(tmp_path)
+    text = path.read_text(encoding="utf-8").replace(
+        "settings:\n",
+        "run:\n  mode: \"jax_gradient\"\nsettings:\n",
+    )
+    path.write_text(text, encoding="utf-8")
+
+    with pytest.raises(ProjectValidationError, match="run.mode conflicts"):
+        load_project_spec(path)
+
+
 def test_projectspec_safe_expression_functions_and_repeat_index0(tmp_path):
     extra = '''  - repeat:
       times: 2
@@ -299,6 +350,7 @@ core_levels:
     assert spec.parameters == {}
     assert spec.datasets == {}
     assert spec.report == {}
+    assert spec.run == {}
 
 
 
@@ -313,15 +365,17 @@ def test_swanx_init_generated_project_validates_and_runs_from_different_cwd(monk
     assert (project_dir / "project.yaml").exists()
     assert (project_dir / "run_project.py").exists()
     assert (project_dir / "README.md").exists()
-    assert (project_dir / "synthetic_residual_factory.py").exists()
+    assert not (project_dir / "synthetic_residual_factory.py").exists()
     assert (project_dir / "data" / "OPC" / "C.dat").exists()
     assert (project_dir / "data" / "OPC" / "LaNiO3.dat").exists()
     assert (project_dir / "data" / "IMFP" / "C.ANG").exists()
     assert (project_dir / "data" / "IMFP" / "LNO.ANG").exists()
     assert (project_dir / "data" / "curves" / "lno_sto_c_synthetic_data.csv").exists()
     starter_yaml = (project_dir / "project.yaml").read_text(encoding="utf-8")
-    assert 'fit_method: "jax_least_squares"' in starter_yaml
-    assert 'residual_function_factory: "synthetic_residual_factory:build_residual_function"' in starter_yaml
+    assert 'mode: "jax_least_squares"' in starter_yaml
+    assert 'residual: "auto_fixed_grid"' in starter_yaml
+    assert 'normalization: "edge_polynomial"' in starter_yaml
+    assert "normalization_edge_fraction: 0.10" in starter_yaml
     assert 'opc_file: "data/OPC/C.dat"' in starter_yaml
     assert 'opc_file: "data/OPC/LaNiO3.dat"' in starter_yaml
     assert 'times: 20' in starter_yaml
@@ -340,7 +394,7 @@ def test_swanx_init_generated_project_validates_and_runs_from_different_cwd(monk
     )
 
     assert "[swanx] Reading ProjectSpec:" in completed.stdout
-    assert "[swanx] Loading JAX least-squares residual factory:" in completed.stdout
+    assert "[swanx] Building ProjectSpec auto fixed-grid JAX residual" in completed.stdout
     assert "[swanx] Running jax_least_squares" in completed.stdout
     assert "[swanx] Simulating final curves" in completed.stdout
     assert "SWANX results written to:" in completed.stdout
@@ -362,8 +416,11 @@ def test_swanx_init_copy_example_data_and_data_root(tmp_path):
     assert (copied_project / "data" / "IMFP" / "LNO.ANG").exists()
     assert (copied_project / "data" / "curves" / "lno_sto_c_synthetic_data.csv").exists()
     copied_yaml = (copied_project / "project.yaml").read_text(encoding="utf-8")
-    assert (copied_project / "synthetic_residual_factory.py").exists()
-    assert 'fit_method: "jax_least_squares"' in copied_yaml
+    assert not (copied_project / "synthetic_residual_factory.py").exists()
+    assert 'mode: "jax_least_squares"' in copied_yaml
+    assert 'residual: "auto_fixed_grid"' in copied_yaml
+    assert 'normalization: "edge_polynomial"' in copied_yaml
+    assert "normalization_edge_fraction: 0.10" in copied_yaml
     assert 'opc_file: "data/OPC/C.dat"' in copied_yaml
     assert 'opc_file: "data/OPC/LaNiO3.dat"' in copied_yaml
     assert 'times: 20' in copied_yaml
@@ -571,7 +628,7 @@ def test_optimizer_factory_imports_relative_to_project_yaml(tmp_path, monkeypatc
     assert callback("ok") == {"problem": "ok"}
 
 
-def test_jax_least_squares_requires_factory_without_bo_fallback(tmp_path):
+def test_jax_least_squares_auto_residual_requires_fixed_grid(tmp_path):
     _write_curve(tmp_path / "reflectivity.csv", "reflectivity")
     datasets = '''
   reflectivity:
@@ -580,8 +637,49 @@ def test_jax_least_squares_requires_factory_without_bo_fallback(tmp_path):
 '''
     path = _project_yaml(tmp_path, datasets=datasets, fit_method="jax_least_squares")
 
-    with pytest.raises(ProjectValidationError, match="residual_function_factory.*Bayesian optimization is not used as a fallback"):
+    with pytest.raises(ProjectValidationError, match="auto_fixed_grid.*settings.slicing.mode"):
         load_project_spec(path)
+
+
+def test_jax_least_squares_auto_residual_accepts_edge_polynomial_normalization(tmp_path):
+    pytest.importorskip("jax")
+    angles = np.linspace(5.0, 7.0, 21)
+    reflectivity_rows = ["angle_deg,reflectivity"]
+    rocking_rows = ["angle_deg,intensity"]
+    for index, angle in enumerate(angles):
+        reflectivity_rows.append(f"{angle:.3f},{1.0e-3 + index * 1.0e-5:.8f}")
+        rocking_rows.append(f"{angle:.3f},{1.0 + 0.05 * np.sin(index / 3):.8f}")
+    (tmp_path / "reflectivity.csv").write_text("\n".join(reflectivity_rows) + "\n", encoding="utf-8")
+    (tmp_path / "la4d.csv").write_text("\n".join(rocking_rows) + "\n", encoding="utf-8")
+    datasets = '''
+  reflectivity:
+    path: "reflectivity.csv"
+    name: "R"
+  rocking_curves:
+    - path: "la4d.csv"
+      name: "La 4d"
+'''
+    path = _project_yaml(tmp_path, datasets=datasets, fit_method="jax_least_squares")
+    text = path.read_text(encoding="utf-8").replace(
+        '  normalization: "mean"\n',
+        '  normalization: "edge_polynomial"\n'
+        '  normalization_edge_fraction: 0.10\n'
+        '  normalization_polynomial_order: 2\n'
+        '  slicing:\n'
+        '    mode: "fixed_grid"\n'
+        '    min_slices: 2\n'
+        '    max_slice_thickness_A: 5.0\n',
+    )
+    path.write_text(text, encoding="utf-8")
+    built = build_project(load_project_spec(path))
+    assert built.fitting_problem is not None
+
+    residual = build_projectspec_jax_residual_function(built)
+    vector = [parameter.initial for parameter in built.fitting_problem.parameters]
+    values = residual(vector)
+
+    assert values.shape == (42,)
+    assert np.all(np.isfinite(values))
 
 
 def test_jax_gradient_requires_factory_without_bo_fallback(tmp_path):
@@ -772,6 +870,32 @@ def test_plots_overlay_experimental_data_when_matplotlib_exists(tmp_path):
     assert "plots/stack_schematic.png written from the final stack" in report
 
 
+def test_simulation_only_overview_colors_rocking_curves_without_data(monkeypatch, tmp_path):
+    pytest.importorskip("matplotlib")
+    import matplotlib.axes
+
+    plotted_colors = []
+    original_plot = matplotlib.axes.Axes.plot
+
+    def recording_plot(self, *args, **kwargs):
+        if kwargs.get("label") == "simulation":
+            plotted_colors.append(kwargs.get("color"))
+        return original_plot(self, *args, **kwargs)
+
+    monkeypatch.setattr(matplotlib.axes.Axes, "plot", recording_plot)
+    path = _project_yaml(
+        tmp_path,
+        output_dir=(tmp_path / "out_simulation_colors").as_posix(),
+        report="  save_plots: true\n",
+    )
+
+    output = run_project(path)
+
+    assert (output / "plots" / "simulation_overview.png").exists()
+    assert "tab:purple" in plotted_colors
+    assert "black" not in plotted_colors
+
+
 @dataclass(frozen=True)
 class _Record:
     iteration: int
@@ -885,6 +1009,44 @@ def test_method_specific_report_writers(tmp_path):
         assert (tmp_path / "plots" / "convergence.png").exists()
     assert not (bayes_dir / "covariance.csv").exists()
     assert not (bayes_dir / "correlation.csv").exists()
+
+
+def test_identifiability_report_writer_uses_run_outputs_switch(tmp_path):
+    project_dir = tmp_path / "project"
+    path = _project_yaml(project_dir, fit_method="jax_least_squares")
+    text = path.read_text(encoding="utf-8").replace(
+        "report:\n  save_plots: false\n",
+        "run:\n"
+        "  outputs:\n"
+        "    identifiability: true\n"
+        "report:\n"
+        "  save_plots: false\n",
+    )
+    path.write_text(text, encoding="utf-8")
+    built = build_project(load_project_spec(path))
+    output = tmp_path / "output"
+    (output / "fit").mkdir(parents=True)
+    (output / "fit" / "residuals.csv").write_text(
+        "dataset,angle_deg,experimental,simulated,residual\n"
+        "reflectivity,5.0,1.0,0.9,0.1\n"
+        "reflectivity,6.0,1.1,1.0,0.1\n"
+        "La 4d,5.0,1.0,1.1,-0.1\n"
+        "La 4d,6.0,1.1,1.0,0.1\n",
+        encoding="utf-8",
+    )
+
+    notes = write_identifiability_outputs(output, _Result(), built)
+
+    ident_dir = output / "identifiability_analysis"
+    assert "identifiability_analysis/summary.md written from scaled least-squares Jacobian" in notes
+    assert (ident_dir / "summary.md").exists()
+    assert (ident_dir / "parameter_identifiability.csv").exists()
+    assert (ident_dir / "dataset_sensitivity.csv").exists()
+    summary = (ident_dir / "summary.md").read_text(encoding="utf-8")
+    assert "Dataset Sensitivity Caveat" in summary
+    rows = _read_csv(ident_dir / "parameter_identifiability.csv")
+    assert rows[0][0] == "parameter"
+    assert rows[1][0] == "lno_thickness"
 
 
 def test_readme_and_project_state_docs_are_current():

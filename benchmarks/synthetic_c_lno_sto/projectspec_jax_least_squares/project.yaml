@@ -1,11 +1,26 @@
 project:
   name: "synthetic_c_lno_sto_projectspec_jax_ls"
 
+run:
+  mode: "jax_least_squares"
+  optimizer:
+    residual: "auto_fixed_grid"
+    max_nfev: 80
+    ftol: 1.0e-8
+    xtol: 1.0e-8
+    gtol: 1.0e-8
+    record_history: true
+    estimate_covariance: true
+  outputs:
+    plots: true
+    identifiability: true
+
 settings:
   photon_energy_ev: 1000.0
   polarization: "s"
-  normalization: "mean"
-  fit_method: "jax_least_squares"
+  normalization: "edge_polynomial"
+  normalization_edge_fraction: 0.10
+  normalization_polynomial_order: 2
   slicing:
     mode: "fixed_grid"
     min_slices: 3
@@ -18,19 +33,6 @@ settings:
       superlattice_roughness: 3.0
       substrate_roughness: 3.0
       angle_offset: 0.0
-  rocking_curve_offpeak_mask:
-    mode: "exclude_reflectivity_peak"
-    half_width_deg: 1.25
-  # ProjectSpec uses an explicit fixed-shape residual factory for JAX fitting.
-  # Run from this folder, or use run_project.py so this folder is on PYTHONPATH.
-  optimizer:
-    residual_function_factory: "synthetic_residual_factory:build_residual_function"
-    max_nfev: 80
-    ftol: 1.0e-8
-    xtol: 1.0e-8
-    gtol: 1.0e-8
-    record_history: true
-    estimate_covariance: true
 
 materials:
   C:
@@ -151,26 +153,21 @@ datasets:
       name: "La 4d"
       angle_column: "angle_deg"
       intensity_column: "la4d_rc"
-      normalization:
       weight: 5.0
     - path: "data/curves/lno_sto_c_synthetic_data.csv"
       name: "O 1s"
       angle_column: "angle_deg"
       intensity_column: "o1s_rc"
-      normalization:
       weight: 5.0
     - path: "data/curves/lno_sto_c_synthetic_data.csv"
       name: "Ti 2p"
       angle_column: "angle_deg"
       intensity_column: "ti2p_rc"
-      normalization:
       weight: 5.0
     - path: "data/curves/lno_sto_c_synthetic_data.csv"
       name: "C 1s"
       angle_column: "angle_deg"
       intensity_column: "c1s_rc"
-      normalization:
       weight: 5.0
 
-report:
-  save_plots: true
+report: {}

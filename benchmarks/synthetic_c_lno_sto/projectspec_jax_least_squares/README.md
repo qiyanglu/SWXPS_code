@@ -4,8 +4,8 @@ This folder runs the existing synthetic C/LaNiO3/SrTiO3 (C/LNO/STO)
 reflectivity plus SW-XPS rocking-curve benchmark through the YAML ProjectSpec
 workflow.
 
-It is intentionally a ProjectSpec YAML example rather than a no-code JAX
-residual generator:
+It is intentionally a ProjectSpec YAML example that uses the internal
+fixed-grid JAX residual builder:
 
 - `project.yaml` owns the JAX least-squares variant: materials, OPC and IMFP
   paths, stack layer IDs/tags, core-level emitting layers, datasets, and fitting
@@ -14,8 +14,8 @@ residual generator:
   simulation/report outputs without fitting.
 - `project_bo.yaml` uses the existing generic Bayesian-optimization backend as
   an optional black-box baseline.
-- `synthetic_residual_factory.py` is the explicit fixed-shape JAX residual
-  callback required by `settings.fit_method: "jax_least_squares"`.
+- `run.optimizer.residual: "auto_fixed_grid"` builds the fixed-shape residual
+  directly from the YAML stack, parameters, datasets, and slicing settings.
 - `run_project.py` is the minimal script entry point.
 - `quick_start.py` prints `swanx inspect`, validates, then runs the fit.
 
@@ -27,6 +27,8 @@ The YAML mirrors the existing synthetic case in
 - OPC files: `data/OPC/C.dat`, `data/OPC/LaNiO3.dat`, `data/OPC/SrTiO3.dat`
 - IMFP files: `data/IMFP/C.ANG`, `data/IMFP/LNO.ANG`, `data/IMFP/STO.ANG`
 - datasets: local copy of `lno_sto_c_synthetic_data.csv`
+- rocking-curve normalization: `edge_polynomial`, first/last 10 percent,
+  polynomial order 2
 - fitted parameters: carbon thickness, carbon roughness fraction, LNO/STO
   thicknesses, superlattice roughness, substrate roughness, and angle offset
 
@@ -59,9 +61,8 @@ For a more verbose first run:
 python benchmarks/synthetic_c_lno_sto/projectspec_jax_least_squares/quick_start.py
 ```
 
-The ProjectSpec runner loads callback factories relative to the `project.yaml`
-directory, so `synthetic_residual_factory:build_residual_function` works from
-both the script and CLI interfaces.
+The ProjectSpec runner builds the fixed-grid residual internally from the YAML
+stack, parameters, datasets, and slicing settings.
 
 ## Run With The CLI Interface
 
@@ -114,15 +115,8 @@ plots/parameter_uncertainty.png
 plots/parameter_correlation.png
 ```
 
-After a least-squares run, inspect parameter sensitivity and local
-identifiability with:
-
-```bash
-python benchmarks/synthetic_c_lno_sto/projectspec_jax_least_squares/analyze_lsq_identifiability.py
-```
-
-By default the analyzer reads the newest least-squares run under this folder's
-`runs/` directory and writes `identifiability_analysis/` inside that run.
+After a least-squares run, `run.outputs.identifiability: true` writes
+`identifiability_analysis/` inside the run folder.
 
 For `project_bo.yaml`, the BO-specific plot set includes:
 

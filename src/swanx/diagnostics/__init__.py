@@ -5,6 +5,12 @@ from .covariance import (
     compute_parameter_diagnostics,
     diagnostics_from_least_squares_result,
 )
+from .identifiability import (
+    IdentifiabilityAnalysis,
+    IdentifiabilityParameter,
+    IdentifiabilitySettings,
+    analyze_identifiability,
+)
 from .plots import (
     plot_correlation_matrix,
     plot_parameter_estimates,

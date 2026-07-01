@@ -52,6 +52,7 @@ class ProjectSpec:
     path: Path
     raw: dict[str, Any]
     project: dict[str, Any]
+    run: dict[str, Any]
     settings: dict[str, Any]
     materials: dict[str, Any]
     parameters: dict[str, ParameterSpec]
@@ -78,6 +79,32 @@ class ProjectSpec:
     @property
     def fit_method(self) -> str:
         return str(self.settings.get("fit_method", "simulate_only"))
+
+    @property
+    def optimizer_settings(self) -> dict[str, Any]:
+        raw = self.settings.get("optimizer", {}) or {}
+        if not isinstance(raw, Mapping):
+            raise ProjectValidationError("settings.optimizer must be a mapping")
+        return dict(raw)
+
+    @property
+    def save_plots(self) -> bool:
+        return bool(self.report.get("save_plots", False))
+
+    @property
+    def identifiability_options(self) -> dict[str, Any]:
+        raw = self.report.get("identifiability", False)
+        if raw is True:
+            return {"enabled": True}
+        if raw in (False, None):
+            return {"enabled": False}
+        if not isinstance(raw, Mapping):
+            raise ProjectValidationError(
+                "run.outputs.identifiability/report.identifiability must be a boolean or mapping"
+            )
+        options = dict(raw)
+        options.setdefault("enabled", True)
+        return options
 
     def default_parameter_values(self) -> dict[str, float]:
         return {name: parameter.value for name, parameter in self.parameters.items()}
@@ -168,8 +195,14 @@ class ProjectSpecFactory:
         raw_with_defaults.setdefault("parameters", {})
         raw_with_defaults.setdefault("datasets", {})
         raw_with_defaults.setdefault("report", {})
+        raw_with_defaults.setdefault("run", {})
         project = _as_mapping(raw_with_defaults["project"], "project")
+        run = _as_mapping(raw_with_defaults["run"], "run")
         settings = _as_mapping(raw_with_defaults["settings"], "settings")
+        report = _as_mapping(raw_with_defaults["report"], "report")
+        settings, report = _merge_run_controls(settings, report, run)
+        raw_with_defaults["settings"] = dict(settings)
+        raw_with_defaults["report"] = dict(report)
         materials = _as_mapping(raw_with_defaults["materials"], "materials")
         parameters = _parse_parameters(_as_mapping(raw_with_defaults["parameters"], "parameters"))
         stack = _expand_stack(
@@ -181,11 +214,11 @@ class ProjectSpecFactory:
             for item in _as_sequence(raw_with_defaults["core_levels"], "core_levels")
         )
         datasets = _as_mapping(raw_with_defaults["datasets"], "datasets")
-        report = _as_mapping(raw_with_defaults["report"], "report")
         spec = ProjectSpec(
             path=self.path,
             raw=raw_with_defaults,
             project=dict(project),
+            run=dict(run),
             settings=dict(settings),
             materials=dict(materials),
             parameters=parameters,
@@ -200,6 +233,96 @@ class ProjectSpecFactory:
         _validate_datasets(spec)
         spec.layer_specs_for_values(spec.default_parameter_values())
         return spec
+
+
+def _merge_run_controls(
+    settings: Mapping[str, Any],
+    report: Mapping[str, Any],
+    run: Mapping[str, Any],
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    effective_settings = dict(settings)
+    effective_report = dict(report)
+
+    if "mode" in run:
+        run_mode = str(run["mode"])
+        if "fit_method" in settings and str(settings["fit_method"]) != run_mode:
+            raise ProjectValidationError(
+                "run.mode conflicts with settings.fit_method; use one value"
+            )
+        effective_settings["fit_method"] = run_mode
+
+    if "optimizer" in run:
+        run_optimizer = _as_mapping(run["optimizer"], "run.optimizer")
+        legacy_optimizer = settings.get("optimizer", {}) or {}
+        legacy_optimizer = _as_mapping(legacy_optimizer, "settings.optimizer")
+        effective_settings["optimizer"] = _merge_mappings_no_conflict(
+            legacy_optimizer,
+            run_optimizer,
+            "settings.optimizer",
+            "run.optimizer",
+        )
+
+    if "outputs" in run:
+        outputs = _as_mapping(run["outputs"], "run.outputs")
+        if "plots" in outputs:
+            run_plots = bool(outputs["plots"])
+            if "save_plots" in report and bool(report["save_plots"]) != run_plots:
+                raise ProjectValidationError(
+                    "run.outputs.plots conflicts with report.save_plots; use one value"
+                )
+            effective_report["save_plots"] = run_plots
+        if "identifiability" in outputs:
+            run_identifiability = outputs["identifiability"]
+            if "identifiability" in report:
+                effective_report["identifiability"] = _merge_identifiability_options(
+                    report["identifiability"],
+                    run_identifiability,
+                )
+            else:
+                effective_report["identifiability"] = run_identifiability
+
+    return effective_settings, effective_report
+
+
+def _merge_mappings_no_conflict(
+    legacy: Mapping[str, Any],
+    modern: Mapping[str, Any],
+    legacy_label: str,
+    modern_label: str,
+) -> dict[str, Any]:
+    result = dict(legacy)
+    for key, value in modern.items():
+        if key in result and result[key] != value:
+            raise ProjectValidationError(
+                f"{modern_label}.{key} conflicts with {legacy_label}.{key}; use one value"
+            )
+        result[key] = value
+    return result
+
+
+def _merge_identifiability_options(legacy: Any, modern: Any) -> Any:
+    if _identifiability_enabled(legacy) != _identifiability_enabled(modern):
+        raise ProjectValidationError(
+            "run.outputs.identifiability conflicts with report.identifiability; use one value"
+        )
+    if isinstance(legacy, Mapping) and isinstance(modern, Mapping):
+        return _merge_mappings_no_conflict(
+            legacy,
+            modern,
+            "report.identifiability",
+            "run.outputs.identifiability",
+        )
+    if isinstance(modern, Mapping):
+        return dict(modern)
+    if isinstance(legacy, Mapping):
+        return dict(legacy)
+    return bool(modern)
+
+
+def _identifiability_enabled(raw: Any) -> bool:
+    if isinstance(raw, Mapping):
+        return bool(raw.get("enabled", True))
+    return bool(raw)
 
 
 def _require_sections(raw: Mapping[str, Any], sections: Sequence[str]) -> None:
@@ -365,32 +488,59 @@ def _validate_settings(spec: ProjectSpec) -> None:
     }
     if method not in allowed_methods:
         raise ProjectValidationError(
-            f"settings.fit_method must be one of {sorted(allowed_methods)}"
+            f"run.mode/settings.fit_method must be one of {sorted(allowed_methods)}"
         )
     polarization = spec.settings.get("polarization", "s")
     if polarization not in {"s", "p", "unpolarized"}:
         raise ProjectValidationError("settings.polarization must be 's', 'p', or 'unpolarized'")
     _validate_slicing_setting(spec)
     _validate_offpeak_mask_setting(spec)
-    optimizer = spec.settings.get("optimizer", {}) or {}
+    spec.identifiability_options
+    optimizer = spec.optimizer_settings
     has_datasets = bool(spec.datasets.get("reflectivity") or spec.datasets.get("rocking_curves"))
-    if method == "jax_least_squares" and has_datasets and not optimizer.get("residual_function_factory"):
-        raise ProjectValidationError(
-            "settings.fit_method='jax_least_squares' requires "
-            "settings.optimizer.residual_function_factory='module:function' for the "
-            "fixed-shape JAX residual. Install with python -m pip install -e "
-            "\".[project,least-squares]\" and provide a factory, or use "
-            "fit_method: \"simulate_only\" for simulation-only "
-            "projects. Bayesian optimization is not used as a fallback."
-        )
+    if method == "jax_least_squares":
+        _validate_jax_least_squares_optimizer(spec, optimizer, has_datasets)
     if method == "jax_gradient" and has_datasets and not optimizer.get("value_and_grad_factory"):
         raise ProjectValidationError(
-            "settings.fit_method='jax_gradient' requires "
-            "settings.optimizer.value_and_grad_factory='module:function' for the "
+            "run.mode='jax_gradient' requires "
+            "run.optimizer.value_and_grad_factory='module:function' for the "
             "fixed-shape JAX value-and-gradient callback. Install with python -m pip install -e "
             "\".[project,gradient]\" and provide a factory, or use "
-            "fit_method: \"simulate_only\" for simulation-only "
+            "run.mode: \"simulate_only\" for simulation-only "
             "projects. Bayesian optimization is not used as a fallback."
+        )
+
+
+def _validate_jax_least_squares_optimizer(
+    spec: ProjectSpec,
+    optimizer: Mapping[str, Any],
+    has_datasets: bool,
+) -> None:
+    residual = str(optimizer.get("residual", "auto_fixed_grid"))
+    factory = optimizer.get("residual_function_factory")
+    if factory and "residual" in optimizer:
+        raise ProjectValidationError(
+            "run.optimizer.residual_function_factory conflicts with "
+            "run.optimizer.residual; use one residual source"
+        )
+    if residual not in {"auto", "auto_fixed_grid"}:
+        raise ProjectValidationError(
+            "run.optimizer.residual must be 'auto_fixed_grid' or use "
+            "run.optimizer.residual_function_factory='module:function'"
+        )
+    if not has_datasets:
+        return
+    if factory:
+        return
+    raw_slicing = spec.settings.get("slicing")
+    fixed_grid = isinstance(raw_slicing, Mapping) and str(raw_slicing.get("mode", "adaptive")) in {
+        "fixed",
+        "fixed_grid",
+    }
+    if not fixed_grid:
+        raise ProjectValidationError(
+            "run.optimizer.residual='auto_fixed_grid' requires "
+            "settings.slicing.mode: 'fixed_grid'"
         )
 
 def _validate_slicing_setting(spec: ProjectSpec) -> None:

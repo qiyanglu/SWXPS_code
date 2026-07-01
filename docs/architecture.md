@@ -4,7 +4,7 @@ SWANX means **S**tanding-**W**ave **A**nalysis for **N**anoscale **X**-ray spect
 
 ## Public API
 
-Beginner users who want a whole project run should start with `swanx init my_project` and `python my_project/run_project.py`; default init projects copy packaged tutorial data, include a project-local JAX residual factory for the synthetic C/LaNiO3/SrTiO3 starter fit, and are runnable from any process current working directory. Advanced project scripts can call `swanx.project.run_project("project.yaml")`. Users writing custom simulation scripts should use `import swanx as sx` for the compact top-level simulation API. Focused subpackages support explicit IO, fitting, diagnostics, and internal development.
+Beginner users who want a whole project run should start with `swanx init my_project` and `python my_project/run_project.py`; default init projects copy packaged tutorial data, use the internal fixed-grid JAX residual for the synthetic C/LaNiO3/SrTiO3 starter fit, and are runnable from any process current working directory. Advanced project scripts can call `swanx.project.run_project("project.yaml")`. Users writing custom simulation scripts should use `import swanx as sx` for the compact top-level simulation API. Focused subpackages support explicit IO, fitting, diagnostics, and internal development.
 
 ## Maintained namespaces
 
@@ -31,9 +31,7 @@ internal code should use the maintained subpackages instead:
 ## IO boundary
 
 Starter inputs live under `data/OPC/`, `data/IMFP/`, and `data/curves/` for
-`swanx init`. The packaged init starter also uses
-`swanx.project.synthetic_lno_sto_jax` through a generated local callback module.
-Maintained examples use those OPC/IMFP tables plus the synthetic
+`swanx init`. Maintained examples use those OPC/IMFP tables plus the synthetic
 C/LaNiO3/SrTiO3 (C/LNO/STO) benchmark CSV when they need reflectivity and
 rocking-curve data. The numbered examples collectively cover the init tutorial
 scope, including a runnable ProjectSpec JAX least-squares fit in
@@ -51,8 +49,10 @@ The YAML ProjectSpec workflow is the main human-editable wrapper over the same I
 Rocking-curve normalization algorithms live in `swanx.preprocessing`.
 `swanx.io.read_rocking_curve_data(...)` may call those algorithms when a
 normalization mode is requested, but preprocessing functions are not exported
-from `swanx.io`. ProjectSpec applies a configured off-peak mask consistently
-when normalizing experimental rocking-curve datasets and simulated curves.
+from `swanx.io`. ProjectSpec applies the configured rocking-curve
+normalization consistently to experimental datasets, simulation-only curves,
+and fitted curves. The maintained default is edge-polynomial normalization
+using the first and last 10 percent of each rocking curve.
 
 ## Core physics
 
@@ -70,4 +70,4 @@ The core uses grazing angles in degrees, photon energy in eV, lengths in Angstro
 
 ## Fitting
 
-Unified slicing is the default for high-level simulation and fitting. `slicing=None` explicitly selects the legacy fixed-step path. `simulate_only` is fully supported by the YAML ProjectSpec workflow and uses simulation-specific plot filenames. JAX-based least-squares/autodiff is the recommended fitting path for differentiable fixed-shape workflows, with explicit factory callbacks still required by YAML projects; Bayesian optimization remains available as an optional global black-box baseline/robustness check, not the default.
+Unified slicing is the default for high-level simulation and fitting. `slicing=None` explicitly selects the legacy fixed-step path. `simulate_only` is fully supported by the YAML ProjectSpec workflow and uses simulation-specific plot filenames. JAX-based least-squares/autodiff is the recommended fitting path for differentiable fixed-shape workflows; ProjectSpec can build fixed-grid JAX least-squares residuals directly from YAML, while explicit factory callbacks remain available for custom residuals. Bayesian optimization remains available as an optional global black-box baseline/robustness check, not the default.

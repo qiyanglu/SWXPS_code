@@ -1,10 +1,23 @@
 project:
   name: "synthetic_c_lno_sto_projectspec_bo"
 
+run:
+  mode: "bayesian_optimization"
+  optimizer:
+    n_calls: 100
+    n_initial_points: 30
+    acquisition_function: "EI"
+    random_state: 7
+    show_progress: false
+  outputs:
+    plots: true
+
 settings:
   photon_energy_ev: 1000.0
   polarization: "s"
-  normalization: "mean"
+  normalization: "edge_polynomial"
+  normalization_edge_fraction: 0.10
+  normalization_polynomial_order: 2
   slicing:
     mode: "fixed_grid"
     min_slices: 3
@@ -17,16 +30,6 @@ settings:
       superlattice_roughness: 3.0
       substrate_roughness: 3.0
       angle_offset: 0.0
-  rocking_curve_offpeak_mask:
-    mode: "exclude_reflectivity_peak"
-    half_width_deg: 1.25
-  fit_method: "bayesian_optimization"
-  optimizer:
-    n_calls: 100
-    n_initial_points: 30
-    acquisition_function: "EI"
-    random_state: 7
-    show_progress: false
 
 materials:
   C:
@@ -147,26 +150,21 @@ datasets:
       name: "La 4d"
       angle_column: "angle_deg"
       intensity_column: "la4d_rc"
-      normalization:
       weight: 5.0
     - path: "data/curves/lno_sto_c_synthetic_data.csv"
       name: "O 1s"
       angle_column: "angle_deg"
       intensity_column: "o1s_rc"
-      normalization:
       weight: 5.0
     - path: "data/curves/lno_sto_c_synthetic_data.csv"
       name: "Ti 2p"
       angle_column: "angle_deg"
       intensity_column: "ti2p_rc"
-      normalization:
       weight: 5.0
     - path: "data/curves/lno_sto_c_synthetic_data.csv"
       name: "C 1s"
       angle_column: "angle_deg"
       intensity_column: "c1s_rc"
-      normalization:
       weight: 5.0
 
-report:
-  save_plots: true
+report: {}

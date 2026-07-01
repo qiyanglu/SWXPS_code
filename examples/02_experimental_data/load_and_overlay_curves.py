@@ -33,7 +33,9 @@ def main() -> None:
             name=name,
             angle_column="angle_deg",
             intensity_column=column,
-            normalization_mode="mean",
+            normalization_mode="edge_polynomial",
+            edge_fraction=0.10,
+            polynomial_order=2,
         )
         for name, column in RC_COLUMN_BY_NAME.items()
     ]
@@ -46,7 +48,7 @@ def main() -> None:
     print(f"reflectivity shape: {reflectivity.angles.shape}")
     print(f"first reflectivity point: {reflectivity.angles[0]:.3f} deg, {reflectivity.reflectivity[0]:.3g}")
     for curve in rocking_curves:
-        print(f"{curve.name}: {curve.angles.size} points, mean-normalized mean {curve.intensity.mean():.3f}")
+        print(f"{curve.name}: {curve.angles.size} points, edge-normalized mean {curve.intensity.mean():.3f}")
     print(
         "FittingProblem datasets: "
         f"reflectivity={problem.reflectivity.name}, "

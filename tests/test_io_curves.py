@@ -158,6 +158,28 @@ def test_mean_normalization_reuses_preprocessing_behavior(tmp_path):
     np.testing.assert_allclose(data.intensity, expected)
 
 
+def test_edge_polynomial_normalization_uses_ten_percent_default(tmp_path):
+    angles = np.linspace(0.0, 19.0, 20)
+    background = 2.0 + 0.1 * angles + 0.02 * angles**2
+    values = background * (1.0 + 0.2 * np.exp(-((angles - 9.5) / 0.7) ** 2))
+    path = tmp_path / "raw.csv"
+    rows = ["angle_deg,intensity"] + [
+        f"{angle},{value}" for angle, value in zip(angles, values)
+    ]
+    path.write_text("\n".join(rows), encoding="utf-8")
+
+    data = read_rocking_curve_data(path, normalization_mode="edge_polynomial")
+    expected, _ = normalize_rocking_curve(
+        angles,
+        values,
+        mode="edge_polynomial",
+        edge_fraction=0.10,
+        polynomial_order=2,
+    )
+
+    np.testing.assert_allclose(data.intensity, expected)
+
+
 def test_io_namespace_does_not_export_preprocessing_functions():
     import swanx.io as sxio
 

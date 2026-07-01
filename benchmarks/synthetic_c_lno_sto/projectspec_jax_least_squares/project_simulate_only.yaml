@@ -1,10 +1,17 @@
 project:
   name: "synthetic_c_lno_sto_projectspec_simulate_only"
 
+run:
+  mode: "simulate_only"
+  outputs:
+    plots: true
+
 settings:
   photon_energy_ev: 1000.0
   polarization: "s"
-  normalization: "mean"
+  normalization: "edge_polynomial"
+  normalization_edge_fraction: 0.10
+  normalization_polynomial_order: 2
   slicing:
     mode: "fixed_grid"
     min_slices: 3
@@ -20,7 +27,6 @@ settings:
   angle_start_deg: 6.915650706368666
   angle_stop_deg: 10.915650706368666
   angle_count: 161
-  fit_method: "simulate_only"
 
 materials:
   C:
@@ -115,5 +121,4 @@ core_levels:
     emission_angle_deg: 0.0
 
 
-report:
-  save_plots: true
+report: {}

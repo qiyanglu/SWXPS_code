@@ -58,7 +58,18 @@ BAD_START = {
 class UnifiedSyntheticJaxModel:
     """Fully JAX-traceable fixed-grid model for the synthetic benchmark."""
 
-    def __init__(self, angles, offpeak_mask, core_levels, plan, nominal_stack):
+    def __init__(
+        self,
+        angles,
+        offpeak_mask,
+        core_levels,
+        plan,
+        nominal_stack,
+        *,
+        normalization_mode=case.RC_NORMALIZATION,
+        normalization_edge_fraction=case.RC_EDGE_FRACTION,
+        normalization_polynomial_order=case.RC_POLYNOMIAL_ORDER,
+    ):
         import jax
         import jax.numpy as jnp
 
@@ -67,6 +78,7 @@ class UnifiedSyntheticJaxModel:
         self.jnp = jnp
         self.angles = jnp.asarray(angles, dtype=jnp.float64)
         self.offpeak_mask = jnp.asarray(offpeak_mask, dtype=bool)
+        self.normalization_mode = str(normalization_mode)
         self.parameter_index = {
             parameter.name: index for index, parameter in enumerate(case.PARAMETERS)
         }
@@ -90,6 +102,20 @@ class UnifiedSyntheticJaxModel:
         self.core_inputs = tuple(
             self._core_inputs(core, nominal_stack.materials) for core in core_levels
         )
+        if self.normalization_mode == "edge_polynomial":
+            (
+                self.edge_indices,
+                self.edge_design_pinv,
+                self.full_design,
+            ) = self._edge_polynomial_matrices(
+                np.asarray(angles, dtype=float),
+                normalization_edge_fraction,
+                normalization_polynomial_order,
+            )
+        else:
+            self.edge_indices = jnp.asarray((), dtype=jnp.int32)
+            self.edge_design_pinv = jnp.zeros((0, 0), dtype=jnp.float64)
+            self.full_design = jnp.zeros((0, 0), dtype=jnp.float64)
 
     def _core_inputs(self, core, materials):
         concentration = np.asarray(
@@ -280,10 +306,45 @@ class UnifiedSyntheticJaxModel:
         optical_depth = jnp.cumsum(cell_optical_depth) - 0.5 * cell_optical_depth
         weights = concentration * jnp.exp(-optical_depth) * widths
         raw = jnp.sum(field_intensity * weights[:, None], axis=0)
-        normalization = jnp.sum(jnp.where(self.offpeak_mask, raw, 0.0)) / jnp.sum(
-            self.offpeak_mask
+        if self.normalization_mode == "mean":
+            normalization = jnp.sum(jnp.where(self.offpeak_mask, raw, 0.0)) / jnp.sum(
+                self.offpeak_mask
+            )
+            return raw / normalization
+        if self.normalization_mode == "edge_polynomial":
+            edge_values = raw[self.edge_indices]
+            coefficients = self.edge_design_pinv @ edge_values
+            background = self.full_design @ coefficients
+            return raw / background
+        raise ValueError("normalization_mode must be 'mean' or 'edge_polynomial'")
+
+    def _edge_polynomial_matrices(self, angles, edge_fraction, polynomial_order):
+        order = int(polynomial_order)
+        if order < 0:
+            raise ValueError("normalization_polynomial_order must be non-negative")
+        fraction = float(edge_fraction)
+        if fraction > 1.0:
+            fraction /= 100.0
+        if not 0.0 < fraction <= 0.5:
+            raise ValueError(
+                "normalization_edge_fraction must select between 0 and 50 percent per edge"
+            )
+        edge_count = max(1, int(np.ceil(fraction * angles.size)))
+        if 2 * edge_count > angles.size:
+            raise ValueError("normalization_edge_fraction selects more than the full curve")
+        edge_mask = np.zeros(angles.size, dtype=bool)
+        edge_mask[:edge_count] = True
+        edge_mask[-edge_count:] = True
+        if np.count_nonzero(edge_mask) <= order:
+            raise ValueError("not enough edge points for normalization_polynomial_order")
+        edge_angles = angles[edge_mask]
+        edge_design = np.vander(edge_angles, N=order + 1, increasing=False)
+        full_design = np.vander(angles, N=order + 1, increasing=False)
+        return (
+            self.jnp.asarray(np.flatnonzero(edge_mask), dtype=self.jnp.int32),
+            self.jnp.asarray(np.linalg.pinv(edge_design), dtype=self.jnp.float64),
+            self.jnp.asarray(full_design, dtype=self.jnp.float64),
         )
-        return raw / normalization
 
 
 def capacity_values() -> dict[str, float]:

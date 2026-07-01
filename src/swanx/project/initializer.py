@@ -22,11 +22,6 @@ output = run_project(Path(__file__).with_name("project.yaml"), progress=True)
 print(f"SWANX results written to: {output}")
 '''
 
-SYNTHETIC_RESIDUAL_FACTORY_TEXT = '''"""Project-local JAX residual factory for the packaged SWANX starter fit."""
-
-from swanx.project.synthetic_lno_sto_jax import build_residual_function
-'''
-
 _REQUIRED_EXAMPLE_FILES = (
     ("OPC", "C.dat"),
     ("OPC", "LaNiO3.dat"),
@@ -76,11 +71,6 @@ def init_project(
         encoding="utf-8",
     )
     (project_dir / "run_project.py").write_text(RUN_PROJECT_TEXT, encoding="utf-8")
-    if _template_uses_jax_fit(template):
-        (project_dir / "synthetic_residual_factory.py").write_text(
-            SYNTHETIC_RESIDUAL_FACTORY_TEXT,
-            encoding="utf-8",
-        )
     (project_dir / "README.md").write_text(
         _readme(
             project_name,
@@ -93,10 +83,6 @@ def init_project(
     )
     load_project_spec(project_dir / "project.yaml")
     return project_dir
-
-
-def _template_uses_jax_fit(template: str) -> bool:
-    return template in {"minimal", "fit-demo"}
 
 
 def _source_data_root(data_root: str | Path | None) -> Path | Traversable:
@@ -171,9 +157,9 @@ def _dataset_comments(project_dir: Path, data_root: Path, *, has_curves: bool) -
     data = _data_file(project_dir, data_root, "curves", "lno_sto_c_synthetic_data.csv")
     return f'''
 # Example synthetic datasets are available in the starter data.
-# Uncomment this block and keep fit_method as "simulate_only" to compare
-# simulated curves with data, or provide a fitting callback before switching
-# to "jax_least_squares".
+# Uncomment this block and keep run.mode as "simulate_only" to compare
+# simulated curves with data, or switch run.mode to "jax_least_squares"
+# with run.optimizer.residual: "auto_fixed_grid" for a fixed-shape fit.
 # datasets:
 #   reflectivity:
 #     path: "{data}"
@@ -375,22 +361,27 @@ def _base_simulation_yaml(project_name: str, paths: dict[str, str], dataset_comm
     return f'''project:
   name: "{project_name}"
 
+run:
+  mode: "simulate_only"
+  outputs:
+    plots: true
+
 settings:
   photon_energy_ev: 1000.0
   angle_start_deg: 6.9
   angle_stop_deg: 10.9
   angle_count: 161
   polarization: "s"
-  normalization: "mean"
-  fit_method: "simulate_only"
+  normalization: "edge_polynomial"
+  normalization_edge_fraction: 0.10
+  normalization_polynomial_order: 2
 
 {_materials_yaml(paths)}
 {_synthetic_parameters_yaml(fit_ready=fit_ready)}
 {_synthetic_stack_and_core_levels_yaml(fit_ready=fit_ready)}
 datasets: {{}}
 {dataset_comments}
-report:
-  save_plots: true
+report: {{}}
 '''
 
 
@@ -412,17 +403,28 @@ def _fit_demo_yaml_from_paths(project_name: str, paths: dict[str, str], data: st
     return f'''project:
   name: "{project_name}"
 
+run:
+  mode: "jax_least_squares"
+  optimizer:
+    residual: "auto_fixed_grid"
+    max_nfev: 40
+    ftol: 1.0e-9
+    xtol: 1.0e-9
+    gtol: 1.0e-8
+    estimate_covariance: true
+  outputs:
+    plots: true
+    identifiability: true
+
 settings:
   photon_energy_ev: 1000.0
   angle_start_deg: 6.9
   angle_stop_deg: 10.9
   angle_count: 161
   polarization: "s"
-  normalization: "mean"
-  fit_method: "jax_least_squares"
-  rocking_curve_offpeak_mask:
-    mode: "exclude_reflectivity_peak"
-    half_width_deg: 1.25
+  normalization: "edge_polynomial"
+  normalization_edge_fraction: 0.10
+  normalization_polynomial_order: 2
   slicing:
     mode: "fixed_grid"
     min_slices: 10
@@ -431,13 +433,6 @@ settings:
       carbon_thickness: 16.0
       lno_thickness: 22.0
       sto_thickness: 22.0
-  optimizer:
-    residual_function_factory: "synthetic_residual_factory:build_residual_function"
-    max_nfev: 40
-    ftol: 1.0e-9
-    xtol: 1.0e-9
-    gtol: 1.0e-8
-    estimate_covariance: true
   # Bayesian optimization is available as an optional global black-box baseline,
   # but it is not the default or a fallback.
 
@@ -457,29 +452,24 @@ datasets:
       name: "La 4d"
       angle_column: "angle_deg"
       intensity_column: "la4d_rc"
-      normalization: "mean"
       weight: 5.0
     - path: "{data}"
       name: "O 1s"
       angle_column: "angle_deg"
       intensity_column: "o1s_rc"
-      normalization: "mean"
       weight: 5.0
     - path: "{data}"
       name: "Ti 2p"
       angle_column: "angle_deg"
       intensity_column: "ti2p_rc"
-      normalization: "mean"
       weight: 5.0
     - path: "{data}"
       name: "C 1s"
       angle_column: "angle_deg"
       intensity_column: "c1s_rc"
-      normalization: "mean"
       weight: 5.0
 
-report:
-  save_plots: true
+report: {{}}
 '''
 
 
@@ -517,9 +507,9 @@ Template: `{template}`
 The sample stack is a carbon cap on a LaNiO3/SrTiO3 superlattice on a SrTiO3
 substrate. In `project.yaml`, `LNO` means LaNiO3 and `STO` means SrTiO3.
 The default project fits the packaged synthetic reflectivity and SW-XPS
-rocking curves with JAX least-squares. The local
-`synthetic_residual_factory.py` file connects ProjectSpec to the fixed-shape
-JAX residual helper included with SWANX.
+rocking curves with JAX least-squares. The fixed-grid JAX residual is built
+directly from the stack, parameters, datasets, and slicing settings in
+`project.yaml`.
 
 Optional automation commands:
 
@@ -538,6 +528,6 @@ Notes:
   repeat coordinates.
 - JAX least-squares is the active fitting path in this starter project.
 - Bayesian optimization is available as an optional global black-box baseline.
-- ProjectSpec JAX fitting uses explicit factory callbacks; this starter already
-  includes one.
+- Advanced ProjectSpec JAX fitting can still use explicit factory callbacks for
+  custom residuals.
 '''

@@ -17,6 +17,7 @@ if str(SRC_DIR) not in sys.path:
 
 from examples.synthetic_case import (  # noqa: E402
     PHOTON_ENERGY_EV,
+    RC_EDGE_FRACTION,
     RC_COLUMN_BY_NAME,
     angles,
     bragg_angle_deg,
@@ -37,7 +38,10 @@ def main() -> None:
     _, reflectivity, rc_result = simulate_case(angle_grid=scan_angles)
     bragg_angle = bragg_angle_deg()
     peak_angle = scan_angles[np.argmax(reflectivity.reflectivity)]
-    offpeak_mask = np.abs(scan_angles - peak_angle) > 1.25
+    edge_count = max(1, int(np.ceil(RC_EDGE_FRACTION * scan_angles.size)))
+    edge_mask = np.zeros(scan_angles.shape, dtype=bool)
+    edge_mask[:edge_count] = True
+    edge_mask[-edge_count:] = True
 
     fig, axes = plt.subplots(
         1 + len(RC_COLUMN_BY_NAME),
@@ -65,8 +69,8 @@ def main() -> None:
             label=f"{core.name}, KE={core.kinetic_energy_ev:.0f} eV",
         )
         ax.scatter(
-            curve.angle[offpeak_mask],
-            curve.intensity[offpeak_mask],
+            curve.angle[edge_mask],
+            curve.intensity[edge_mask],
             color="tab:gray",
             s=10,
             alpha=0.45,

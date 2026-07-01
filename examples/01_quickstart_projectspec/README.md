@@ -10,6 +10,10 @@ Data-overlay and fitting examples read the benchmark CSV with reflectivity plus
 La 4d, O 1s, Ti 2p, and C 1s rocking curves, so the beginner YAML workflow
 matches the Python examples and benchmark scripts.
 
+The ProjectSpec YAML examples use the maintained rocking-curve default:
+`settings.normalization: "edge_polynomial"` with the first and last 10 percent
+of each RC used for a second-order background fit.
+
 ## Files
 
 - `minimal_simulate_only.yaml`: C-capped 20-repeat LNO/STO superlattice,
@@ -19,14 +23,13 @@ matches the Python examples and benchmark scripts.
   zero-based repeat coordinate is clearer.
 - `compare_with_data.yaml`: simulation-only project that overlays the synthetic
   reflectivity and four rocking-curve datasets and writes residuals.
-- `fit_jax_least_squares_placeholder.yaml`: shows the ProjectSpec settings for
-  a custom JAX least-squares fit. It validates, but it is not runnable until
-  you provide `fit_factory.py` with `build_residual` next to the YAML file.
+- `fit_jax_least_squares_placeholder.yaml`: runnable ProjectSpec settings for
+  a fixed-grid JAX least-squares fit using `residual: "auto_fixed_grid"`.
 - `bo_optional_baseline.yaml`: small Bayesian-optimization baseline config. BO
   is optional, not the recommended default and not a fallback.
 
-For a runnable ProjectSpec fitting tutorial with an explicit residual factory,
-see `../04_fitting/projectspec_jax_least_squares/`.
+For a fuller runnable ProjectSpec fitting tutorial, see
+`../04_fitting/projectspec_jax_least_squares/`.
 
 ## Useful Commands
 

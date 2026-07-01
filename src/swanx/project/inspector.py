@@ -23,6 +23,8 @@ def inspect_project(path: str | Path) -> str:
 
     _section(lines, "Output")
     lines.append(f"default_output_dir: {_output_dir_preview(spec)}")
+    lines.append(f"plots: {spec.save_plots}")
+    lines.append(f"identifiability: {spec.identifiability_options.get('enabled', False)}")
 
     _section(lines, "Materials")
     for name, fields in spec.materials.items():
@@ -119,10 +121,12 @@ def _selector_text(emit_from: dict[str, Any]) -> str:
 
 
 def _callback_status(spec: ProjectSpec) -> list[str]:
-    optimizer = spec.settings.get("optimizer", {}) or {}
+    optimizer = spec.optimizer_settings
     if spec.fit_method == "jax_least_squares":
         factory = optimizer.get("residual_function_factory")
-        return [f"residual_function_factory: {factory if factory else 'missing'}"]
+        if factory:
+            return [f"residual_function_factory: {factory}"]
+        return [f"residual: {optimizer.get('residual', 'auto_fixed_grid')}"]
     if spec.fit_method == "jax_gradient":
         factory = optimizer.get("value_and_grad_factory")
         return [f"value_and_grad_factory: {factory if factory else 'missing'}"]

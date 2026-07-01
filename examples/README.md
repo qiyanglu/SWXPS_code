@@ -13,10 +13,14 @@ The four numbered example folders collectively cover the same scope as the
 default `swanx init` tutorial while keeping each folder focused on one user
 task.
 
+ProjectSpec examples use the maintained rocking-curve default:
+edge-polynomial normalization with the first and last 10 percent of each curve
+and polynomial order 2.
+
 ## Recommended Path
 
 1. `01_quickstart_projectspec/`: copy-pasteable ProjectSpec YAML files for
-   simulation, data overlays, repeats, and optional fitting settings.
+   simulation, data overlays, repeats, and a runnable fixed-grid fitting setup.
 2. `02_experimental_data/`: a small Python example that loads the synthetic
    benchmark CSV as data and evaluates the matching overlay.
 3. `03_python_api/`: compact Python API examples for users who need scripting

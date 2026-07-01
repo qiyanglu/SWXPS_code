@@ -1,14 +1,26 @@
 # ProjectSpec YAML Reference
 
-This reference describes the human-editable SWANX `project.yaml` format. A
-ProjectSpec is a plain YAML file that resolves materials, stack layers, core
-levels, datasets, and report settings before calling existing SWANX IO,
-simulation, and fitting APIs.
+This reference describes the human-editable SWANX `project.yaml` format.
+ProjectSpec YAML resolves file paths, material tables, stack layers, core-level
+selectors, datasets, fitting parameters, run controls, and report options before
+calling the maintained SWANX simulation, fitting, and reporting APIs.
+
+For a runnable full fitting example, see
+`examples/04_fitting/projectspec_jax_least_squares`.
+
+Useful commands while editing a ProjectSpec:
+
+```bash
+swanx inspect project.yaml
+swanx validate project.yaml
+swanx run project.yaml
+```
 
 ## Top-Level Structure
 
 ```yaml
 project:
+run:
 settings:
 materials:
 parameters:
@@ -18,9 +30,57 @@ datasets:
 report:
 ```
 
-Required sections are `project`, `settings`, `materials`, `stack`, and
-`core_levels`. The `parameters`, `datasets`, and `report` sections may be empty
-mappings.
+Required sections:
+
+- `project`
+- `settings`
+- `materials`
+- `stack`
+- `core_levels`
+
+Optional sections that default to empty mappings:
+
+- `run`
+- `parameters`
+- `datasets`
+- `report`
+
+The preferred modern control surface is `run:`. Older fields
+`settings.fit_method`, `settings.optimizer`, `report.save_plots`, and
+`report.identifiability` are still accepted when they do not conflict with
+`run:`.
+
+## Minimal Skeleton
+
+```yaml
+project:
+  name: "my_project"
+
+run:
+  mode: "simulate_only"
+  outputs:
+    plots: true
+
+settings:
+  photon_energy_ev: 1000.0
+  angle_start_deg: 6.9
+  angle_stop_deg: 10.9
+  angle_count: 161
+  polarization: "s"
+  normalization: "edge_polynomial"
+  normalization_edge_fraction: 0.10
+  normalization_polynomial_order: 2
+
+materials: {}
+parameters: {}
+stack: []
+core_levels: []
+datasets: {}
+report: {}
+```
+
+`report: {}` and `datasets: {}` mean "this section is intentionally empty."
+They do not enable any output or data behavior by themselves.
 
 ## `project`
 
@@ -30,18 +90,91 @@ project:
   output_dir: "optional_relative_or_absolute_path"
 ```
 
-- `name` is used in the default output folder name.
+Fields:
+
+- `name`: used in the default output folder name and report title.
+- `output_dir`: optional output folder.
+
+Path behavior:
+
 - Relative `output_dir` values are resolved relative to `project.yaml`.
 - Absolute `output_dir` values are respected.
-- If `output_dir` is absent, SWANX writes to:
+- If `output_dir` is absent, output goes to:
 
 ```text
 project_yaml_dir/runs/<project_name>_<timestamp>/
 ```
 
+## `run`
+
+`run:` is the preferred section for execution mode, optimizer settings, and
+optional run outputs.
+
+Simulation only:
+
+```yaml
+run:
+  mode: "simulate_only"
+  outputs:
+    plots: true
+```
+
+Auto fixed-grid JAX least-squares:
+
+```yaml
+run:
+  mode: "jax_least_squares"
+  optimizer:
+    residual: "auto_fixed_grid"
+    max_nfev: 80
+    ftol: 1.0e-8
+    xtol: 1.0e-8
+    gtol: 1.0e-8
+    record_history: true
+    estimate_covariance: true
+  outputs:
+    plots: true
+    identifiability: true
+```
+
+Bayesian optimization:
+
+```yaml
+run:
+  mode: "bayesian_optimization"
+  optimizer:
+    n_calls: 100
+    n_initial_points: 30
+    acquisition_function: "EI"
+    random_state: 7
+    show_progress: false
+  outputs:
+    plots: true
+```
+
+Fields:
+
+- `mode`: one of `"simulate_only"`, `"jax_least_squares"`,
+  `"jax_gradient"`, or `"bayesian_optimization"`.
+- `optimizer`: method-specific settings.
+- `outputs.plots`: write plots when matplotlib is available.
+- `outputs.identifiability`: boolean or mapping. When enabled for
+  `jax_least_squares`, SWANX writes `identifiability_analysis/`.
+
+Conflict rules:
+
+- `run.mode` conflicts with `settings.fit_method` if both are set differently.
+- `run.optimizer.*` conflicts with `settings.optimizer.*` if the same key has a
+  different value.
+- `run.outputs.plots` conflicts with `report.save_plots` if the values differ.
+- `run.outputs.identifiability` conflicts with `report.identifiability` if the
+  enabled/disabled choice differs.
+
 ## `settings`
 
-A common simulation setup is:
+`settings:` contains physical simulation settings and preprocessing choices.
+
+Common angle grid:
 
 ```yaml
 settings:
@@ -49,55 +182,197 @@ settings:
   angle_start_deg: 6.9
   angle_stop_deg: 10.9
   angle_count: 161
-  polarization: "p"
-  normalization: "mean"
-  fit_method: "simulate_only"
+  polarization: "s"
+  normalization: "edge_polynomial"
+  normalization_edge_fraction: 0.10
+  normalization_polynomial_order: 2
 ```
 
-You can also provide explicit angles:
+Explicit angle grid:
 
 ```yaml
 settings:
   photon_energy_ev: 1000.0
   angles_deg: [6.9, 7.0, 7.1]
-  polarization: "s"
-  normalization: "mean"
-  fit_method: "simulate_only"
+  polarization: "unpolarized"
+  normalization: "edge_polynomial"
+  normalization_edge_fraction: 0.10
+  normalization_polynomial_order: 2
 ```
 
 Fields:
 
-- `photon_energy_ev`: photon energy in eV.
+- `photon_energy_ev`: photon energy in eV. Required.
 - `angle_start_deg`, `angle_stop_deg`, `angle_count`: generated incident-angle
   grid in degrees.
 - `angles_deg`: explicit incident-angle list in degrees.
 - `polarization`: `"s"`, `"p"`, or `"unpolarized"`.
-- `"unpolarized"` maps to a 50/50 s/p mixture.
-- Circular polarization is not implemented.
-- `normalization`: default rocking-curve normalization mode, commonly `"mean"`.
-  `"edge_polynomial"` is also supported for workflows that normalize both
-  experimental and simulated rocking curves by a fitted edge background.
-- `normalization_edge_fraction`: edge fraction for `"edge_polynomial"`
-  normalization; default `0.10`.
-- `normalization_polynomial_order`: polynomial order for `"edge_polynomial"`
-  normalization; default `2`.
-- `fit_method`: `"simulate_only"`, `"jax_least_squares"`, `"jax_gradient"`, or
-  `"bayesian_optimization"`.
-- `angle_offset_parameter`: one parameter name used for both reflectivity and
-  rocking-curve calculation-angle offsets. Set it to empty/null when using
-  separate offsets.
-- `reflectivity_angle_offset_parameter`: optional parameter name for only the
-  reflectivity angle offset.
-- `rocking_curve_angle_offset_parameter`: optional parameter name for only the
-  rocking-curve angle offset.
-- `field_step` and `roughness_step`: legacy-grid step sizes in Angstrom when
-  `slicing: "legacy"` is selected.
+- `normalization`: default rocking-curve normalization mode, usually
+  `"edge_polynomial"`.
+- `normalization_edge_fraction`: edge fraction used by
+  `"edge_polynomial"`. Default `0.10`, meaning the first 10 percent and last
+  10 percent of each rocking curve.
+- `normalization_polynomial_order`: polynomial order used by
+  `"edge_polynomial"`. Default `2`.
+- `field_step`: legacy depth grid step in Angstrom when `slicing: "legacy"` is
+  selected. Default `1.0`.
+- `roughness_step`: legacy roughness discretization step in Angstrom when
+  `slicing: "legacy"` is selected. Default `1.0`.
+- `roughness_profile`: roughness profile name for compatible paths. Default
+  `"erf"`.
+- `simulation_backend`: backend hint used by generic fitting paths. Default
+  `"numpy"`.
 
-JAX methods require callback factories when datasets are used. Bayesian
-optimization is an optional global black-box baseline, not a default and not a
-fallback.
+Angles in fitting runs:
 
-Optional fixed-shape or unified-grid controls can be set with `slicing`:
+- With datasets, fitting and overlays use the dataset angles.
+- Without datasets, `simulate_only` needs `angles_deg` or
+  `angle_start_deg`/`angle_stop_deg`/`angle_count`.
+
+### Polarization
+
+```yaml
+settings:
+  polarization: "s"
+```
+
+Allowed values:
+
+- `"s"`: s polarization.
+- `"p"`: p polarization.
+- `"unpolarized"`: 50/50 s/p mixture.
+
+Circular polarization is not implemented.
+
+### Angle Offsets
+
+By default, a parameter named `angle_offset` is used as a shared calculation
+angle offset if it exists and is varied or fixed in `parameters`.
+
+```yaml
+parameters:
+  angle_offset:
+    initial: 0.03
+    lower: -0.25
+    upper: 0.25
+    vary: true
+```
+
+Advanced split offsets:
+
+```yaml
+settings:
+  angle_offset_parameter: null
+  reflectivity_angle_offset_parameter: "reflectivity_angle_offset"
+  rocking_curve_angle_offset_parameter: "rc_angle_offset"
+```
+
+Use this when reflectivity and rocking-curve scans need independent angular
+offsets.
+
+## Rocking-Curve Normalization
+
+### Edge-Polynomial Background Normalization
+
+```yaml
+settings:
+  normalization: "edge_polynomial"
+  normalization_edge_fraction: 0.10
+  normalization_polynomial_order: 2
+```
+
+This is the recommended default for ProjectSpec rocking curves. It uses the
+first and last fraction of each rocking curve to fit a polynomial background,
+then normalizes by that background. `0.10` means first 10 percent and last 10
+percent. Values greater than 1 are treated as percentages, so `10` also means
+10 percent.
+
+Use this as the universal default unless you have already prepared
+pre-normalized rocking curves outside SWANX. The same mode is applied to
+experimental data, simulation-only rocking curves, fitted rocking curves, and
+the internal auto fixed-grid JAX residual. This avoids comparing RC data and
+model curves that were scaled by different rules.
+
+Supported paths:
+
+- experimental rocking-curve data loaded from YAML datasets;
+- simulation-only reports;
+- generic fitting and Bayesian optimization;
+- no-code fixed-grid JAX least-squares with
+  `run.optimizer.residual: "auto_fixed_grid"`.
+
+This setting applies to SW-XPS rocking curves only. Reflectivity remains
+reflectivity and is usually scored in log space for fitting.
+
+Practical requirements:
+
+- enough points must be available at the two curve edges to fit the requested
+  polynomial order;
+- with the default order `2`, the selected edge points must be more than two
+  total points;
+- for very sparse curves, increase `normalization_edge_fraction` or lower
+  `normalization_polynomial_order`.
+
+### Mean Normalization
+
+```yaml
+settings:
+  normalization: "mean"
+```
+
+Mean normalization divides each rocking curve by a scalar mean. If no mask is
+configured, the mean uses all rocking-curve points. It remains supported for
+backward compatibility and for workflows where a scalar normalization is
+preferred.
+
+### Off-Peak Mask For Mean Normalization
+
+```yaml
+settings:
+  normalization: "mean"
+  rocking_curve_offpeak_mask:
+    mode: "exclude_reflectivity_peak"
+    half_width_deg: 1.25
+```
+
+This finds the maximum point in the reflectivity dataset and excludes
+rocking-curve points within `+/- half_width_deg` of that angle from the mean
+normalization denominator.
+
+What it controls:
+
+- experimental rocking-curve mean normalization;
+- simulated/fitted rocking-curve mean normalization;
+- the denominator used to put rocking curves on a comparable scale.
+
+What it does not do:
+
+- it does not remove those points from output files;
+- it does not remove those points from plots;
+- it does not by itself remove those points from the residual vector.
+
+Requirements:
+
+- `datasets.reflectivity` must be present.
+- `mode` must currently be `"exclude_reflectivity_peak"`.
+- `half_width_deg` must be positive. Default is `1.25`.
+
+## Slicing
+
+Slicing controls how finite layers are converted into effective calculation
+cells for roughness and standing-wave XPS calculations.
+
+Default adaptive/unified slicing:
+
+```yaml
+settings:
+  slicing:
+    mode: "adaptive"
+    min_slices: 3
+    max_slice_thickness_A: 1.0
+```
+
+Fixed-grid slicing:
 
 ```yaml
 settings:
@@ -106,23 +381,43 @@ settings:
     min_slices: 3
     max_slice_thickness_A: 1.0
     reference_values:
-      lno_thickness: 40.0
+      carbon_thickness: 16.0
+      lno_thickness: 22.0
+      sto_thickness: 22.0
 ```
 
-Optional rocking-curve masking can exclude the reflectivity peak region from
-mean normalization and RC scoring:
+Allowed forms:
+
+- omitted: adaptive/unified slicing with defaults;
+- `"adaptive"` or `"unified"`: adaptive/unified slicing;
+- `"legacy"`: legacy fixed-step roughness/depth path;
+- mapping with `mode: "adaptive"` or `mode: "unified"`;
+- mapping with `mode: "fixed"` or `mode: "fixed_grid"`;
+- mapping with `mode: "legacy"` or `mode: "none"` to select the legacy path.
+
+Fields:
+
+- `min_slices`: minimum cells per finite layer. Must be positive.
+- `max_slice_thickness_A`: target maximum cell thickness in Angstrom. Must be
+  positive.
+- `reference_values`: optional parameter values used to build the capacity
+  stack for a fixed grid. Keys must be known parameter names.
+
+The auto fixed-grid JAX residual requires:
 
 ```yaml
 settings:
-  rocking_curve_offpeak_mask:
-    mode: "exclude_reflectivity_peak"
-    half_width_deg: 1.25
+  slicing:
+    mode: "fixed_grid"
 ```
 
 ## `materials`
 
 ```yaml
 materials:
+  C:
+    opc_file: "data/OPC/C.dat"
+    imfp_file: "data/IMFP/C.ANG"
   LNO:
     opc_file: "data/OPC/LaNiO3.dat"
     imfp_file: "data/IMFP/LNO.ANG"
@@ -133,12 +428,12 @@ materials:
 
 Rules:
 
-- In the starter examples, `LNO` means LaNiO3 and `STO` means SrTiO3.
-- Material labels must match `stack[*].material` values.
+- Material labels must match `stack[*].material`.
 - Non-vacuum stack materials require `opc_file`.
-- Materials used by emitting layers require `imfp_file`.
+- Materials that emit a core level require `imfp_file`.
 - `vacuum` does not need a material definition.
 - Paths are resolved relative to `project.yaml` unless absolute.
+- In starter examples, `LNO` means LaNiO3 and `STO` means SrTiO3.
 
 ## `parameters`
 
@@ -164,21 +459,20 @@ parameters:
 
 Rules:
 
-- Only `vary: true` parameters become fitting parameters.
-- If `initial`, `lower`, and `upper` are present and `vary` is omitted, `vary`
-  defaults to `true`.
+- If `initial`, `lower`, and `upper` are present and `vary` is omitted,
+  `vary` defaults to `true`.
 - If only `value` is present, `vary` defaults to `false`.
-- Thickness and roughness values are in Angstrom; do not add per-parameter unit
-  fields.
-- Bounds must satisfy:
-
-$$lower \le initial \le upper$$
-
-and `lower < upper`.
+- Varying parameters require `initial`, `lower`, and `upper`.
+- Constant parameters require `value` or `initial`.
+- `lower < upper`.
+- `lower <= initial <= upper`.
+- Only `vary: true` parameters become optimizer variables.
+- Thickness and roughness values are in Angstrom; units are not repeated per
+  parameter.
 
 ## `stack`
 
-Simple stack:
+The stack is ordered from vacuum to substrate.
 
 ```yaml
 stack:
@@ -187,7 +481,7 @@ stack:
     thickness_A: 0.0
     roughness_A: 0.0
 
-  - id: "lno_1"
+  - id: "film"
     material: "LNO"
     tags: ["lno_layers"]
     thickness_A: "$lno_thickness"
@@ -195,61 +489,29 @@ stack:
 
   - id: "sto_substrate"
     material: "STO"
+    tags: ["substrate"]
     thickness_A: 0.0
     roughness_A: 0.0
 ```
 
-Rules:
+Fields:
 
-- The first layer should be vacuum.
-- The substrate is last and can use `thickness_A: 0.0`.
-- Every concrete layer needs a stable unique `id`.
-- `tags` are optional but recommended for selecting emitting layers.
-- `roughness_A` is the layer's upper-interface roughness: layer j roughness is
-  the interface between layer j-1 and layer j.
-- Legacy material-only emitting-layer selection is not used.
+- `id`: stable unique layer identifier.
+- `material`: material label or `"vacuum"`.
+- `tags`: optional list used by `core_levels[*].emit_from`.
+- `thickness_A`: number, parameter reference, or expression. Default `0.0`.
+- `roughness_A`: number, parameter reference, or expression. Default `0.0`.
 
-Inline parameter reference:
+Rules and conventions:
 
-```yaml
-thickness_A: "$lno_thickness"
-```
+- First layer should be vacuum.
+- Final substrate layer has `thickness_A: 0.0`.
+- `roughness_A` is the upper-interface roughness of that layer, i.e. the
+  interface between layer `j-1` and layer `j`.
+- Every expanded concrete layer id must be unique.
+- Legacy material-only core-level selection is not used; use layer ids or tags.
 
-Safe arithmetic expression:
-
-```yaml
-thickness_A: "A_LNO + B_LNO * repeat_index"
-```
-
-Safe function expression:
-
-```yaml
-roughness_A: "linear_map(repeat_index0, 0, 19, roughness_top, roughness_bottom)"
-```
-
-Expression variables are parameter names, `repeat_index`, `repeat_index0`, and
-`layer_index`. `repeat_index` is 1-based inside repeat blocks; `repeat_index0`
-is the matching zero-based convenience variable for formulas that naturally use
-zero-based coordinates. Outside repeat blocks, both repeat-index variables
-resolve to `0`.
-
-Expressions use an AST whitelist, not raw `eval`. Allowed operators are `+`,
-`-`, `*`, `/`, and parentheses. Allowed functions are:
-
-- `min(...)`
-- `max(...)`
-- `sqrt(x)`
-- `erf(x)`
-- `linear_map(x, x0, x1, y0, y1)`
-- `transition_erf(x, start, end, center, width)`
-
-For example, a smooth transition across repeated layers can be written as:
-
-```yaml
-thickness_A: "transition_erf(repeat_index0, sto_start, sto_end, transition_center, transition_width)"
-```
-
-## Repeat Block
+## Repeat Blocks
 
 ```yaml
 stack:
@@ -259,33 +521,82 @@ stack:
     roughness_A: 0.0
 
   - repeat:
-      times: 40
+      times: 20
       layers:
         - id: "lno_{repeat_index}"
           material: "LNO"
-          tags: ["lno_layers"]
+          tags: ["lno_layers", "oxide_layers"]
           thickness_A: "$lno_thickness"
-          roughness_A: "$interface_roughness"
-
+          roughness_A: "$superlattice_roughness"
         - id: "sto_{repeat_index}"
           material: "STO"
-          tags: ["sto_layers"]
+          tags: ["sto_layers", "oxide_layers"]
           thickness_A: "$sto_thickness"
-          roughness_A: "$interface_roughness"
+          roughness_A: "$superlattice_roughness"
 
   - id: "sto_substrate"
     material: "STO"
+    tags: ["substrate", "sto_layers"]
     thickness_A: 0.0
-    roughness_A: 0.0
+    roughness_A: "$substrate_roughness"
 ```
 
-Rules:
+Repeat rules:
 
+- `repeat.times` must be positive.
+- `repeat.layers` must be a list.
 - `repeat_index` is 1-based.
-- `repeat_index0` is 0-based and is provided only for expression convenience;
-  `repeat_index - 1` is equivalent.
-- Generated IDs must be unique.
-- Use tags for all repeated layer groups so core levels can select layer groups.
+- `repeat_index0` is zero-based.
+- Layer ids may use `{repeat_index}` and `{layer_index}` formatting.
+- Use tags to select repeated layer groups in `core_levels`.
+
+## Expressions
+
+Parameter reference:
+
+```yaml
+thickness_A: "$lno_thickness"
+```
+
+Arithmetic expression:
+
+```yaml
+thickness_A: "period * lno_fraction"
+```
+
+Safe function expression:
+
+```yaml
+roughness_A: "linear_map(repeat_index0, 0, 19, roughness_top, roughness_bottom)"
+```
+
+Allowed variables:
+
+- any parameter name;
+- `repeat_index`;
+- `repeat_index0`;
+- `layer_index`.
+
+Allowed operators:
+
+- `+`
+- `-`
+- `*`
+- `/`
+- parentheses
+
+Allowed functions:
+
+- `min(...)`
+- `max(...)`
+- `sqrt(x)`
+- `erf(x)`
+- `linear_map(x, x0, x1, y0, y1)`
+- `transition_erf(x, start, end, center, width)`
+
+Expressions are parsed with an AST whitelist, not raw Python `eval`. Imports,
+attributes, indexing, lambdas, comprehensions, and arbitrary Python calls are
+rejected.
 
 ## `core_levels`
 
@@ -293,12 +604,22 @@ Rules:
 core_levels:
   - name: "La 4d"
     binding_energy_ev: 105.0
-    vacuum_imfp_from_material: "C"
     emit_from:
       tags: ["lno_layers"]
     concentration: 1.0
     emission_angle_deg: 0.0
 ```
+
+Fields:
+
+- `name`: core-level name. Match dataset names for overlays and residual labels.
+- `binding_energy_ev`: binding energy in eV.
+- `emit_from`: required layer selector.
+- `concentration`: scalar concentration assigned to selected emitting layers.
+  Default `1.0`.
+- `emission_angle_deg`: electron emission angle in degrees. Default `0.0`.
+- `vacuum_imfp_from_material`: optional material label used to assign a finite
+  vacuum IMFP for legacy workflow parity.
 
 Selectors:
 
@@ -317,20 +638,13 @@ emit_from:
   all: true
 ```
 
-Rules:
+Selector rules:
 
 - `emit_from` is required.
-- `all: true` cannot be combined with `tags` or `layer_ids`.
-- Unknown tags or layer IDs fail validation.
-- `binding_energy_ev` is used to compute kinetic energy:
-
-$$E_\mathrm{kin} = h\nu - E_B$$
-
-- Every emitting material needs an IMFP table.
-- `vacuum_imfp_from_material` is optional. When present, SWANX uses that
-  material's IMFP for the vacuum entry of this core level instead of the
-  default infinite vacuum IMFP. This is mainly for reproducing legacy workflows
-  that treated the vacuum attenuation entry as a material-specific value.
+- `all: true` cannot be combined with `layer_ids` or `tags`.
+- If `all: true` is absent, at least one of `layer_ids` or `tags` is required.
+- Unknown tags or layer ids fail validation.
+- Selected non-vacuum emitting materials must have IMFP tables.
 
 ## `datasets`
 
@@ -345,11 +659,11 @@ Reflectivity dataset:
 ```yaml
 datasets:
   reflectivity:
-    path: "../../benchmarks/synthetic_c_lno_sto/lno_sto_c_synthetic_data.csv"
+    path: "data/curves/lno_sto_c_synthetic_data.csv"
     name: "Reflectivity"
     angle_column: "angle_deg"
     intensity_column: "reflectivity"
-    sigma_column: "sigma"
+    sigma_column: "reflectivity_sigma"
     weight: 1.0
     log_floor: 1.0e-12
 ```
@@ -359,86 +673,205 @@ Rocking-curve datasets:
 ```yaml
 datasets:
   rocking_curves:
-    - path: "../../benchmarks/synthetic_c_lno_sto/lno_sto_c_synthetic_data.csv"
+    - path: "data/curves/lno_sto_c_synthetic_data.csv"
       name: "La 4d"
       angle_column: "angle_deg"
       intensity_column: "la4d_rc"
-      sigma_column: "sigma"
-      normalization: "mean"
-      weight: 1.0
+      sigma_column: "la4d_sigma"
+      weight: 5.0
 ```
 
 Rules:
 
-- Dataset paths are resolved relative to `project.yaml`.
-- A rocking-curve `name` should match a core-level name for overlay and residual
-  comparison.
+- Dataset paths are resolved relative to `project.yaml` unless absolute.
+- `angle_column` defaults to `"angle_deg"`.
+- Reflectivity `intensity_column` defaults to `"reflectivity"`.
+- Rocking-curve `intensity_column` defaults to `"intensity"`.
 - `sigma_column` is optional.
-- Normalization can be set globally in `settings.normalization` or per rocking
-  curve.
-- With `normalization: "mean"`, a configured `rocking_curve_offpeak_mask` is
-  applied to both experimental dataset normalization and simulated rocking
-  curves.
-- Weights must be non-negative.
-- Reflectivity `log_floor` must be positive.
+- `weight` is optional and must be non-negative. A zero weight is allowed.
+- Reflectivity `log_floor` is optional and must be positive.
+- Rocking-curve `name` should match a `core_levels[*].name` value for overlays
+  and residual interpretation.
+- Rocking-curve `normalization` can override `settings.normalization` per
+  dataset. If omitted, `settings.normalization` is used. If set to empty/null,
+  experimental data are left as read.
+- Prefer omitting per-dataset `normalization` unless one dataset truly needs a
+  different rule. Setting it to empty/null is intended only for pre-normalized
+  data or advanced compatibility cases; otherwise experimental data can end up
+  scaled differently from simulated/fitted curves.
+
+Fitting methods require at least one dataset. `simulate_only` can run with or
+without datasets.
 
 ## `report`
+
+Modern ProjectSpec files usually keep this empty:
+
+```yaml
+report: {}
+```
+
+That means no legacy report options are set in this section. Prefer:
+
+```yaml
+run:
+  outputs:
+    plots: true
+    identifiability: true
+```
+
+Legacy form still accepted:
 
 ```yaml
 report:
   save_plots: true
+  identifiability: true
 ```
 
-When matplotlib is available and `save_plots: true`, fitting runs write:
+Do not set both legacy and `run.outputs` values differently.
 
-- `plots/fit_overview.png`
-- `plots/reflectivity_fit.png`
-- `plots/rocking_curves_fit.png`
-- `plots/stack_schematic.png`
-- least-squares diagnostic plots when available;
-- Bayesian optimization convergence/surrogate plots when available.
+## Optimizer Details
 
-For `simulate_only`, the corresponding curve plots are:
-
-- `plots/simulation_overview.png`
-- `plots/reflectivity_simulation.png`
-- `plots/rocking_curves_simulation.png`
-- `plots/stack_schematic.png`
-
-Skipped plot reasons are written to `report.md`.
-
-## Fitting Settings
-
-JAX least-squares with an explicit factory:
+### `simulate_only`
 
 ```yaml
-settings:
-  fit_method: "jax_least_squares"
+run:
+  mode: "simulate_only"
+```
+
+No optimizer is run. SWANX still writes input, resolved, simulation, fit summary,
+and report files. With datasets present, experimental data and residual files
+are also written. No `fit/best_parameters.csv` table is written.
+
+### `jax_least_squares`
+
+```yaml
+run:
+  mode: "jax_least_squares"
   optimizer:
-    residual_function_factory: "fit_factory:build_residual"
+    residual: "auto_fixed_grid"
     max_nfev: 100
+    ftol: 1.0e-8
+    xtol: 1.0e-8
+    gtol: 1.0e-8
+    record_history: true
     estimate_covariance: true
 ```
 
-The factory module can live next to `project.yaml`. The default `swanx init`
-project and `examples/04_fitting/projectspec_jax_least_squares/` include a
-factory for the packaged synthetic C/LaNiO3/SrTiO3 starter case. ProjectSpec
-does not auto-generate JAX residual functions for arbitrary custom models, and
-SWANX does not fall back to BO when the factory is missing.
+Auto fixed-grid residual requirements:
 
-BO optional baseline:
+- at least one dataset;
+- `settings.slicing.mode: "fixed_grid"`;
+- fixed stack topology;
+- `settings.normalization: "edge_polynomial"` or `"mean"` when rocking curves
+  are present.
+
+The auto residual supports ProjectSpec stack expressions handled by the
+internal JAX expression evaluator. If a model needs arbitrary Python logic,
+external state, or a residual shape that cannot be derived from the YAML stack
+and datasets, use the custom factory hook below.
+
+Advanced custom residual hook:
 
 ```yaml
-settings:
-  fit_method: "bayesian_optimization"
+run:
+  mode: "jax_least_squares"
+  optimizer:
+    residual_function_factory: "fit_factory:build_residual"
+```
+
+Use this only when the model cannot be represented by the ProjectSpec
+fixed-grid residual. The factory path is `module:function` and is loaded
+relative to the project folder.
+
+### `jax_gradient`
+
+```yaml
+run:
+  mode: "jax_gradient"
+  optimizer:
+    value_and_grad_factory: "fit_factory:build_value_and_grad"
+    maxiter: 100
+    record_history: true
+```
+
+This backend requires a custom fixed-shape value-and-gradient factory when
+datasets are used.
+
+### `bayesian_optimization`
+
+```yaml
+run:
+  mode: "bayesian_optimization"
   optimizer:
     n_calls: 40
     n_initial_points: 10
+    acquisition_function: "EI"
     random_state: 0
+    show_progress: false
 ```
 
-BO requires the scikit-optimize extra (`.[fit]`). BO is an optional global black-box baseline / robustness check. BO reports do not write least-squares
-covariance or correlation files.
+Fields:
+
+- `n_calls`: total objective evaluations. Default `40`.
+- `n_initial_points`: initial random/sampling evaluations. Default `10`.
+- `acquisition_function`: acquisition rule passed to the BO backend. `"EI"`
+  means Expected Improvement.
+- `random_state`: seed for reproducibility.
+- `show_progress`: print/display BO progress when supported. Default `false`.
+
+BO is an optional global black-box baseline. It is not the default and is not a
+fallback for JAX methods.
+
+## Output Folder Contents
+
+Every run writes the core run folder:
+
+- `report.md`
+- `input/project_original.yaml`
+- `input/project_resolved.yaml`
+- `input/run_metadata.json`
+- `resolved/stack_resolved.csv`
+- `resolved/materials_resolved.csv`
+- `resolved/core_levels_resolved.csv`
+- `resolved/parameters_resolved.csv`
+- `resolved/datasets_resolved.csv`
+- `simulation/reflectivity_simulated.csv`
+- `simulation/rocking_curves_simulated.csv`
+- `fit/fit_summary.json`
+
+When datasets are present, SWANX also writes:
+
+- `data/reflectivity_experimental.csv`
+- `data/rocking_curves_experimental.csv`
+- `fit/residuals.csv`
+
+When an optimizer is run and returns fitted parameters, SWANX also writes:
+
+- `fit/best_parameters.csv`
+- method-specific files under `optimizer/`
+
+When plots are enabled:
+
+- fitting runs use `plots/fit_overview.png`,
+  `plots/reflectivity_fit.png`, and `plots/rocking_curves_fit.png`;
+- `simulate_only` runs use `plots/simulation_overview.png`,
+  `plots/reflectivity_simulation.png`, and
+  `plots/rocking_curves_simulation.png`;
+- all plotted runs can include `plots/stack_schematic.png`.
+
+When identifiability is enabled and least-squares diagnostics are available:
+
+- `identifiability_analysis/summary.md`
+- `identifiability_analysis/parameter_identifiability.csv`
+- `identifiability_analysis/singular_values.csv`
+- `identifiability_analysis/weak_modes.csv`
+- `identifiability_analysis/strong_correlation_pairs.csv`
+- `identifiability_analysis/dataset_sensitivity.csv`
+
+Dataset sensitivity is computed from the final weighted least-squares Jacobian.
+It is a weighting/scaling audit signal, not automatic proof that one data type
+was physically scaled incorrectly.
 
 ## Common Mistakes
 
@@ -448,17 +881,17 @@ Every non-vacuum material used in `stack` needs `materials.<name>.opc_file`.
 
 **Missing IMFP for emitting material**
 
-If a core level emits from a material, that material needs
+If a core level emits from a non-vacuum material, that material needs
 `materials.<name>.imfp_file`.
 
-**Duplicate layer ID**
+**Duplicate layer id**
 
-Every concrete layer must have a unique `id`. In repeat blocks, include
-`{repeat_index}`.
+Every expanded concrete layer must have a unique `id`. In repeat blocks, include
+`{repeat_index}` when needed.
 
 **Unknown tag in `emit_from`**
 
-Tags must exist on at least one expanded layer.
+Tags must exist on at least one expanded stack layer.
 
 **Missing `emit_from`**
 
@@ -468,24 +901,38 @@ Every core level must explicitly specify `layer_ids`, `tags`, or `all: true`.
 
 Expressions can only use numbers, parameter names, `repeat_index`,
 `repeat_index0`, `layer_index`, arithmetic operators, parentheses, and the
-documented safe functions. Imports, attributes, indexing, lambdas, and arbitrary
-Python calls are rejected.
+documented safe functions.
 
 **Using `repeat_index` outside a repeat block**
 
 Outside repeat blocks, `repeat_index` and `repeat_index0` resolve to `0`.
-Use a constant or named parameter when that is clearer for non-repeated layers.
 
-**Switching to `jax_least_squares` without a factory**
+**Switching to auto JAX least-squares without fixed-grid slicing**
 
-Add `settings.optimizer.residual_function_factory` or use `simulate_only` while
-preparing the project. There is no BO fallback.
+Use:
 
-**Dataset rocking-curve name not matching a core level**
+```yaml
+settings:
+  slicing:
+    mode: "fixed_grid"
+```
 
-For overlays and residuals, the dataset `name` should match `core_levels[*].name`.
+or provide a custom `residual_function_factory`.
 
-**Relative path assumed from CWD instead of `project.yaml`**
+**Too few edge points for edge-polynomial normalization**
 
-Relative paths are resolved from the directory containing `project.yaml`, not
-from the shell current working directory.
+With `settings.normalization: "edge_polynomial"`, the first and last edge
+segments must contain enough points for the polynomial order. For sparse
+rocking curves, lower `settings.normalization_polynomial_order` or increase
+`settings.normalization_edge_fraction`.
+
+**Accidentally bypassing data normalization**
+
+If a rocking-curve dataset sets `normalization: null` or `normalization: ""`,
+SWANX leaves that experimental curve as read. Use that only when the file has
+already been normalized with the same convention you want to compare against.
+
+**Relative path assumed from the shell current directory**
+
+Relative paths in ProjectSpec YAML are resolved from the directory containing
+`project.yaml`, not from the shell current working directory.

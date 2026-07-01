@@ -23,6 +23,7 @@ from .reports import (
     write_experimental_files,
     write_fit_files,
     write_fit_summary,
+    write_identifiability_outputs,
     write_input_files,
     write_markdown_report,
     write_method_outputs,
@@ -83,7 +84,8 @@ def run_project(path: str | Path, *, progress: ProgressReporter = False) -> Path
     write_fit_files(output, final_built, simulation, evaluation, result)
     write_fit_summary(output, final_built, timestamp=timestamp, result=result, evaluation=evaluation)
     method_notes = write_method_outputs(output, spec.fit_method, result, final_built)
-    skipped_outputs = method_notes + write_plots(output, final_built, simulation)
+    identifiability_notes = write_identifiability_outputs(output, result, final_built)
+    skipped_outputs = method_notes + identifiability_notes + write_plots(output, final_built, simulation)
     write_markdown_report(
         output,
         final_built,
@@ -105,7 +107,7 @@ def _run_backend(built: BuiltProject, *, emit: Callable[[str], None] | None = No
     if built.fitting_problem is None:
         raise ProjectValidationError(f"{method} requires at least one dataset")
     if method == "bayesian_optimization":
-        settings = built.spec.settings.get("optimizer", {})
+        settings = built.spec.optimizer_settings
         emit(
             "Running bayesian_optimization "
             f"(n_calls={int(settings.get('n_calls', 40))}, "
@@ -122,21 +124,24 @@ def _run_backend(built: BuiltProject, *, emit: Callable[[str], None] | None = No
             ),
         )
     if method == "jax_least_squares":
-        settings = built.spec.settings.get("optimizer", {})
+        settings = built.spec.optimizer_settings
         factory_path = settings.get("residual_function_factory")
-        if not factory_path:
-            raise ProjectValidationError(
-                "settings.fit_method='jax_least_squares' requires "
-                "settings.optimizer.residual_function_factory='module:function' for the "
-                "fixed-shape JAX residual. Install with python -m pip install -e "
-                "\".[project,least-squares]\" and provide a factory, or use "
-                "fit_method: \"simulate_only\" for simulation-only projects. "
-                "Bayesian optimization is not used as a fallback."
-            )
         from swanx.fitting import JaxLeastSquaresOptimizerSettings, optimize_with_jax_least_squares
 
-        emit(f"Loading JAX least-squares residual factory: {factory_path}")
-        residual_function = _load_callable(factory_path, built.spec.root_dir)(built.fitting_problem)
+        if factory_path:
+            emit(f"Loading JAX least-squares residual factory: {factory_path}")
+            residual_function = _load_callable(factory_path, built.spec.root_dir)(built.fitting_problem)
+        else:
+            residual = str(settings.get("residual", "auto_fixed_grid"))
+            if residual not in {"auto", "auto_fixed_grid"}:
+                raise ProjectValidationError(
+                    "run.optimizer.residual must be 'auto_fixed_grid' or use "
+                    "run.optimizer.residual_function_factory='module:function'"
+                )
+            from .jax_fixed_grid import build_projectspec_jax_residual_function
+
+            emit("Building ProjectSpec auto fixed-grid JAX residual")
+            residual_function = build_projectspec_jax_residual_function(built)
         emit(f"Running jax_least_squares (max_nfev={settings.get('max_nfev', 100)})")
         return optimize_with_jax_least_squares(
             built.fitting_problem.parameters,
@@ -151,15 +156,15 @@ def _run_backend(built: BuiltProject, *, emit: Callable[[str], None] | None = No
             ),
         )
     if method == "jax_gradient":
-        settings = built.spec.settings.get("optimizer", {})
+        settings = built.spec.optimizer_settings
         factory_path = settings.get("value_and_grad_factory")
         if not factory_path:
             raise ProjectValidationError(
-                "settings.fit_method='jax_gradient' requires "
-                "settings.optimizer.value_and_grad_factory='module:function' for the "
+                "run.mode='jax_gradient' requires "
+                "run.optimizer.value_and_grad_factory='module:function' for the "
                 "fixed-shape JAX value-and-gradient callback. Install with python -m pip install -e "
                 "\".[project,gradient]\" and provide a factory, or use "
-                "fit_method: \"simulate_only\" for simulation-only projects. "
+                "run.mode: \"simulate_only\" for simulation-only projects. "
                 "Bayesian optimization is not used as a fallback."
             )
         from swanx.fitting import JaxGradientOptimizerSettings, optimize_with_jax_gradient

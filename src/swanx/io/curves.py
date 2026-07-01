@@ -57,7 +57,7 @@ def read_rocking_curve_data(
     sigma_column: str | int | None = None,
     normalization_mode: str | None = None,
     offpeak_mask: np.ndarray | None = None,
-    edge_fraction: float = 0.2,
+    edge_fraction: float = 0.10,
     polynomial_order: int = 2,
     delimiter: str | None = None,
     comments: str = "#",
