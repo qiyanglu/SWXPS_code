@@ -1,6 +1,8 @@
 # SWANX
 
-<img src="swanx_logo.png" alt="SWANX logo" height="120">
+<p align="center">
+  <img src="swanx_logo.png" alt="SWANX logo" height="220">
+</p>
 
 **SWANX** means **S**tanding-**W**ave **A**nalysis for **N**anoscale
 **X**-ray spectroscopy.
