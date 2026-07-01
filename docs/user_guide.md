@@ -36,7 +36,7 @@ workflow.
   energy and emitting-layer selector.
 - **Emitting layer selector**: `emit_from.layer_ids`, `emit_from.tags`, or
   `emit_from.all: true`; material-only emission selection is not used.
-- **Reflectivity curve**: reflected x-ray intensity versus incident angle.
+- **Reflectivity curve**: reflected X-ray intensity versus incident angle.
 - **Rocking curve**: core-level photoemission intensity versus incident angle,
   written conceptually as $$I_\mathrm{core}(\theta)$$.
 - **Fit parameter**: a named scalar with `initial`, `lower`, and `upper` bounds

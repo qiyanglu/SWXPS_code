@@ -1,19 +1,19 @@
 # SWANX
 
-![SWANX logo](swanx_logo.png)
+<img src="swanx_logo.png" alt="SWANX logo" height="120">
 
 **SWANX** means **S**tanding-**W**ave **A**nalysis for **N**anoscale
 **X**-ray spectroscopy.
 
 SWANX is a Python workflow tool for multilayer standing-wave XPS projects. It
-helps users build a stack, simulate x-ray reflectivity and core-level rocking
+helps users build a stack, simulate X-ray reflectivity and core-level rocking
 curves, fit selected parameters, and write reproducible reports. Its current
 scope is multilayer SW-XPS reflectivity, rocking curves, fitting, and
 diagnostics rather than a general spectroscopy or crystallography platform.
 
 ## Why SWANX?
 
-Standing-wave XPS analysis is useful because the x-ray electric field inside a
+Standing-wave XPS analysis is useful because the X-ray electric field inside a
 multilayer changes with incidence angle, making reflectivity and core-level
 rocking curves sensitive to layer thicknesses, roughness, composition profiles,
 and emission depth. In practice, the hard part is keeping optical constants,
@@ -202,14 +202,14 @@ python -m pip install -e ".[project,fit,plot]"
 
 ## Background
 
-SWANX is inspired by standing-wave x-ray optics and SW-PES workflows such as
+SWANX is inspired by standing-wave X-ray optics and SW-PES workflows such as
 YXRO and SWOPT, but it has a narrower Python-first scope focused on multilayer
 SW-XPS reflectivity, rocking curves, fitting, and diagnostics.
 
 Related background:
 
-- S.-H. Yang et al., "Making use of x-ray optical effects in photoelectron-,
-  Auger electron-, and x-ray emission spectroscopies," *Journal of Applied
+- S.-H. Yang et al., "Making use of X-ray optical effects in photoelectron-,
+  Auger electron-, and X-ray emission spectroscopies," *Journal of Applied
   Physics* 113, 073513 (2013).
 - O. Karslioglu et al., "An Efficient Algorithm for Automatic Structure
   Optimization in X-ray Standing-Wave Experiments," *Journal of Electron

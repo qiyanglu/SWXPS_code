@@ -470,9 +470,9 @@ regression tests passed, and the full ProjectSpec workflow test file passed.
 
 README and ProjectSpec reliability docs were refreshed again on 2026-07-01.
 `README.md` is now a concise user-facing landing page and leaves detailed YAML
-syntax to `docs/projectspec_reference.md`. Active status docs no longer imply
-that default `swanx init` projects require `synthetic_residual_factory.py`;
-the current default uses `run.optimizer.residual: "auto_fixed_grid"`.
+syntax to `docs/projectspec_reference.md`. Default `swanx init` projects use
+`run.optimizer.residual: "auto_fixed_grid"` rather than project-local residual
+factory scripts.
 Project report Markdown now adds a short `Fit Interpretation` section for
 fitting runs, including final cost/objective, near-bound parameter notes, and a
 brief identifiability summary that links to `identifiability_analysis/summary.md`
@@ -497,14 +497,15 @@ and `--template simulate` were added as clearer preferred aliases while
 include recommended next checks for near-bound parameters, identifiability
 summaries, strong correlations, and dataset sensitivity as a weighting/scaling
 audit signal. Active docs were refreshed to keep README concise, keep detailed
-syntax in `docs/projectspec_reference.md`, and avoid pinned exact pytest pass
-counts in this status file. Validation passed with
+syntax in `docs/projectspec_reference.md`, and keep validation notes qualitative
+rather than depending on pinned exact pytest pass counts. Validation passed with
 `python -m pytest tests\test_project_workflow.py --basetemp runs\pytest_projectspec_reliability_ux_workflow`,
 `python -m pytest --basetemp runs\pytest_projectspec_reliability_ux_full`, and
 `git diff --check` with only Windows LF-to-CRLF notices.
 
 README public-facing polish completed on 2026-07-01. The root README now shows
-the SWANX logo, describes the default synthetic starter as a C capping layer on
+the SWANX logo at a controlled height, uses the preferred `X-ray` capitalization
+in prose, describes the default synthetic starter as a C capping layer on
 [LaNiO3/SrTiO3]x20/SrTiO3, notes that this means 40 oxide layers in the
 superlattice, frames capabilities under a Features section, and explains the
 JAX least-squares/autodiff plus identifiability-diagnostics advantages without

@@ -1250,6 +1250,7 @@ def test_readme_and_project_state_docs_are_current():
 
     assert readme.index("## Why SWANX?") < readme.index("## Quickstart")
     assert "## Features" in readme
+    assert '<img src="swanx_logo.png" alt="SWANX logo" height="120">' in readme
     assert "## ProjectSpec In One Minute" in readme
     assert "## Outputs" in readme
     assert "## Fitting" in readme
@@ -1264,6 +1265,8 @@ def test_readme_and_project_state_docs_are_current():
     assert "--template fit-demo`: explicit fitting starter alias" in readme
     assert "--template multilayer` / `--template simulate`: simulation-only repeated" in readme
     assert "JAX least-squares" in readme
+    assert "simulate X-ray reflectivity" in readme
+    assert "the X-ray electric field" in readme
     assert 'residual: "auto_fixed_grid"' in readme
     assert "auto_fixed_grid` is the default YAML residual path" in readme
     assert "optional global black-box baseline" in readme
