@@ -1,7 +1,7 @@
 # SWANX
 
 <p align="center">
-  <img src="swanx_logo.png" alt="SWANX logo" height="220">
+  <img src="swanx_logo.png" alt="SWANX logo" height="320">
 </p>
 
 **SWANX** means **S**tanding-**W**ave **A**nalysis for **N**anoscale

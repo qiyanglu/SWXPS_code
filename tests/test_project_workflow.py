@@ -1251,7 +1251,7 @@ def test_readme_and_project_state_docs_are_current():
     assert readme.index("## Why SWANX?") < readme.index("## Quickstart")
     assert "## Features" in readme
     assert '<p align="center">' in readme
-    assert '<img src="swanx_logo.png" alt="SWANX logo" height="220">' in readme
+    assert '<img src="swanx_logo.png" alt="SWANX logo" height="320">' in readme
     assert "## ProjectSpec In One Minute" in readme
     assert "## Outputs" in readme
     assert "## Fitting" in readme
