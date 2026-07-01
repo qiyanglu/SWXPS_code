@@ -114,6 +114,16 @@ plots/parameter_uncertainty.png
 plots/parameter_correlation.png
 ```
 
+After a least-squares run, inspect parameter sensitivity and local
+identifiability with:
+
+```bash
+python benchmarks/synthetic_c_lno_sto/projectspec_jax_least_squares/analyze_lsq_identifiability.py
+```
+
+By default the analyzer reads the newest least-squares run under this folder's
+`runs/` directory and writes `identifiability_analysis/` inside that run.
+
 For `project_bo.yaml`, the BO-specific plot set includes:
 
 ```text

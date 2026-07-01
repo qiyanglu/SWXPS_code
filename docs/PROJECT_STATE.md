@@ -351,3 +351,19 @@ passed with `30 passed`; and
 `python -m pytest -q --basetemp=runs\pytest_handoff_full` passed with
 `253 passed, 1 xfailed, 1 warning`. The warning is the existing diagnostics
 rank-deficient covariance projection warning.
+
+Synthetic benchmark ProjectSpec least-squares identifiability analysis was
+added on 2026-07-01. The new tracked script
+`benchmarks/synthetic_c_lno_sto/projectspec_jax_least_squares/analyze_lsq_identifiability.py`
+mirrors the local case-study Jacobian/SVD sensitivity workflow for the public
+synthetic C/LaNiO3/SrTiO3 benchmark. It reads an existing ProjectSpec
+least-squares run, scales Jacobian columns by parameter ranges, writes
+parameter/dataset sensitivity CSVs, singular-value and weak-mode diagnostics,
+correlation summaries, plots, and `summary.md` under the run-local
+`identifiability_analysis/` folder. Validation on existing run
+`synthetic_c_lno_sto_projectspec_jax_ls_20260628_191108` passed with 805
+residuals and 7 fitted parameters; the scaled Jacobian was singular because
+`substrate_roughness` was effectively invisible, followed by weak
+`carbon_roughness_fraction` sensitivity. The analyzer script compiled cleanly
+with `python -m py_compile`, and `git diff --check` passed for the README
+documentation update.

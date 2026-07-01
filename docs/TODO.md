@@ -70,6 +70,9 @@
       mirroring the maintained all-RC TRF script, diagnose its scaled Jacobian,
       and test a reduced-v1 fit that removes weak roughness/profile/transition
       directions.
+- [x] Add a synthetic benchmark ProjectSpec least-squares identifiability
+      analyzer that reports range-scaled parameter sensitivity, SVD weak modes,
+      dataset sensitivity, correlations, and plots from existing run artifacts.
 - [x] Complete a full handoff-oriented repo sweep after the Sample 12/13
       ProjectSpec and identifiability work, update status docs, validate active
       benchmark ProjectSpecs, and rerun focused plus full test suites.
