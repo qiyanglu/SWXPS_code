@@ -502,3 +502,14 @@ counts in this status file. Validation passed with
 `python -m pytest tests\test_project_workflow.py --basetemp runs\pytest_projectspec_reliability_ux_workflow`,
 `python -m pytest --basetemp runs\pytest_projectspec_reliability_ux_full`, and
 `git diff --check` with only Windows LF-to-CRLF notices.
+
+README public-facing polish completed on 2026-07-01. The root README now shows
+the SWANX logo, describes the default synthetic starter as a C capping layer on
+[LaNiO3/SrTiO3]x20/SrTiO3, notes that this means 40 oxide layers in the
+superlattice, frames capabilities under a Features section, and explains the
+JAX least-squares/autodiff plus identifiability-diagnostics advantages without
+using symbolic reflectivity or core-level rocking-curve notation in the opening
+motivation. The starter-template section now gives brief guidance on when to
+choose fitting versus simulation starters, and the examples section points to
+the full numbered learning path rather than singling out only the fitting
+example.

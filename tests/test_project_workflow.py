@@ -1249,16 +1249,17 @@ def test_readme_and_project_state_docs_are_current():
     fitting_readme = Path("examples/04_fitting/README.md").read_text(encoding="utf-8")
 
     assert readme.index("## Why SWANX?") < readme.index("## Quickstart")
-    assert "## What SWANX Currently Supports" in readme
+    assert "## Features" in readme
     assert "## ProjectSpec In One Minute" in readme
     assert "## Outputs" in readme
     assert "## Fitting" in readme
     assert "## Installation Options" in readme
     assert "The default init project is self-contained" in readme
     assert "copies" in readme
-    assert "packaged C/LaNiO3/SrTiO3 starter OPC, IMFP, and curve files" in readme
-    assert "C/LaNiO3/SrTiO3 starter OPC, IMFP, and curve files" in readme
-    assert "--template fit`: preferred C/LaNiO3/SrTiO3 fitting starter" in readme
+    assert "C capping layer on a" in readme
+    assert "20-repeat LaNiO3/SrTiO3 superlattice mirror" in readme
+    assert "40 oxide layers total" in readme
+    assert "--template fit`: preferred fitting starter" in readme
     assert "--template minimal`: legacy alias" in readme
     assert "--template fit-demo`: explicit fitting starter alias" in readme
     assert "--template multilayer` / `--template simulate`: simulation-only repeated" in readme
@@ -1271,7 +1272,7 @@ def test_readme_and_project_state_docs_are_current():
     assert "docs/user_guide.md" in readme
     assert "docs/projectspec_reference.md" in readme
     assert "examples/README.md" in readme
-    assert "examples/04_fitting/projectspec_jax_least_squares" in readme
+    assert "numbered example folders are intended to be read as a path" in readme
     assert "swanx init my_project" in readme
     assert "swanx inspect" in readme
     assert "repository-level `data/`" not in readme

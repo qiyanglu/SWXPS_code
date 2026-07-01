@@ -1,5 +1,7 @@
 # SWANX
 
+![SWANX logo](swanx_logo.png)
+
 **SWANX** means **S**tanding-**W**ave **A**nalysis for **N**anoscale
 **X**-ray spectroscopy.
 
@@ -12,20 +14,20 @@ diagnostics rather than a general spectroscopy or crystallography platform.
 ## Why SWANX?
 
 Standing-wave XPS analysis is useful because the x-ray electric field inside a
-multilayer changes with incidence angle. A reflectivity scan gives
+multilayer changes with incidence angle, making reflectivity and core-level
+rocking curves sensitive to layer thicknesses, roughness, composition profiles,
+and emission depth. In practice, the hard part is keeping optical constants,
+IMFP tables, the stack model, emitting layers, experimental curves, fitting
+parameters, diagnostics, and reports consistent.
 
-$$R(\theta)$$
+SWANX packages those moving parts into one editable project workflow. Its
+JAX-based fixed-grid path gives differentiable forward simulations for
+least-squares fitting, so users can move beyond black-box parameter searches
+when the model topology is fixed. The accompanying diagnostics help identify
+which parameters are actually constrained, which parameters are strongly
+correlated, and where a reduced or reparameterized model may be more reliable.
 
-and a core-level rocking curve gives
-
-$$I_\mathrm{core}(\theta)$$
-
-In practice, the hard part is keeping optical constants, IMFP tables, the stack
-model, emitting layers, experimental curves, fitting parameters, diagnostics,
-and reports consistent. SWANX packages those moving parts into one editable
-project workflow.
-
-## What SWANX Currently Supports
+## Features
 
 - ProjectSpec YAML projects with `swanx init`, `swanx inspect`,
   `swanx validate`, and `swanx run`.
@@ -34,8 +36,9 @@ project workflow.
 - JAX least-squares fitting with the ProjectSpec `auto_fixed_grid` residual
   path for fixed-topology stacks.
 - Bayesian optimization as an optional global baseline or robustness check.
-- Markdown reports, CSV outputs, plots, parameter diagnostics, and optional
-  least-squares identifiability reports.
+- Markdown reports, CSV outputs, plots, parameter diagnostics, and
+  least-squares identifiability reports with sensitivity, correlation,
+  weak-mode, and dataset-contribution summaries.
 
 ## Quickstart
 
@@ -52,7 +55,11 @@ swanx init my_project
 python my_project/run_project.py
 ```
 
-The default init project is self-contained. It copies packaged C/LaNiO3/SrTiO3 starter OPC, IMFP, and curve files into `my_project/data/`, then runs a JAX least-squares fit using an internal fixed-grid residual built from `project.yaml` with:
+The default init project is self-contained. It copies packaged OPC, IMFP, and
+synthetic curve files for an example stack with a C capping layer on a
+20-repeat LaNiO3/SrTiO3 superlattice mirror, meaning 40 oxide layers total,
+grown on a SrTiO3 substrate. It then runs a JAX least-squares fit using an
+internal fixed-grid residual built from `project.yaml` with:
 
 ```yaml
 run:
@@ -69,6 +76,12 @@ my_project/runs/<project_name>_<timestamp>/
 
 ## Choose A Starter
 
+The starter templates are small project folders meant to get different users to
+their first successful run quickly. Use the fitting starter when you want to see
+the full data-to-report workflow, including optimization and diagnostics. Use a
+simulation starter when you want to learn the stack, materials, and plotting
+syntax before introducing experimental datasets or fitted parameters.
+
 ```bash
 swanx init my_project --template fit
 swanx init my_project --template simulate
@@ -77,7 +90,8 @@ swanx init my_project --template fit-demo
 swanx init my_project --template multilayer
 ```
 
-- `--template fit`: preferred C/LaNiO3/SrTiO3 fitting starter.
+- `--template fit`: preferred fitting starter for the C-capped
+  [LaNiO3/SrTiO3]x20/SrTiO3 synthetic benchmark geometry.
 - `--template minimal`: legacy alias for the default fitting starter.
 - `--template fit-demo`: explicit fitting starter alias.
 - `--template multilayer` / `--template simulate`: simulation-only repeated
@@ -154,8 +168,11 @@ robustness check. BO is not the default fitting method and is not used as a fall
 - [`docs/projectspec_reference.md`](docs/projectspec_reference.md) - detailed
   YAML reference.
 - [`examples/README.md`](examples/README.md) - example map and learning path.
-- [`examples/04_fitting/projectspec_jax_least_squares/`](examples/04_fitting/projectspec_jax_least_squares/)
-  - runnable ProjectSpec JAX least-squares example.
+
+The numbered example folders are intended to be read as a path: quick ProjectSpec
+YAMLs, experimental-data loading, compact Python API scripts, fitting examples,
+and then advanced visualizations. Start with the examples map unless you already
+know which layer of the workflow you want to inspect.
 
 ## Installation Options
 
