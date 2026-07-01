@@ -18,12 +18,14 @@ from swanx.project.builder import build_project, project_polarization
 from swanx.project.reports import (
     write_fit_files,
     write_identifiability_outputs,
+    write_markdown_report,
     write_method_outputs,
 )
 from swanx.project.jax_fixed_grid import build_projectspec_jax_residual_function
 from swanx.project.runner import _load_callable, run_project, validate_project
 from swanx.project.spec import ProjectValidationError, load_project_spec
 from swanx.project.yaml_io import YAML_INSTALL_MESSAGE, read_yaml
+from swanx.preprocessing import normalize_rocking_curve
 from swanx.cli import main as cli_main
 
 
@@ -69,6 +71,45 @@ def _write_synthetic_case_curve(path: Path) -> None:
             f"{1.02 + 0.01 * np.cos(index / 6):.8f}"
         )
     path.write_text("\n".join(rows) + "\n", encoding="utf-8")
+
+
+def _write_reflectivity_and_la4d_data(path: Path) -> tuple[np.ndarray, np.ndarray]:
+    angles = np.linspace(5.0, 7.0, 21)
+    reflectivity_rows = ["angle_deg,reflectivity"]
+    rocking_rows = ["angle_deg,intensity"]
+    background = 1.2 + 0.04 * angles + 0.003 * angles**2
+    raw_rocking = background * (1.0 + 0.04 * np.sin(np.linspace(0.0, 2.0 * np.pi, angles.size)))
+    for index, angle in enumerate(angles):
+        reflectivity_rows.append(f"{angle:.3f},{1.0e-3 + index * 1.0e-5:.8f}")
+        rocking_rows.append(f"{angle:.3f},{raw_rocking[index]:.10f}")
+    (path / "reflectivity.csv").write_text("\n".join(reflectivity_rows) + "\n", encoding="utf-8")
+    (path / "la4d.csv").write_text("\n".join(rocking_rows) + "\n", encoding="utf-8")
+    return angles, raw_rocking
+
+
+def _fixed_grid_jax_project(tmp_path: Path) -> tuple[Path, np.ndarray, np.ndarray]:
+    angles, raw_rocking = _write_reflectivity_and_la4d_data(tmp_path)
+    datasets = '''
+  reflectivity:
+    path: "reflectivity.csv"
+    name: "R"
+  rocking_curves:
+    - path: "la4d.csv"
+      name: "La 4d"
+'''
+    path = _project_yaml(tmp_path, datasets=datasets, fit_method="jax_least_squares")
+    text = path.read_text(encoding="utf-8").replace(
+        '  normalization: "mean"\n',
+        '  normalization: "edge_polynomial"\n'
+        '  normalization_edge_fraction: 0.10\n'
+        '  normalization_polynomial_order: 2\n'
+        '  slicing:\n'
+        '    mode: "fixed_grid"\n'
+        '    min_slices: 2\n'
+        '    max_slice_thickness_A: 5.0\n',
+    )
+    path.write_text(text, encoding="utf-8")
+    return path, angles, raw_rocking
 
 
 
@@ -643,34 +684,7 @@ def test_jax_least_squares_auto_residual_requires_fixed_grid(tmp_path):
 
 def test_jax_least_squares_auto_residual_accepts_edge_polynomial_normalization(tmp_path):
     pytest.importorskip("jax")
-    angles = np.linspace(5.0, 7.0, 21)
-    reflectivity_rows = ["angle_deg,reflectivity"]
-    rocking_rows = ["angle_deg,intensity"]
-    for index, angle in enumerate(angles):
-        reflectivity_rows.append(f"{angle:.3f},{1.0e-3 + index * 1.0e-5:.8f}")
-        rocking_rows.append(f"{angle:.3f},{1.0 + 0.05 * np.sin(index / 3):.8f}")
-    (tmp_path / "reflectivity.csv").write_text("\n".join(reflectivity_rows) + "\n", encoding="utf-8")
-    (tmp_path / "la4d.csv").write_text("\n".join(rocking_rows) + "\n", encoding="utf-8")
-    datasets = '''
-  reflectivity:
-    path: "reflectivity.csv"
-    name: "R"
-  rocking_curves:
-    - path: "la4d.csv"
-      name: "La 4d"
-'''
-    path = _project_yaml(tmp_path, datasets=datasets, fit_method="jax_least_squares")
-    text = path.read_text(encoding="utf-8").replace(
-        '  normalization: "mean"\n',
-        '  normalization: "edge_polynomial"\n'
-        '  normalization_edge_fraction: 0.10\n'
-        '  normalization_polynomial_order: 2\n'
-        '  slicing:\n'
-        '    mode: "fixed_grid"\n'
-        '    min_slices: 2\n'
-        '    max_slice_thickness_A: 5.0\n',
-    )
-    path.write_text(text, encoding="utf-8")
+    path, _angles, _raw_rocking = _fixed_grid_jax_project(tmp_path)
     built = build_project(load_project_spec(path))
     assert built.fitting_problem is not None
 
@@ -680,6 +694,136 @@ def test_jax_least_squares_auto_residual_accepts_edge_polynomial_normalization(t
 
     assert values.shape == (42,)
     assert np.all(np.isfinite(values))
+
+
+def test_auto_fixed_grid_jax_model_matches_numpy_simulation(tmp_path):
+    pytest.importorskip("jax")
+    from swanx.project.jax_fixed_grid import _ProjectSpecFixedGridJaxModel
+
+    path, _angles, _raw_rocking = _fixed_grid_jax_project(tmp_path)
+    built = build_project(load_project_spec(path))
+    assert built.fitting_problem is not None
+    problem = built.fitting_problem
+    vector = np.asarray([parameter.initial for parameter in problem.parameters], dtype=float)
+    values = {parameter.name: value for parameter, value in zip(problem.parameters, vector)}
+    numpy_simulation = problem.simulate(values)
+    model = _ProjectSpecFixedGridJaxModel(
+        built=built,
+        plan=problem.slicing,
+        angles=problem.reflectivity.angles,
+        offpeak_mask=np.ones(problem.reflectivity.angles.shape, dtype=bool),
+        normalization_mode=problem.rocking_curve_normalization,
+        normalization_edge_fraction=problem.normalization_edge_fraction,
+        normalization_polynomial_order=problem.normalization_polynomial_order,
+    )
+
+    jax_reflectivity, jax_curves = model.simulate_curves(vector)
+
+    np.testing.assert_allclose(
+        np.asarray(jax_reflectivity),
+        numpy_simulation.reflectivity.reflectivity,
+        rtol=5.0e-6,
+        atol=1.0e-10,
+    )
+    np.testing.assert_allclose(
+        np.asarray(jax_curves[0]),
+        numpy_simulation.rocking_curves.core_levels[0].curve.intensity,
+        rtol=5.0e-6,
+        atol=1.0e-8,
+    )
+
+
+def test_auto_fixed_grid_jacobian_matches_finite_difference(tmp_path):
+    pytest.importorskip("jax")
+    path, _angles, _raw_rocking = _fixed_grid_jax_project(tmp_path)
+    built = build_project(load_project_spec(path))
+    assert built.fitting_problem is not None
+    problem = built.fitting_problem
+    residual = build_projectspec_jax_residual_function(built)
+    vector = np.asarray([parameter.initial for parameter in problem.parameters], dtype=float)
+    jacobian = residual.jacobian(vector)
+
+    for parameter_index in (0, 1):
+        step = 1.0e-5 * (
+            problem.parameters[parameter_index].upper
+            - problem.parameters[parameter_index].lower
+        )
+        plus = vector.copy()
+        minus = vector.copy()
+        plus[parameter_index] += step
+        minus[parameter_index] -= step
+        finite_difference = (residual(plus) - residual(minus)) / (2.0 * step)
+        np.testing.assert_allclose(
+            jacobian[:, parameter_index],
+            finite_difference,
+            rtol=2.0e-3,
+            atol=2.0e-5,
+        )
+
+
+def test_edge_polynomial_normalization_parity_across_projectspec_paths(tmp_path):
+    pytest.importorskip("jax")
+    from swanx.project.jax_fixed_grid import _ProjectSpecFixedGridJaxModel
+
+    path, angles, raw_rocking = _fixed_grid_jax_project(tmp_path)
+    built = build_project(load_project_spec(path))
+    assert built.fitting_problem is not None
+    problem = built.fitting_problem
+    expected_data, _ = normalize_rocking_curve(
+        angles,
+        raw_rocking,
+        mode="edge_polynomial",
+        edge_fraction=0.10,
+        polynomial_order=2,
+    )
+    np.testing.assert_allclose(built.rocking_curve_data[0].intensity, expected_data)
+
+    vector = np.asarray([parameter.initial for parameter in problem.parameters], dtype=float)
+    values = {parameter.name: value for parameter, value in zip(problem.parameters, vector)}
+    generic_simulation = problem.simulate(values)
+    model = _ProjectSpecFixedGridJaxModel(
+        built=built,
+        plan=problem.slicing,
+        angles=problem.reflectivity.angles,
+        offpeak_mask=np.ones(problem.reflectivity.angles.shape, dtype=bool),
+        normalization_mode=problem.rocking_curve_normalization,
+        normalization_edge_fraction=problem.normalization_edge_fraction,
+        normalization_polynomial_order=problem.normalization_polynomial_order,
+    )
+    _jax_reflectivity, jax_curves = model.simulate_curves(vector)
+    np.testing.assert_allclose(
+        np.asarray(jax_curves[0]),
+        generic_simulation.rocking_curves.core_levels[0].curve.intensity,
+        rtol=5.0e-6,
+        atol=1.0e-8,
+    )
+
+    simulate_only = _project_yaml(tmp_path / "simulate_only")
+    text = simulate_only.read_text(encoding="utf-8").replace(
+        '  normalization: "mean"\n',
+        '  normalization: "edge_polynomial"\n'
+        '  normalization_edge_fraction: 0.20\n'
+        '  normalization_polynomial_order: 2\n',
+    )
+    text = text.replace("  angle_count: 2\n", "  angle_count: 21\n")
+    simulate_only.write_text(text, encoding="utf-8")
+    output = run_project(simulate_only)
+    rows = [
+        row
+        for row in csv.DictReader((output / "simulation" / "rocking_curves_simulated.csv").open(encoding="utf-8"))
+        if row["core_level"] == "La 4d"
+    ]
+    output_values = np.asarray([float(row["intensity"]) for row in rows], dtype=float)
+    raw_values = np.asarray([float(row["raw_intensity"]) for row in rows], dtype=float)
+    output_angles = np.asarray([float(row["angle_deg"]) for row in rows], dtype=float)
+    expected_output, _ = normalize_rocking_curve(
+        output_angles,
+        raw_values,
+        mode="edge_polynomial",
+        edge_fraction=0.20,
+        polynomial_order=2,
+    )
+    np.testing.assert_allclose(output_values, expected_output)
 
 
 def test_jax_gradient_requires_factory_without_bo_fallback(tmp_path):
@@ -1048,6 +1192,16 @@ def test_identifiability_report_writer_uses_run_outputs_switch(tmp_path):
     assert rows[0][0] == "parameter"
     assert rows[1][0] == "lno_thickness"
 
+    write_markdown_report(output, built, timestamp="2026-07-01T00:00:00", result=_Result())
+
+    report = (output / "report.md").read_text(encoding="utf-8")
+    assert "## Fit Interpretation" in report
+    assert "Final least-squares cost: 0.5" in report
+    assert "Identifiability analysis: see `identifiability_analysis/summary.md`" in report
+    assert "Weakly identifiable parameters:" in report
+    assert "Highest weak-mode participation:" in report
+    assert "Dataset sensitivity caveat:" in report
+
 
 def test_readme_and_project_state_docs_are_current():
     readme = Path("README.md").read_text(encoding="utf-8")
@@ -1059,29 +1213,28 @@ def test_readme_and_project_state_docs_are_current():
     examples_readme = Path("examples/README.md").read_text(encoding="utf-8")
     fitting_readme = Path("examples/04_fitting/README.md").read_text(encoding="utf-8")
 
-    assert readme.index("## What problem does SWANX solve?") < readme.index("## Quickstart")
-    assert "## What can I do with SWANX?" in readme
-    assert "## ProjectSpec overview" in readme
+    assert readme.index("## Why SWANX?") < readme.index("## Quickstart")
+    assert "## What SWANX Currently Supports" in readme
+    assert "## ProjectSpec In One Minute" in readme
     assert "## Outputs" in readme
     assert "## Fitting" in readme
-    assert "## Installation options" in readme
-    assert "The generated project is self-contained" in readme
+    assert "## Installation Options" in readme
+    assert "The default init project is self-contained" in readme
     assert "copies" in readme
     assert "packaged C/LaNiO3/SrTiO3 starter OPC, IMFP, and curve files" in readme
     assert "C/LaNiO3/SrTiO3 starter OPC, IMFP, and curve files" in readme
-    assert "thickness_A` and `roughness_A` are in Angstrom" in readme
-    assert "repeat_index` is 1-based" in readme
-    assert "repeat_index0" in readme
+    assert "--template minimal`: default C/LaNiO3/SrTiO3 fitting starter" in readme
+    assert "--template fit-demo`: explicit alias" in readme
+    assert "--template multilayer`: simulation-only repeated multilayer starter" in readme
     assert "JAX least-squares" in readme
+    assert 'residual: "auto_fixed_grid"' in readme
+    assert "auto_fixed_grid` is the default YAML residual path" in readme
     assert "optional global black-box baseline" in readme
     assert "BO is not the default fitting method and is not used as a fallback" in readme
-    assert "carbon cap on a 20-repeat LaNiO3/SrTiO3 (LNO/STO)" in readme
-    assert "superlattice on a SrTiO3 (STO) substrate" in readme
-    assert "benchmarks/synthetic_c_lno_sto" in readme
+    assert "synthetic_residual_factory.py" not in readme
     assert "docs/user_guide.md" in readme
     assert "docs/projectspec_reference.md" in readme
     assert "examples/README.md" in readme
-    assert "examples/04_fitting/README.md" in readme
     assert "examples/04_fitting/projectspec_jax_least_squares" in readme
     assert "swanx init my_project" in readme
     assert "swanx inspect" in readme
@@ -1103,6 +1256,7 @@ def test_readme_and_project_state_docs_are_current():
 
     for section in (
         "project",
+        "run",
         "settings",
         "materials",
         "parameters",
@@ -1113,7 +1267,11 @@ def test_readme_and_project_state_docs_are_current():
     ):
         assert f"{section}:" in reference
     assert "BO is an optional global black-box baseline" in reference
+    assert "auto_fixed_grid" in reference
+    assert "edge_polynomial" in reference
+    assert "identifiability" in reference
     assert "transition_erf" in reference
+    assert "linear_map" in reference
     assert "repeat_index0" in reference
     assert "examples/04_fitting/projectspec_jax_least_squares" in reference
 

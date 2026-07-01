@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import csv
 from pathlib import Path
 from typing import Any
 
@@ -76,6 +77,7 @@ def write_markdown_report(
             lines.extend(["", "Best parameters:", ""])
             for parameter in varying:
                 lines.append(f"- {parameter.name}: {best.get(parameter.name, parameter.value)}")
+        lines.extend(_fit_interpretation_lines(output, built, result, evaluation))
     lines.extend(["", "## Plot Notes", ""])
     if plot_notes:
         lines.extend(f"- {item}" for item in plot_notes)
@@ -89,3 +91,139 @@ def write_markdown_report(
     else:
         lines.append("- none")
     (output / "report.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+
+def _fit_interpretation_lines(
+    output: Path,
+    built: BuiltProject,
+    result: Any,
+    evaluation: Any,
+) -> list[str]:
+    if built.spec.fit_method == "bayesian_optimization":
+        return [
+            "",
+            "## Fit Interpretation",
+            "",
+            "Bayesian optimization was used as a global black-box search. "
+            "Covariance and correlation interpretation is not reported for BO runs.",
+        ]
+    lines = ["", "## Fit Interpretation", ""]
+    cost = getattr(result, "final_cost", None)
+    objective = None if evaluation is None else getattr(evaluation, "objective", None)
+    if built.spec.fit_method == "jax_least_squares":
+        lines.append(f"- Final least-squares cost: {_format_report_value(cost)}")
+        lines.append(f"- Final objective from maintained evaluator: {_format_report_value(objective)}")
+    else:
+        lines.append(f"- Final objective: {_format_report_value(objective)}")
+
+    near_bounds = _near_bound_parameters(built, result)
+    if near_bounds:
+        lines.append("- Near-bound parameters: " + ", ".join(near_bounds))
+    else:
+        lines.append("- Near-bound parameters: none using the default report tolerance")
+
+    ident_dir = output / "identifiability_analysis"
+    if built.spec.fit_method == "jax_least_squares" and (ident_dir / "summary.md").is_file():
+        lines.extend(_identifiability_summary_lines(ident_dir))
+    return lines
+
+
+def _near_bound_parameters(
+    built: BuiltProject,
+    result: Any,
+    tolerance: float = 0.02,
+) -> list[str]:
+    best = dict(built.values)
+    best.update(
+        {
+            name: float(value)
+            for name, value in getattr(result, "best_parameters", {}).items()
+        }
+    )
+    near = []
+    for parameter in built.spec.varying_parameters():
+        initial, lower, upper = parameter.require_bounds()
+        del initial
+        width = float(upper) - float(lower)
+        if width <= 0.0:
+            continue
+        value = float(best.get(parameter.name, lower))
+        scaled = (value - float(lower)) / width
+        if scaled <= tolerance:
+            near.append(f"{parameter.name} near lower bound")
+        elif scaled >= 1.0 - tolerance:
+            near.append(f"{parameter.name} near upper bound")
+    return near
+
+
+def _identifiability_summary_lines(directory: Path) -> list[str]:
+    lines = [
+        "- Identifiability analysis: see `identifiability_analysis/summary.md`.",
+    ]
+    parameter_rows = _csv_dicts(directory / "parameter_identifiability.csv")
+    if parameter_rows:
+        weak = sorted(
+            parameter_rows,
+            key=lambda row: _float(row.get("relative_sensitivity")),
+        )[:3]
+        lines.append(
+            "- Weakly identifiable parameters: "
+            + ", ".join(row["parameter"] for row in weak if row.get("parameter"))
+        )
+        weak_mode = sorted(
+            parameter_rows,
+            key=lambda row: _float(row.get("weak_mode_participation")),
+            reverse=True,
+        )[:3]
+        lines.append(
+            "- Highest weak-mode participation: "
+            + ", ".join(row["parameter"] for row in weak_mode if row.get("parameter"))
+        )
+
+    correlation_rows = _csv_dicts(directory / "strong_correlation_pairs.csv")
+    if correlation_rows:
+        strongest = sorted(
+            correlation_rows,
+            key=lambda row: _float(row.get("abs_correlation")),
+            reverse=True,
+        )[:3]
+        lines.append(
+            "- Strongest correlations: "
+            + ", ".join(
+                f"{row.get('parameter_1')} vs {row.get('parameter_2')}"
+                for row in strongest
+            )
+        )
+    else:
+        lines.append("- Strongest correlations: none above the configured threshold")
+
+    if (directory / "dataset_sensitivity.csv").is_file():
+        lines.append(
+            "- Dataset sensitivity caveat: this uses the final weighted residual "
+            "Jacobian, so it is a scaling/weighting audit signal rather than "
+            "proof that one physical data type was scaled incorrectly."
+        )
+    return lines
+
+
+def _csv_dicts(path: Path) -> list[dict[str, str]]:
+    if not path.is_file():
+        return []
+    with path.open("r", newline="", encoding="utf-8") as handle:
+        return list(csv.DictReader(handle))
+
+
+def _float(value: str | None) -> float:
+    try:
+        return float(value) if value not in (None, "") else float("nan")
+    except ValueError:
+        return float("nan")
+
+
+def _format_report_value(value: Any) -> str:
+    if value is None:
+        return "not available"
+    try:
+        return f"{float(value):.6g}"
+    except (TypeError, ValueError):
+        return str(value)

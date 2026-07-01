@@ -211,13 +211,13 @@ Repository-local `templates/` were retired after `swanx init` became the
 supported starter workflow and `examples/01_quickstart_projectspec/` became the
 maintained copy-paste YAML surface.
 
-Default init JAX-fit smoke validation completed on 2026-06-29: a fresh
-`swanx init` project loaded `synthetic_residual_factory.py`, ran
-`jax_least_squares`, wrote `fit/best_parameters.csv`, and produced fit-named
-plots. A simulation-only ProjectSpec smoke wrote `simulation_overview.png`,
-`reflectivity_simulation.png`, and `rocking_curves_simulation.png`. Focused
-ProjectSpec workflow tests and the full suite passed afterward; the full suite
-kept its expected xfail and one existing diagnostics warning.
+Default init JAX-fit smoke validation has since been superseded by the
+no-code ProjectSpec residual path: a fresh `swanx init` project no longer
+generates or loads `synthetic_residual_factory.py`. It runs
+`jax_least_squares` with `run.optimizer.residual: "auto_fixed_grid"`, writes
+`fit/best_parameters.csv`, and produces fit-named plots. A simulation-only
+ProjectSpec smoke writes `simulation_overview.png`,
+`reflectivity_simulation.png`, and `rocking_curves_simulation.png`.
 
 ProjectSpec rocking-curve normalization fix completed on 2026-06-29: configured
 `rocking_curve_offpeak_mask` now normalizes experimental rocking-curve datasets
@@ -231,8 +231,9 @@ with `250 passed, 1 xfailed`.
 Examples fitting-scope sweep completed on 2026-06-29: added
 `examples/04_fitting/projectspec_jax_least_squares/` as a runnable ProjectSpec
 JAX least-squares example matching the default init tutorial's data scope,
-factory callback, off-peak rocking-curve normalization, fixed-grid slicing, and
-report outputs. Example docs and workflow validation tests now point to it.
+the internal `auto_fixed_grid` residual, current rocking-curve normalization,
+fixed-grid slicing, and report outputs. Example docs and workflow validation
+tests now point to it.
 
 Repository documentation sweep completed on 2026-06-29: README, user guide,
 ProjectSpec reference, architecture, roadmap, example docs, active plan notes,
@@ -468,3 +469,23 @@ rocking curves without experimental overlays are drawn with the maintained
 core-level color scheme instead of all-black model lines. Focused plot
 regression tests passed with `3 passed`, and the full ProjectSpec workflow
 test file passed with `35 passed`.
+
+README and ProjectSpec reliability docs were refreshed again on 2026-07-01.
+`README.md` is now a concise user-facing landing page and leaves detailed YAML
+syntax to `docs/projectspec_reference.md`. Active status docs no longer imply
+that default `swanx init` projects require `synthetic_residual_factory.py`;
+the current default uses `run.optimizer.residual: "auto_fixed_grid"`.
+Project report Markdown now adds a short `Fit Interpretation` section for
+fitting runs, including final cost/objective, near-bound parameter notes, and a
+brief identifiability summary that links to `identifiability_analysis/summary.md`
+when that folder exists. Focused auto-fixed-grid reliability tests now cover
+JAX-vs-NumPy simulation parity, finite-difference Jacobian agreement, and
+edge-polynomial normalization consistency across data loading, simulation-only
+outputs, generic fitting simulation, and the auto fixed-grid residual. Focused
+validation passed with `6 passed` in
+`runs\pytest_projectspec_docs_reliability_focused`. Full validation passed with
+`python -m pytest tests\test_project_workflow.py --basetemp runs\pytest_projectspec_docs_reliability_workflow`
+(`38 passed`) and
+`python -m pytest --basetemp runs\pytest_projectspec_docs_reliability_full`
+(`263 passed, 1 xfailed, 1 warning`); `git diff --check` reported only
+Windows LF-to-CRLF notices with no whitespace errors.

@@ -239,6 +239,12 @@ def _simulate(built: BuiltProject):
                 core_levels=built.core_levels,
                 polarization=project_polarization(str(built.spec.settings.get("polarization", "s"))),
                 normalization_mode=str(built.spec.settings.get("normalization", "mean")),
+                normalization_edge_fraction=float(
+                    built.spec.settings.get("normalization_edge_fraction", 0.10)
+                ),
+                normalization_polynomial_order=int(
+                    built.spec.settings.get("normalization_polynomial_order", 2)
+                ),
             )
         )
     return type(

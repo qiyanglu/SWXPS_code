@@ -101,8 +101,8 @@
 - [x] Sweep maintained docs for stale example-case wording, old public README
       mojibake, and outdated active guidance after the examples realignment.
 - [x] Change default `swanx init` from simulation-only to a packaged
-      C/LaNiO3/SrTiO3 JAX least-squares fitting starter with a local residual
-      factory entry point.
+      C/LaNiO3/SrTiO3 JAX least-squares fitting starter using the internal
+      `auto_fixed_grid` residual path.
 - [x] Rename ProjectSpec `simulate_only` curve plots to simulation-specific
       filenames while preserving fit-specific filenames for fitting runs.
 - [x] Fix ProjectSpec off-peak rocking-curve normalization so experimental
@@ -137,6 +137,8 @@
       first/last 10 percent polynomial RC normalization convention.
 - [x] Use the fitting-mode core-level color scheme for simulation-only
       ProjectSpec rocking-curve overview plots.
+- [x] Rewrite README as a concise landing page, add main-report fit
+      interpretation notes, and add focused auto-fixed-grid reliability tests.
 
 ## Deferred or out of scope
 
