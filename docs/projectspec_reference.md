@@ -11,10 +11,20 @@ For a runnable full fitting example, see
 Useful commands while editing a ProjectSpec:
 
 ```bash
+swanx init my_project --template fit
+swanx init my_project --template simulate
 swanx inspect project.yaml
 swanx validate project.yaml
 swanx run project.yaml
 ```
+
+Starter template names:
+
+- `fit`: preferred fitting starter.
+- `minimal`: legacy alias for the default fitting starter.
+- `fit-demo`: explicit fitting starter alias.
+- `simulate`: preferred simulation-only starter.
+- `multilayer`: legacy simulation-only starter alias.
 
 ## Top-Level Structure
 
@@ -49,6 +59,12 @@ The preferred modern control surface is `run:`. Older fields
 `settings.fit_method`, `settings.optimizer`, `report.save_plots`, and
 `report.identifiability` are still accepted when they do not conflict with
 `run:`.
+
+`swanx inspect project.yaml` includes a Doctor section for troubleshooting. It
+reports material and dataset file status, optional dependency availability,
+matplotlib plot consequences, and whether a ProjectSpec is ready for the
+`jax_least_squares`/`auto_fixed_grid` path. Inspection does not run simulation
+or fitting.
 
 ## Minimal Skeleton
 

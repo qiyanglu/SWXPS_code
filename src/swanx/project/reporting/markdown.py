@@ -125,7 +125,20 @@ def _fit_interpretation_lines(
     ident_dir = output / "identifiability_analysis"
     if built.spec.fit_method == "jax_least_squares" and (ident_dir / "summary.md").is_file():
         lines.extend(_identifiability_summary_lines(ident_dir))
+    lines.extend(_recommended_next_checks_lines())
     return lines
+
+
+def _recommended_next_checks_lines() -> list[str]:
+    return [
+        "",
+        "Recommended next checks:",
+        "",
+        "- Review near-bound parameters before trusting the fitted structure.",
+        "- Inspect `identifiability_analysis/summary.md` when present.",
+        "- Review strong correlations before interpreting individual parameter values.",
+        "- Review dataset sensitivity as a weighting/scaling audit signal.",
+    ]
 
 
 def _near_bound_parameters(

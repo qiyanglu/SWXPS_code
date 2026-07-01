@@ -6,6 +6,7 @@ from dataclasses import dataclass
 import importlib
 import math
 from pathlib import Path
+import re
 import subprocess
 import sys
 
@@ -477,11 +478,15 @@ def test_swanx_init_copy_example_data_and_data_root(tmp_path):
 
 
 def test_swanx_init_templates_validate_and_minimal_runs(tmp_path):
-    for template in ("minimal", "multilayer", "fit-demo"):
+    for template in ("minimal", "multilayer", "fit-demo", "fit", "simulate"):
         project_dir = tmp_path / f"project_{template.replace('-', '_')}"
         assert cli_main(["init", str(project_dir), "--template", template]) == 0
         spec = validate_project(project_dir / "project.yaml")
         assert spec.name == project_dir.name
+        if template in {"multilayer", "simulate"}:
+            assert spec.fit_method == "simulate_only"
+        else:
+            assert spec.fit_method == "jax_least_squares"
     output = run_project(tmp_path / "project_multilayer" / "project.yaml")
     assert output.parent == tmp_path / "project_multilayer" / "runs"
 
@@ -502,9 +507,34 @@ def test_swanx_inspect_prints_expected_sections(tmp_path, capsys):
     assert "[Optional Dependencies]" in captured
     assert "[Fitting Callbacks]" in captured
     assert "callback_required: no" in captured
+    assert "[Doctor]" in captured
+    assert "material files: OK" in captured
+    assert "dataset files: OK" in captured
+    assert "matplotlib:" in captured
+    assert "plot consequence:" in captured
+    assert "jax_least_squares deps:" in captured
+    assert "bayesian_optimization deps: scikit-optimize=" in captured
+    assert "auto_fixed_grid readiness:" in captured
+    assert "mode is jax_least_squares: no" in captured
+    assert "settings.slicing.mode is fixed_grid: no" in captured
 
     direct = inspect_project(project_dir / "project.yaml")
     assert "fit_method: simulate_only" in direct
+
+    fit_project = tmp_path / "inspect_fit_project"
+    assert cli_main(["init", str(fit_project), "--template", "fit"]) == 0
+    fit_direct = inspect_project(fit_project / "project.yaml")
+    assert "mode is jax_least_squares: yes" in fit_direct
+    assert "residual is auto_fixed_grid: yes" in fit_direct
+    assert "datasets exist: yes" in fit_direct
+    assert "settings.slicing.mode is fixed_grid: yes" in fit_direct
+
+    (fit_project / "data" / "OPC" / "C.dat").unlink()
+    missing_direct = inspect_project(fit_project / "project.yaml")
+    assert "[Doctor]" in missing_direct
+    assert "validation_error:" in missing_direct
+    assert "material files: MISSING" in missing_direct
+    assert "MISSING materials.C.opc_file:" in missing_direct
 
 
 def test_duplicate_layer_id_error(tmp_path):
@@ -1201,6 +1231,11 @@ def test_identifiability_report_writer_uses_run_outputs_switch(tmp_path):
     assert "Weakly identifiable parameters:" in report
     assert "Highest weak-mode participation:" in report
     assert "Dataset sensitivity caveat:" in report
+    assert "Recommended next checks:" in report
+    assert "Review near-bound parameters" in report
+    assert "Inspect `identifiability_analysis/summary.md` when present" in report
+    assert "Review strong correlations" in report
+    assert "Review dataset sensitivity as a weighting/scaling audit signal" in report
 
 
 def test_readme_and_project_state_docs_are_current():
@@ -1223,9 +1258,10 @@ def test_readme_and_project_state_docs_are_current():
     assert "copies" in readme
     assert "packaged C/LaNiO3/SrTiO3 starter OPC, IMFP, and curve files" in readme
     assert "C/LaNiO3/SrTiO3 starter OPC, IMFP, and curve files" in readme
-    assert "--template minimal`: default C/LaNiO3/SrTiO3 fitting starter" in readme
-    assert "--template fit-demo`: explicit alias" in readme
-    assert "--template multilayer`: simulation-only repeated multilayer starter" in readme
+    assert "--template fit`: preferred C/LaNiO3/SrTiO3 fitting starter" in readme
+    assert "--template minimal`: legacy alias" in readme
+    assert "--template fit-demo`: explicit fitting starter alias" in readme
+    assert "--template multilayer` / `--template simulate`: simulation-only repeated" in readme
     assert "JAX least-squares" in readme
     assert 'residual: "auto_fixed_grid"' in readme
     assert "auto_fixed_grid` is the default YAML residual path" in readme
@@ -1280,7 +1316,12 @@ def test_readme_and_project_state_docs_are_current():
     assert "four numbered example folders" in examples_readme
 
     assert "C:\\Users" not in project_state
-    assert "240 passed" not in project_state
+    assert not re.search(r"\b\d+\s+passed\b", project_state)
+    assert not re.search(r"\b\d+\s+xfailed\b", project_state)
+    assert not re.search(r"\b\d+\s+warning", project_state)
+    assert "synthetic_residual_factory.py" not in readme
+    assert "synthetic_residual_factory.py" not in user_guide
+    assert "synthetic_residual_factory.py" not in reference
 
 
 def test_projectspec_example_yaml_files_validate():

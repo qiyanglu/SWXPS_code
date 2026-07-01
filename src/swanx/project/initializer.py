@@ -13,7 +13,7 @@ from typing import Literal
 from .spec import ProjectValidationError, load_project_spec
 
 
-InitTemplate = Literal["minimal", "multilayer", "fit-demo"]
+InitTemplate = Literal["minimal", "multilayer", "fit-demo", "fit", "simulate"]
 
 RUN_PROJECT_TEXT = '''from pathlib import Path
 from swanx.project import run_project
@@ -33,7 +33,7 @@ _REQUIRED_EXAMPLE_FILES = (
 _OPTIONAL_EXAMPLE_FILES = (
     ("curves", "lno_sto_c_synthetic_data.csv"),
 )
-_TEMPLATES = {"minimal", "multilayer", "fit-demo"}
+_TEMPLATES = {"minimal", "multilayer", "fit-demo", "fit", "simulate"}
 
 
 def init_project(
@@ -52,9 +52,10 @@ def init_project(
     if project_dir.exists() and any(project_dir.iterdir()):
         raise FileExistsError(f"project directory is not empty: {project_dir}")
 
+    canonical_template = _canonical_template(template)
     source_data_root = _source_data_root(data_root)
     _require_example_data(source_data_root)
-    _require_template_data(source_data_root, template)
+    _require_template_data(source_data_root, canonical_template)
 
     project_dir.mkdir(parents=True, exist_ok=True)
     project_name = _project_name(project_dir.name)
@@ -67,7 +68,7 @@ def init_project(
 
     has_curves = _has_file(source_data_root, ("curves", "lno_sto_c_synthetic_data.csv"))
     (project_dir / "project.yaml").write_text(
-        _project_yaml(project_dir, project_name, yaml_data_root, template=template, has_curves=has_curves),
+        _project_yaml(project_dir, project_name, yaml_data_root, template=canonical_template, has_curves=has_curves),
         encoding="utf-8",
     )
     (project_dir / "run_project.py").write_text(RUN_PROJECT_TEXT, encoding="utf-8")
@@ -89,6 +90,14 @@ def _source_data_root(data_root: str | Path | None) -> Path | Traversable:
     if data_root is not None:
         return Path(data_root).expanduser().resolve()
     return resources.files("swanx.project") / "example_data"
+
+
+def _canonical_template(template: str) -> str:
+    if template in {"minimal", "fit-demo", "fit"}:
+        return "fit-demo"
+    if template in {"multilayer", "simulate"}:
+        return "multilayer"
+    return template
 
 
 def _has_file(data_root: Path | Traversable, parts: tuple[str, ...]) -> bool:
@@ -118,7 +127,7 @@ def _require_template_data(data_root: Path | Traversable, template: str) -> None
         raise ProjectValidationError(
             "swanx init fitting templates require tutorial curve files. "
             "Use the packaged default data, pass --copy-example-data with a data root containing curves/, "
-            f"or choose --template multilayer for a simulation-only project. Missing:\n{formatted}"
+            f"or choose --template simulate for a simulation-only project. Missing:\n{formatted}"
         )
 
 

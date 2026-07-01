@@ -18,9 +18,12 @@ def main(argv: list[str] | None = None) -> int:
     init_parser.add_argument("--data-root")
     init_parser.add_argument(
         "--template",
-        choices=("minimal", "multilayer", "fit-demo"),
+        choices=("fit", "simulate", "minimal", "fit-demo", "multilayer"),
         default="minimal",
-        help="starter ProjectSpec template to generate",
+        help=(
+            "starter ProjectSpec template: fit (preferred fitting starter), "
+            "simulate (simulation-only), plus legacy aliases minimal, fit-demo, and multilayer"
+        ),
     )
 
     inspect_parser = subparsers.add_parser("inspect", help="summarize a YAML project without running it")

@@ -39,15 +39,17 @@ when they need reflectivity and rocking-curve data.
   internal ProjectSpec fixed-grid residual builder. Generated starters use the
   unified `run:` YAML section for execution mode, optimizer settings, and output
   switches.
-- `swanx init --template minimal`, `--template multilayer`, and
-  `--template fit-demo` generate beginner starters for the default fitting
-  workflow, a simulation-only repeated multilayer, and an explicit fitting
-  starter alias.
+- `swanx init --template fit` and `--template simulate` generate the preferred
+  beginner fitting and simulation-only starters. Legacy aliases remain:
+  `minimal` and `fit-demo` for the fitting starter, and `multilayer` for the
+  simulation-only repeated multilayer starter.
 - `--copy-example-data` creates a self-contained copy from a chosen data root;
   `--data-root` points at another tutorial data root and writes relative paths
   when possible.
 - `swanx inspect ...`, `swanx validate ...`, and `swanx run ...` are thin CLI
-  wrappers for review, validation, and automation.
+  wrappers for review, validation, and automation. Inspect includes a Doctor
+  section for path, dependency, plotting, and auto-fixed-grid readiness checks
+  without running simulation or fitting.
 - PyYAML is optional via `python -m pip install -e ".[project]"`.
 - `docs/projectspec_reference.md` is the detailed YAML ProjectSpec reference,
   including `run:` controls, normalization options, slicing modes, datasets,
@@ -125,6 +127,9 @@ Supported YAML workflow features include:
   runs, writing `identifiability_analysis/` with range-scaled parameter
   sensitivity, singular values, weak SVD modes, strong correlations, dataset
   sensitivity, plots when matplotlib is available, and a Markdown summary.
+- fitting `report.md` files include a short recommended-next-checks block for
+  reviewing near-bound parameters, identifiability summaries, strong
+  correlations, and dataset sensitivity as a weighting/scaling audit signal.
 
 All thickness, roughness, depth, and IMFP values are in Angstrom. In YAML,
 `roughness_A` on layer j means roughness/interdiffusion at the upper interface
@@ -225,8 +230,7 @@ with the same off-peak denominator used for simulated curves, and the packaged
 C/LaNiO3/SrTiO3 JAX starter residual uses `problem.offpeak_mask` instead of a
 hard-coded peak window. Re-running `myproject/run_project.py` reduced the final
 objective from `0.0029710860635918292` in `myproject_20260629_194603` to
-`8.906614807793117e-08` in `myproject_20260629_195454`; full validation passed
-with `250 passed, 1 xfailed`.
+`8.906614807793117e-08` in `myproject_20260629_195454`; full validation passed.
 
 Examples fitting-scope sweep completed on 2026-06-29: added
 `examples/04_fitting/projectspec_jax_least_squares/` as a runnable ProjectSpec
@@ -241,9 +245,9 @@ PROJECT_STATE, TODO, and docs consistency tests were rechecked against the
 current init workflow, retired `templates/` folder, and four-folder examples
 scope.
 
-Validation after this docs sweep: `python -m pytest tests\test_project_workflow.py -q`
-passed with `27 passed`, and `python -m pytest -q` passed with `250 passed,
-1 xfailed`.
+Validation after this docs sweep passed with
+`python -m pytest tests\test_project_workflow.py -q` and
+`python -m pytest -q`.
 
 ProjectSpec safe expression functions completed on 2026-06-30: YAML layer
 expressions now support `min`, `max`, `sqrt`, `erf`, `linear_map`, and
@@ -258,11 +262,11 @@ custom preprocessing and a fixed-shape residual callback.
 
 Validation after this expression-function change:
 `python -m pytest tests\test_project_workflow.py -q --basetemp=runs\pytest_expression_functions`
-passed with `29 passed`;
+passed;
 `python case_studies\sample_12\yaml_jax_least_squares_fit\run_project.py --setup-only`
 passed and reported 18 parameters, 227 residuals, and matching JAX/NumPy
 initial objectives; `python -m pytest -q --basetemp=runs\pytest_expression_functions_full`
-passed with `252 passed, 1 xfailed, 1 warning`.
+passed.
 
 Follow-up Sample 12 YAML setup validation after the one-to-one rewrite passed
 on 2026-06-30. The tightened runner checked data paths, angle grids,
@@ -283,8 +287,7 @@ rocking-curve angle offsets, and the legacy vacuum-IMFP convention. Validation:
 matched the legacy initial objective (`0.00342457445517` NumPy objective,
 227 residuals); `swanx run case_studies/sample_12/projectspec_jax_least_squares/project.yaml`
 completed and wrote a ProjectSpec report folder with final objective
-`0.003376508606357828`. Focused ProjectSpec tests passed with `30 passed`;
-the full suite passed with `253 passed, 1 xfailed, 1 warning`.
+`0.003376508606357828`. Focused ProjectSpec tests and the full suite passed.
 
 Sample 12 identifiability post-processing and reduced-fit experiment were added
 on 2026-06-30 in ignored local case-study files. The script
@@ -368,10 +371,9 @@ Validation after this handoff sweep:
 `swanx validate` passed for the three benchmark ProjectSpec YAMLs under
 `benchmarks/synthetic_c_lno_sto/projectspec_jax_least_squares/`;
 `python -m pytest tests\test_project_workflow.py -q --basetemp=runs\pytest_handoff_project_workflow`
-passed with `30 passed`; and
-`python -m pytest -q --basetemp=runs\pytest_handoff_full` passed with
-`253 passed, 1 xfailed, 1 warning`. The warning is the existing diagnostics
-rank-deficient covariance projection warning.
+passed; and `python -m pytest -q --basetemp=runs\pytest_handoff_full` passed.
+The warning observed in that run was the existing diagnostics rank-deficient
+covariance projection warning.
 
 Synthetic benchmark ProjectSpec least-squares identifiability analysis was
 promoted into packaged ProjectSpec reporting on 2026-07-01. The public
@@ -394,9 +396,8 @@ longer write or require project-local residual factory scripts; the
 `residual_function_factory` hook remains available for custom residuals and old
 projects. Validation after this change:
 `python -m pytest tests\test_project_workflow.py --basetemp runs\pytest_projectspec_auto_residual_workflow`
-passed with `33 passed`, and
-`python -m pytest --basetemp runs\pytest_projectspec_auto_residual_full` passed
-with `257 passed, 1 xfailed, 1 warning`.
+passed, and `python -m pytest --basetemp runs\pytest_projectspec_auto_residual_full`
+passed.
 
 Maintained examples were swept on 2026-07-01 to use the unified `run:` section.
 All YAML examples under `examples/01_quickstart_projectspec/` and
@@ -410,9 +411,8 @@ optional BO ProjectSpec examples. The Python example scripts under
 scripts wrote their expected PNG outputs under ignored example locations.
 Focused ProjectSpec workflow validation passed with
 `python -m pytest tests\test_project_workflow.py --basetemp runs\pytest_examples_run_sweep_workflow`
-(`33 passed`), and the full suite passed with
-`python -m pytest --basetemp runs\pytest_examples_run_sweep_full`
-(`257 passed, 1 xfailed, 1 warning`).
+and the full suite passed with
+`python -m pytest --basetemp runs\pytest_examples_run_sweep_full`.
 
 Benchmark ProjectSpec files were swept on 2026-07-01 to use the unified `run:`
 section as well. The synthetic C/LaNiO3/SrTiO3 ProjectSpec benchmark now keeps
@@ -438,12 +438,11 @@ preprocessing, simulation-only reports, BO, and generic fitting. Generated
 use first/last 10 percent edge-polynomial normalization with polynomial order 2
 by default. Mean normalization and `rocking_curve_offpeak_mask` remain available
 for backward compatibility and specialized workflows. Focused validation passed
-with `5 passed` in `runs\pytest_edge_poly_focused`. Follow-up validation:
+with `python -m pytest` against the edge-polynomial tests. Follow-up validation:
 `python -m pytest tests\test_project_workflow.py --basetemp runs\pytest_edge_poly_project_workflow`
-passed with `34 passed`; benchmark ProjectSpec YAML validation passed for
+passed; benchmark ProjectSpec YAML validation passed for
 `project.yaml`, `project_bo.yaml`, and `project_simulate_only.yaml`; and
-`python -m pytest --basetemp runs\pytest_edge_poly_full` passed with
-`258 passed, 1 xfailed, 1 warning`.
+`python -m pytest --basetemp runs\pytest_edge_poly_full` passed.
 
 Active docs, examples, and benchmarks were swept again on 2026-07-01 after the
 edge-polynomial default became universal. `docs/projectspec_reference.md` now
@@ -455,20 +454,19 @@ explicitly, normalize loaded RC data with the same first/last 10 percent
 polynomial rule, and avoid presenting peak-exclusion masks as the default
 denominator. `swanx.io.read_rocking_curve_data` now uses `edge_fraction=0.10`
 when edge-polynomial normalization is requested without an explicit fraction.
-Focused validation passed with `25 passed` in
-`runs\pytest_docs_examples_benchmarks_sweep_focused`; the experimental-data and
+Focused validation passed with
+`python -m pytest` against the docs/examples/benchmarks sweep; the experimental-data and
 Python-API examples ran successfully; and benchmark ProjectSpec YAML validation
 passed for `project.yaml`, `project_bo.yaml`, and `project_simulate_only.yaml`.
 Full-suite validation passed with
 `python -m pytest --basetemp runs\pytest_docs_examples_benchmarks_sweep_full`
-(`259 passed, 1 xfailed, 1 warning`), and `git diff --check` reported only
-Windows LF-to-CRLF notices with no whitespace errors.
+and `git diff --check` reported only Windows LF-to-CRLF notices with no
+whitespace errors.
 
 Simulation-only ProjectSpec overview plots were corrected on 2026-07-01 so
 rocking curves without experimental overlays are drawn with the maintained
 core-level color scheme instead of all-black model lines. Focused plot
-regression tests passed with `3 passed`, and the full ProjectSpec workflow
-test file passed with `35 passed`.
+regression tests passed, and the full ProjectSpec workflow test file passed.
 
 README and ProjectSpec reliability docs were refreshed again on 2026-07-01.
 `README.md` is now a concise user-facing landing page and leaves detailed YAML
@@ -482,10 +480,25 @@ when that folder exists. Focused auto-fixed-grid reliability tests now cover
 JAX-vs-NumPy simulation parity, finite-difference Jacobian agreement, and
 edge-polynomial normalization consistency across data loading, simulation-only
 outputs, generic fitting simulation, and the auto fixed-grid residual. Focused
-validation passed with `6 passed` in
-`runs\pytest_projectspec_docs_reliability_focused`. Full validation passed with
+validation passed with the reliability-focused test selection. Full validation passed with
 `python -m pytest tests\test_project_workflow.py --basetemp runs\pytest_projectspec_docs_reliability_workflow`
-(`38 passed`) and
-`python -m pytest --basetemp runs\pytest_projectspec_docs_reliability_full`
-(`263 passed, 1 xfailed, 1 warning`); `git diff --check` reported only
-Windows LF-to-CRLF notices with no whitespace errors.
+and
+`python -m pytest --basetemp runs\pytest_projectspec_docs_reliability_full`;
+`git diff --check` reported only Windows LF-to-CRLF notices with no
+whitespace errors.
+
+ProjectSpec reliability and UX pass completed on 2026-07-01. `swanx inspect`
+now includes a Doctor section that checks material files, dataset files,
+matplotlib plot consequences, JAX/SciPy readiness for `jax_least_squares`,
+scikit-optimize readiness for BO, and `auto_fixed_grid` configuration
+readiness without running simulation or fitting. `swanx init --template fit`
+and `--template simulate` were added as clearer preferred aliases while
+`minimal`, `fit-demo`, and `multilayer` remain supported. Fitting reports now
+include recommended next checks for near-bound parameters, identifiability
+summaries, strong correlations, and dataset sensitivity as a weighting/scaling
+audit signal. Active docs were refreshed to keep README concise, keep detailed
+syntax in `docs/projectspec_reference.md`, and avoid pinned exact pytest pass
+counts in this status file. Validation passed with
+`python -m pytest tests\test_project_workflow.py --basetemp runs\pytest_projectspec_reliability_ux_workflow`,
+`python -m pytest --basetemp runs\pytest_projectspec_reliability_ux_full`, and
+`git diff --check` with only Windows LF-to-CRLF notices.

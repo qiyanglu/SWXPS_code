@@ -101,8 +101,12 @@ formulas. Expressions may use arithmetic plus `min`, `max`, `sqrt`, `erf`,
 For a forward-modeling-only starter, use:
 
 ```bash
-swanx init my_project --template multilayer
+swanx init my_project --template simulate
 ```
+
+`--template fit` is the preferred explicit fitting starter name. `minimal` and
+`fit-demo` remain fitting starter aliases, and `multilayer` remains an alias for
+the simulation-only starter.
 
 More complete syntax is documented in
 [projectspec_reference.md](projectspec_reference.md).
@@ -216,8 +220,11 @@ swanx inspect project.yaml
 ```
 
 `inspect` prints the project name, output preview, material paths, layer count,
-core levels, datasets, varying parameters, optional dependency status, and
-fitting callback status. It does not run simulations or fitting.
+core levels, datasets, varying parameters, optional dependency status, fitting
+callback status, and a Doctor section. The Doctor section checks material and
+dataset file status, plotting consequences if matplotlib is missing,
+least-squares and BO optional dependencies, and auto-fixed-grid readiness. It
+does not run simulations or fitting.
 
 Validate the YAML and referenced files:
 

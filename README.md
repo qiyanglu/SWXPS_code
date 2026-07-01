@@ -70,14 +70,18 @@ my_project/runs/<project_name>_<timestamp>/
 ## Choose A Starter
 
 ```bash
+swanx init my_project --template fit
+swanx init my_project --template simulate
 swanx init my_project --template minimal
 swanx init my_project --template fit-demo
 swanx init my_project --template multilayer
 ```
 
-- `--template minimal`: default C/LaNiO3/SrTiO3 fitting starter.
-- `--template fit-demo`: explicit alias for the same fitting starter.
-- `--template multilayer`: simulation-only repeated multilayer starter.
+- `--template fit`: preferred C/LaNiO3/SrTiO3 fitting starter.
+- `--template minimal`: legacy alias for the default fitting starter.
+- `--template fit-demo`: explicit fitting starter alias.
+- `--template multilayer` / `--template simulate`: simulation-only repeated
+  multilayer starter.
 
 Despite the name, `minimal` is not simulation-only; it is the default runnable
 fitting project.

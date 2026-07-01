@@ -139,6 +139,9 @@
       ProjectSpec rocking-curve overview plots.
 - [x] Rewrite README as a concise landing page, add main-report fit
       interpretation notes, and add focused auto-fixed-grid reliability tests.
+- [x] Add ProjectSpec inspect Doctor diagnostics, clearer `fit`/`simulate`
+      starter aliases, report recommended-next-checks guidance, and docs
+      freshness tests that avoid pinned exact pytest counts.
 
 ## Deferred or out of scope
 
