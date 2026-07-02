@@ -1340,6 +1340,9 @@ def test_readme_and_project_state_docs_are_current():
     assert 'residual: "auto_fixed_grid"' in readme
     assert "auto_fixed_grid` is the default YAML residual path" in readme
     assert "next_project/" in readme
+    assert "next_project:" in readme
+    assert "best_start: true" in readme
+    assert "reduced: true" in readme
     assert "optional global black-box baseline" in readme
     assert "BO is not the default fitting method and is not used as a fallback" in readme
     assert "synthetic_residual_factory.py" not in readme

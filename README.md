@@ -157,6 +157,9 @@ run:
     residual: "auto_fixed_grid"
   outputs:
     identifiability: true
+    next_project:
+      best_start: true
+      reduced: true
 ```
 
 `auto_fixed_grid` is the default YAML residual path for fixed-topology
