@@ -130,6 +130,12 @@ Supported YAML workflow features include:
 - fitting `report.md` files include a short recommended-next-checks block for
   reviewing near-bound parameters, identifiability summaries, strong
   correlations, and dataset sensitivity as a weighting/scaling audit signal.
+- optional `run.outputs.next_project` for fitting runs, writing
+  `next_project/project_best_start.yaml`,
+  `next_project/project_reduced.yaml` when identifiability diagnostics are
+  available, and `next_project/reduction_notes.md`. The maintained
+  ProjectSpec fitting example enables this output so the follow-up workflow is
+  visible in `examples/04_fitting/projectspec_jax_least_squares/`.
 
 All thickness, roughness, depth, and IMFP values are in Angstrom. In YAML,
 `roughness_A` on layer j means roughness/interdiffusion at the upper interface
@@ -514,3 +520,23 @@ motivation. The starter-template section now gives brief guidance on when to
 choose fitting versus simulation starters, and the examples section points to
 the full numbered learning path rather than singling out only the fitting
 example.
+
+ProjectSpec next-project outputs added on 2026-07-02. Fitting runs can enable
+`run.outputs.next_project` to write follow-up YAML files under `next_project/`.
+`project_best_start.yaml` preserves the fitted model but updates varied
+parameter `initial` values to the fitted best values. `project_reduced.yaml`
+starts from those best values and fixes parameters whose identifiability
+`relative_sensitivity` is at or below the configured threshold, when
+`identifiability_analysis/parameter_identifiability.csv` is available. Generated
+YAML files rewrite material and dataset paths relative to the `next_project/`
+folder, remove explicit `project.output_dir`, and disable recursive
+`run.outputs.next_project`. Reduction remains advisory and is documented in
+`next_project/reduction_notes.md`. Validation passed with the focused
+next-project tests, the ProjectSpec workflow test file, and the full suite.
+
+Docs and examples were swept again on 2026-07-02 after the next-project feature
+landed. The maintained ProjectSpec fitting example now enables
+`run.outputs.next_project` next to identifiability analysis, and example docs,
+README, and YAML reference text explain the generated
+`next_project/project_best_start.yaml`, `next_project/project_reduced.yaml`, and
+`next_project/reduction_notes.md` files.

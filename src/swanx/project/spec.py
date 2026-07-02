@@ -106,6 +106,29 @@ class ProjectSpec:
         options.setdefault("enabled", True)
         return options
 
+    @property
+    def next_project_options(self) -> dict[str, Any]:
+        raw = self.report.get("next_project", False)
+        if raw is True:
+            return {"enabled": True, "best_start": True, "reduced": True}
+        if raw in (False, None):
+            return {"enabled": False, "best_start": False, "reduced": False}
+        if not isinstance(raw, Mapping):
+            raise ProjectValidationError(
+                "run.outputs.next_project must be a boolean or mapping"
+            )
+        options = dict(raw)
+        options.setdefault("enabled", True)
+        enabled = bool(options.get("enabled", True))
+        options["enabled"] = enabled
+        options.setdefault("best_start", enabled)
+        options.setdefault("reduced", enabled)
+        if float(options.get("low_sensitivity_threshold", 0.02)) < 0.0:
+            raise ProjectValidationError(
+                "run.outputs.next_project.low_sensitivity_threshold must be non-negative"
+            )
+        return options
+
     def default_parameter_values(self) -> dict[str, float]:
         return {name: parameter.value for name, parameter in self.parameters.items()}
 
@@ -280,6 +303,8 @@ def _merge_run_controls(
                 )
             else:
                 effective_report["identifiability"] = run_identifiability
+        if "next_project" in outputs:
+            effective_report["next_project"] = outputs["next_project"]
 
     return effective_settings, effective_report
 
@@ -496,6 +521,7 @@ def _validate_settings(spec: ProjectSpec) -> None:
     _validate_slicing_setting(spec)
     _validate_offpeak_mask_setting(spec)
     spec.identifiability_options
+    spec.next_project_options
     optimizer = spec.optimizer_settings
     has_datasets = bool(spec.datasets.get("reflectivity") or spec.datasets.get("rocking_curves"))
     if method == "jax_least_squares":

@@ -135,7 +135,11 @@ runs/<project_name>_<timestamp>/
 Typical contents include `report.md`, resolved input CSVs, simulated curve
 CSVs, experimental-data and residual CSVs when datasets are present, plot
 files when plotting is enabled, method-specific files under `optimizer/`, and
-optional `identifiability_analysis/` outputs for JAX least-squares runs.
+optional `identifiability_analysis/` and `next_project/` outputs for
+JAX least-squares runs. The maintained fitting example enables
+`next_project/project_best_start.yaml` and `next_project/project_reduced.yaml`
+so users can restart from best-fit values or review a low-sensitivity reduced
+model.
 
 For `simulate_only`, reports clearly state that no fitting was performed. For
 fitting runs, reports include the final objective, best parameters, output

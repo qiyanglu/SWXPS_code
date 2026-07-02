@@ -142,6 +142,10 @@
 - [x] Add ProjectSpec inspect Doctor diagnostics, clearer `fit`/`simulate`
       starter aliases, report recommended-next-checks guidance, and docs
       freshness tests that avoid pinned exact pytest counts.
+- [x] Add optional ProjectSpec `run.outputs.next_project` reports that write
+      best-start and low-sensitivity reduced YAML files for follow-up fits.
+- [x] Expose `run.outputs.next_project` in the maintained ProjectSpec fitting
+      example and align README, example docs, and YAML reference wording.
 
 ## Deferred or out of scope
 

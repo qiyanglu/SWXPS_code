@@ -15,6 +15,7 @@ from .reporting.csv_outputs import (
 )
 from .reporting.markdown import write_markdown_report
 from .reporting.identifiability import write_identifiability_outputs
+from .reporting.next_project import write_next_project_outputs
 from .reporting.optimizer_outputs import write_method_outputs
 from .reporting.paths import prepare_output_dir
 from .reporting.plots import write_plots
@@ -28,6 +29,7 @@ __all__ = [
     "write_input_files",
     "write_markdown_report",
     "write_method_outputs",
+    "write_next_project_outputs",
     "write_plots",
     "write_resolved_files",
     "write_simulation_files",

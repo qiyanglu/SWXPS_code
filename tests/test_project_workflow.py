@@ -21,6 +21,7 @@ from swanx.project.reports import (
     write_identifiability_outputs,
     write_markdown_report,
     write_method_outputs,
+    write_next_project_outputs,
 )
 from swanx.project.jax_fixed_grid import build_projectspec_jax_residual_function
 from swanx.project.runner import _load_callable, run_project, validate_project
@@ -273,6 +274,10 @@ def test_run_section_controls_mode_optimizer_and_outputs(tmp_path):
         "    identifiability:\n"
         "      enabled: true\n"
         "      weak_modes: 3\n"
+        "    next_project:\n"
+        "      best_start: true\n"
+        "      reduced: true\n"
+        "      low_sensitivity_threshold: 0.05\n"
         "settings:\n",
     )
     path.write_text(text, encoding="utf-8")
@@ -284,6 +289,10 @@ def test_run_section_controls_mode_optimizer_and_outputs(tmp_path):
     assert spec.save_plots is True
     assert spec.identifiability_options["enabled"] is True
     assert spec.identifiability_options["weak_modes"] == 3
+    assert spec.next_project_options["enabled"] is True
+    assert spec.next_project_options["best_start"] is True
+    assert spec.next_project_options["reduced"] is True
+    assert spec.next_project_options["low_sensitivity_threshold"] == 0.05
 
 
 def test_run_section_conflicting_legacy_mode_fails(tmp_path):
@@ -1238,6 +1247,63 @@ def test_identifiability_report_writer_uses_run_outputs_switch(tmp_path):
     assert "Review dataset sensitivity as a weighting/scaling audit signal" in report
 
 
+def test_next_project_outputs_write_best_start_and_reduced_yaml(tmp_path):
+    project_dir = tmp_path / "project"
+    project_dir.mkdir()
+    path, _angles, _raw = _fixed_grid_jax_project(project_dir)
+    text = path.read_text(encoding="utf-8").replace(
+        "report:\n  save_plots: false\n",
+        "run:\n"
+        "  outputs:\n"
+        "    next_project:\n"
+        "      best_start: true\n"
+        "      reduced: true\n"
+        "      low_sensitivity_threshold: 0.02\n"
+        "report:\n"
+        "  save_plots: false\n",
+    )
+    path.write_text(text, encoding="utf-8")
+    built = build_project(load_project_spec(path))
+    output = tmp_path / "output"
+    ident_dir = output / "identifiability_analysis"
+    ident_dir.mkdir(parents=True)
+    (ident_dir / "parameter_identifiability.csv").write_text(
+        "parameter,relative_sensitivity,suggestion\n"
+        "lno_thickness,0.01,consider fixing this weak parameter\n"
+        "sto_thickness,0.50,keep\n"
+        "interface_roughness,0.80,keep\n",
+        encoding="utf-8",
+    )
+
+    notes = write_next_project_outputs(output, _Result(), built)
+
+    next_dir = output / "next_project"
+    assert "next_project/project_best_start.yaml written with best-fit initial values" in notes
+    assert "next_project/project_reduced.yaml written with low-sensitivity parameters fixed" in notes
+    assert (next_dir / "project_best_start.yaml").exists()
+    assert (next_dir / "project_reduced.yaml").exists()
+    assert (next_dir / "reduction_notes.md").exists()
+
+    best = read_yaml(next_dir / "project_best_start.yaml")
+    assert best["project"]["name"] == "yaml_test_best_start"
+    assert "output_dir" not in best["project"]
+    assert best["run"]["outputs"]["next_project"] is False
+    assert best["parameters"]["lno_thickness"]["initial"] == pytest.approx(41.0)
+    assert best["parameters"]["sto_thickness"]["initial"] == pytest.approx(11.0)
+    assert best["materials"]["LNO"]["opc_file"].startswith("../")
+    assert best["datasets"]["reflectivity"]["path"].startswith("../")
+    validate_project(next_dir / "project_best_start.yaml")
+
+    reduced = read_yaml(next_dir / "project_reduced.yaml")
+    assert reduced["project"]["name"] == "yaml_test_reduced"
+    assert reduced["parameters"]["lno_thickness"] == {"value": 41.0, "vary": False}
+    assert reduced["parameters"]["sto_thickness"]["vary"] is True
+    validate_project(next_dir / "project_reduced.yaml")
+    reduction_notes = (next_dir / "reduction_notes.md").read_text(encoding="utf-8")
+    assert "lno_thickness" in reduction_notes
+    assert "Low-sensitivity threshold" in reduction_notes
+
+
 def test_readme_and_project_state_docs_are_current():
     readme = Path("README.md").read_text(encoding="utf-8")
     user_guide = Path("docs/user_guide.md").read_text(encoding="utf-8")
@@ -1247,6 +1313,9 @@ def test_readme_and_project_state_docs_are_current():
     architecture = Path("docs/architecture.md").read_text(encoding="utf-8")
     examples_readme = Path("examples/README.md").read_text(encoding="utf-8")
     fitting_readme = Path("examples/04_fitting/README.md").read_text(encoding="utf-8")
+    projectspec_fit_readme = Path(
+        "examples/04_fitting/projectspec_jax_least_squares/README.md"
+    ).read_text(encoding="utf-8")
 
     assert readme.index("## Why SWANX?") < readme.index("## Quickstart")
     assert "## Features" in readme
@@ -1270,6 +1339,7 @@ def test_readme_and_project_state_docs_are_current():
     assert "the X-ray electric field" in readme
     assert 'residual: "auto_fixed_grid"' in readme
     assert "auto_fixed_grid` is the default YAML residual path" in readme
+    assert "next_project/" in readme
     assert "optional global black-box baseline" in readme
     assert "BO is not the default fitting method and is not used as a fallback" in readme
     assert "synthetic_residual_factory.py" not in readme
@@ -1294,6 +1364,9 @@ def test_readme_and_project_state_docs_are_current():
     ):
         assert heading in user_guide
     assert "examples/04_fitting/projectspec_jax_least_squares" in user_guide
+    assert "run.outputs.next_project" in user_guide
+    assert "project_best_start.yaml" in user_guide
+    assert "project_reduced.yaml" in user_guide
 
     for section in (
         "project",
@@ -1311,13 +1384,32 @@ def test_readme_and_project_state_docs_are_current():
     assert "auto_fixed_grid" in reference
     assert "edge_polynomial" in reference
     assert "identifiability" in reference
+    assert "outputs.next_project" in reference
+    assert "project_best_start.yaml" in reference
+    assert "project_reduced.yaml" in reference
     assert "transition_erf" in reference
     assert "linear_map" in reference
     assert "repeat_index0" in reference
     assert "examples/04_fitting/projectspec_jax_least_squares" in reference
 
-    for text_block in (project_state, roadmap, architecture, examples_readme, fitting_readme):
+    for text_block in (
+        project_state,
+        roadmap,
+        architecture,
+        examples_readme,
+        fitting_readme,
+        projectspec_fit_readme,
+    ):
         assert "examples/04_fitting/projectspec_jax_least_squares" in text_block
+    assert "run.outputs.next_project" in project_state
+    assert "next_project/" in examples_readme
+    assert "run.outputs.next_project" in fitting_readme
+    assert "project_best_start.yaml" in projectspec_fit_readme
+    assert "project_reduced.yaml" in projectspec_fit_readme
+    assert "`fit` as the preferred fitting starter" in roadmap
+    assert "`simulate` as the preferred" in roadmap
+    assert "`minimal` and `fit-demo` remain fitting aliases" in roadmap
+    assert "`multilayer` remains a simulation-only alias" in roadmap
     assert "four numbered example folders" in examples_readme
 
     assert "C:\\Users" not in project_state
@@ -1345,4 +1437,10 @@ def test_projectspec_example_yaml_files_validate():
 
 
 def test_projectspec_fitting_example_validates():
-    validate_project(Path("examples/04_fitting/projectspec_jax_least_squares/project.yaml"))
+    spec = validate_project(
+        Path("examples/04_fitting/projectspec_jax_least_squares/project.yaml")
+    )
+    assert spec.next_project_options["enabled"] is True
+    assert spec.next_project_options["best_start"] is True
+    assert spec.next_project_options["reduced"] is True
+    assert spec.next_project_options["low_sensitivity_threshold"] == 0.02

@@ -26,7 +26,9 @@ and polynomial order 2.
 3. `03_python_api/`: compact Python API examples for users who need scripting
    instead of YAML.
 4. `04_fitting/`: a runnable ProjectSpec JAX least-squares fitting project
-   plus standalone fitting scripts for custom residual experiments.
+   plus standalone fitting scripts for custom residual experiments. The
+   ProjectSpec fit also demonstrates follow-up YAML outputs under
+   `next_project/`.
 5. `advanced/`: lower-level optics, field, roughness, XPS, and profile
    visualizations for users who want to inspect the model internals.
 

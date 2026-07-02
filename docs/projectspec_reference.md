@@ -151,6 +151,10 @@ run:
   outputs:
     plots: true
     identifiability: true
+    next_project:
+      best_start: true
+      reduced: true
+      low_sensitivity_threshold: 0.02
 ```
 
 Bayesian optimization:
@@ -176,6 +180,8 @@ Fields:
 - `outputs.plots`: write plots when matplotlib is available.
 - `outputs.identifiability`: boolean or mapping. When enabled for
   `jax_least_squares`, SWANX writes `identifiability_analysis/`.
+- `outputs.next_project`: boolean or mapping. When enabled after a fitting run,
+  SWANX writes follow-up YAML files under `next_project/`.
 
 Conflict rules:
 
@@ -185,6 +191,39 @@ Conflict rules:
 - `run.outputs.plots` conflicts with `report.save_plots` if the values differ.
 - `run.outputs.identifiability` conflicts with `report.identifiability` if the
   enabled/disabled choice differs.
+
+### Follow-Up Project YAML
+
+```yaml
+run:
+  outputs:
+    next_project:
+      best_start: true
+      reduced: true
+      low_sensitivity_threshold: 0.02
+```
+
+`next_project: true` enables both follow-up YAML files with default settings.
+The mapping form is more explicit:
+
+- `best_start`: write `next_project/project_best_start.yaml`. Varied
+  parameters keep `vary: true`, but their `initial` values are updated to the
+  fitted best values.
+- `reduced`: write `next_project/project_reduced.yaml` when parameter
+  identifiability diagnostics are available. Parameters with
+  `relative_sensitivity <= low_sensitivity_threshold` are fixed at their fitted
+  best values.
+- `low_sensitivity_threshold`: threshold applied to
+  `identifiability_analysis/parameter_identifiability.csv`. Default `0.02`.
+
+The original ProjectSpec is never modified. Generated YAML files remove
+`project.output_dir`, disable recursive `run.outputs.next_project`, and rewrite
+relative material/dataset paths so they can be run from the `next_project/`
+folder. Reduced YAML generation is advisory: review `reduction_notes.md` before
+using it, because low sensitivity is a model-reduction signal rather than proof
+that a parameter is physically irrelevant. The maintained runnable fitting
+example at `examples/04_fitting/projectspec_jax_least_squares/project.yaml`
+enables this block together with identifiability diagnostics.
 
 ## `settings`
 
@@ -888,6 +927,12 @@ When identifiability is enabled and least-squares diagnostics are available:
 Dataset sensitivity is computed from the final weighted least-squares Jacobian.
 It is a weighting/scaling audit signal, not automatic proof that one data type
 was physically scaled incorrectly.
+
+When `run.outputs.next_project` is enabled after a fitting run:
+
+- `next_project/project_best_start.yaml`
+- `next_project/project_reduced.yaml` when reduction diagnostics are available
+- `next_project/reduction_notes.md`
 
 ## Common Mistakes
 

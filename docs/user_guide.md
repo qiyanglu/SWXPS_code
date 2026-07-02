@@ -178,6 +178,10 @@ run:
   outputs:
     plots: true
     identifiability: true
+    next_project:
+      best_start: true
+      reduced: true
+      low_sensitivity_threshold: 0.02
 ```
 
 This path reads the stack, expressions, parameters, datasets, core levels, and
@@ -194,6 +198,15 @@ rocking-curve scans need independent angular offsets. Edge-polynomial
 rocking-curve normalization is the ProjectSpec default and can be controlled with
 `settings.normalization_edge_fraction` and
 `settings.normalization_polynomial_order`.
+
+When `run.outputs.next_project` is enabled, fitting runs also write
+`next_project/project_best_start.yaml` and, when identifiability diagnostics are
+available, `next_project/project_reduced.yaml`. The best-start file restarts the
+same model from fitted best values. The reduced file fixes very-low-sensitivity
+parameters at their fitted values and writes `next_project/reduction_notes.md`
+explaining the suggested reduction. Treat the reduced file as a transparent
+starting point to review, not an automatic declaration that a parameter is
+physically irrelevant.
 
 Bayesian optimization is available as an optional global black-box baseline or
 robustness check:
@@ -286,6 +299,8 @@ Important files:
   norms, and final gradient when available.
 - `optimizer/bayesian/`: evaluations, best-so-far, parameter samples, and stage
   summary.
+- `next_project/`: optional follow-up YAML files for restarting from fitted best
+  values or testing a low-sensitivity reduced parameter set.
 - `plots/`: overview, reflectivity, rocking curves, stack schematic, and
   backend-specific diagnostics when available. Fitting runs use
   `fit_overview.png`, `reflectivity_fit.png`, and `rocking_curves_fit.png`;

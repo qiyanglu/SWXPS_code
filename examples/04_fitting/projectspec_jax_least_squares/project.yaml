@@ -13,6 +13,10 @@ run:
   outputs:
     plots: true
     identifiability: true
+    next_project:
+      best_start: true
+      reduced: true
+      low_sensitivity_threshold: 0.02
 
 settings:
   photon_energy_ev: 1000.0

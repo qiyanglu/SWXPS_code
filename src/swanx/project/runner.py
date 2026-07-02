@@ -27,6 +27,7 @@ from .reports import (
     write_input_files,
     write_markdown_report,
     write_method_outputs,
+    write_next_project_outputs,
     write_plots,
     write_resolved_files,
     write_simulation_files,
@@ -85,7 +86,13 @@ def run_project(path: str | Path, *, progress: ProgressReporter = False) -> Path
     write_fit_summary(output, final_built, timestamp=timestamp, result=result, evaluation=evaluation)
     method_notes = write_method_outputs(output, spec.fit_method, result, final_built)
     identifiability_notes = write_identifiability_outputs(output, result, final_built)
-    skipped_outputs = method_notes + identifiability_notes + write_plots(output, final_built, simulation)
+    next_project_notes = write_next_project_outputs(output, result, final_built)
+    skipped_outputs = (
+        method_notes
+        + identifiability_notes
+        + next_project_notes
+        + write_plots(output, final_built, simulation)
+    )
     write_markdown_report(
         output,
         final_built,
