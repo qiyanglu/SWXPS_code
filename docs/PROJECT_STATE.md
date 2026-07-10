@@ -33,12 +33,12 @@ when they need reflectivity and rocking-curve data.
 
 - `swanx.project` validates and runs YAML ProjectSpec files.
 - `swanx init my_project` creates `project.yaml`, `run_project.py`, a project
-  README, and by default a local `data/` copy of packaged C/LaNiO3/SrTiO3
-  starter data. The default project runs a JAX least-squares fit against the
-  packaged synthetic reflectivity and four rocking-curve datasets using the
-  internal ProjectSpec fixed-grid residual builder. Generated starters use the
-  unified `run:` YAML section for execution mode, optimizer settings, and output
-  switches.
+  README, and by default a local `data/` copy of packaged starter data for the
+  C-capped [LaNiO3/SrTiO3]x20/SrTiO3 benchmark geometry. The default project
+  runs a JAX least-squares fit against the packaged synthetic reflectivity and
+  four rocking-curve datasets using the internal ProjectSpec fixed-grid residual
+  builder. Generated starters use the unified `run:` YAML section for execution
+  mode, optimizer settings, and output switches.
 - `swanx init --template fit` and `--template simulate` generate the preferred
   beginner fitting and simulation-only starters. Legacy aliases remain:
   `minimal` and `fit-demo` for the fitting starter, and `multilayer` for the

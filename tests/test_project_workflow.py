@@ -422,6 +422,10 @@ def test_swanx_init_generated_project_validates_and_runs_from_different_cwd(monk
     assert (project_dir / "data" / "IMFP" / "C.ANG").exists()
     assert (project_dir / "data" / "IMFP" / "LNO.ANG").exists()
     assert (project_dir / "data" / "curves" / "lno_sto_c_synthetic_data.csv").exists()
+    starter_readme = (project_dir / "README.md").read_text(encoding="utf-8")
+    assert "This is a JAX least-squares fitting starter." in starter_readme
+    assert "20-repeat LaNiO3/SrTiO3 superlattice mirror" in starter_readme
+    assert "40 oxide layers total" in starter_readme
     starter_yaml = (project_dir / "project.yaml").read_text(encoding="utf-8")
     assert 'mode: "jax_least_squares"' in starter_yaml
     assert 'residual: "auto_fixed_grid"' in starter_yaml
@@ -492,10 +496,16 @@ def test_swanx_init_templates_validate_and_minimal_runs(tmp_path):
         assert cli_main(["init", str(project_dir), "--template", template]) == 0
         spec = validate_project(project_dir / "project.yaml")
         assert spec.name == project_dir.name
+        starter_readme = (project_dir / "README.md").read_text(encoding="utf-8")
+        assert "20-repeat LaNiO3/SrTiO3 superlattice mirror" in starter_readme
         if template in {"multilayer", "simulate"}:
             assert spec.fit_method == "simulate_only"
+            assert "This is a simulation-only starter." in starter_readme
+            assert "Switch to `--template fit`" in starter_readme
+            assert "JAX least-squares is the active fitting path" not in starter_readme
         else:
             assert spec.fit_method == "jax_least_squares"
+            assert "This is a JAX least-squares fitting starter." in starter_readme
     output = run_project(tmp_path / "project_multilayer" / "project.yaml")
     assert output.parent == tmp_path / "project_multilayer" / "runs"
 

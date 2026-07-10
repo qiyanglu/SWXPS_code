@@ -64,10 +64,10 @@ my_project/
   data/
 ```
 
-The default generated YAML uses `run.mode: "jax_least_squares"`. It builds the
-C/LaNiO3/SrTiO3 stack, loads the packaged synthetic reflectivity and rocking
-curves, fits selected stack parameters, simulates the best-fit curves, and
-writes a report.
+The default generated YAML uses `run.mode: "jax_least_squares"`. It builds a C
+capping layer on a 20-repeat LaNiO3/SrTiO3 superlattice mirror grown on SrTiO3,
+loads the packaged synthetic reflectivity and rocking curves, fits selected
+stack parameters, simulates the best-fit curves, and writes a report.
 
 Rocking curves use edge-polynomial normalization by default:
 
@@ -104,9 +104,11 @@ For a forward-modeling-only starter, use:
 swanx init my_project --template simulate
 ```
 
-`--template fit` is the preferred explicit fitting starter name. `minimal` and
-`fit-demo` remain fitting starter aliases, and `multilayer` remains an alias for
-the simulation-only starter.
+`--template fit` is the preferred explicit fitting starter name for the
+C-capped [LaNiO3/SrTiO3]x20/SrTiO3 benchmark geometry. `minimal` and
+`fit-demo` remain fitting starter aliases. `--template simulate` is the
+preferred simulation-only starter for the same stack, and `multilayer` remains
+its legacy alias.
 
 More complete syntax is documented in
 [projectspec_reference.md](projectspec_reference.md).

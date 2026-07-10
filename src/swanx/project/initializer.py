@@ -490,15 +490,44 @@ def _readme(
     template: str,
     packaged_default: bool,
 ) -> str:
+    fitting_template = _canonical_template(template) == "fit-demo"
+    starter_case = "C-capped [LaNiO3/SrTiO3]x20/SrTiO3"
     if packaged_default:
-        data_note = "This project contains a local `data/` copy of the packaged SWANX C/LaNiO3/SrTiO3 starter OPC, IMFP, and curve files."
+        data_note = (
+            "This project contains a local `data/` copy of the packaged SWANX "
+            f"{starter_case} starter OPC, IMFP, and curve files."
+        )
     elif copied_data:
-        data_note = "This project contains a local `data/` copy of the C/LaNiO3/SrTiO3 starter OPC, IMFP, and curve files."
+        data_note = (
+            "This project contains a local `data/` copy of the "
+            f"{starter_case} starter OPC, IMFP, and curve files."
+        )
     else:
         data_note = (
-            f"This project references external C/LaNiO3/SrTiO3 starter data at `{data_root}` using paths relative to `project.yaml`. "
+            f"This project references external {starter_case} starter data at `{data_root}` using paths relative to `project.yaml`. "
             "Keep that folder available, or rerun `swanx init --copy-example-data --data-root <path>` for a local copy."
         )
+    template_note = (
+        "This is a JAX least-squares fitting starter."
+        if fitting_template
+        else "This is a simulation-only starter."
+    )
+    workflow_note = (
+        "The default project fits the packaged synthetic reflectivity and SW-XPS\n"
+        "rocking curves with JAX least-squares. The fixed-grid JAX residual is built\n"
+        "directly from the stack, parameters, datasets, and slicing settings in\n"
+        "`project.yaml`."
+        if fitting_template
+        else "The default project simulates reflectivity and SW-XPS rocking curves\n"
+        "from the stack, materials, core levels, and angle settings in\n"
+        "`project.yaml`. Example synthetic datasets may be present in `data/` for\n"
+        "later overlay or fitting experiments."
+    )
+    fitting_note = (
+        "- JAX least-squares is the active fitting path in this starter project."
+        if fitting_template
+        else "- Switch to `--template fit` when you want the JAX least-squares fitting starter."
+    )
     return f'''# {project_name}
 
 Edit `project.yaml`, then run:
@@ -511,14 +540,15 @@ Outputs are written under `runs/` inside this project folder unless `project.out
 
 Template: `{template}`
 
+{template_note}
+
 {data_note}
 
-The sample stack is a carbon cap on a LaNiO3/SrTiO3 superlattice on a SrTiO3
-substrate. In `project.yaml`, `LNO` means LaNiO3 and `STO` means SrTiO3.
-The default project fits the packaged synthetic reflectivity and SW-XPS
-rocking curves with JAX least-squares. The fixed-grid JAX residual is built
-directly from the stack, parameters, datasets, and slicing settings in
-`project.yaml`.
+The sample stack is a C capping layer on a
+20-repeat LaNiO3/SrTiO3 superlattice mirror, meaning 40 oxide layers total,
+grown on a SrTiO3 substrate. In `project.yaml`, `LNO` means LaNiO3 and `STO`
+means SrTiO3.
+{workflow_note}
 
 Optional automation commands:
 
@@ -535,7 +565,7 @@ Notes:
 - `repeat_index` is 1-based inside repeat blocks.
 - `repeat_index0` is available for formulas that read better with zero-based
   repeat coordinates.
-- JAX least-squares is the active fitting path in this starter project.
+{fitting_note}
 - Bayesian optimization is available as an optional global black-box baseline.
 - Advanced ProjectSpec JAX fitting can still use explicit factory callbacks for
   custom residuals.

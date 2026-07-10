@@ -20,10 +20,16 @@ swanx run project.yaml
 
 Starter template names:
 
-- `fit`: preferred fitting starter.
-- `minimal`: legacy alias for the default fitting starter.
+- `fit`: preferred fitting starter for the C-capped
+  [LaNiO3/SrTiO3]x20/SrTiO3 synthetic benchmark geometry. It copies or
+  references starter OPC, IMFP, and curve files and runs
+  `jax_least_squares` with `optimizer.residual: "auto_fixed_grid"`.
+- `minimal`: legacy alias for the default fitting starter. Despite the name,
+  it is not simulation-only.
 - `fit-demo`: explicit fitting starter alias.
-- `simulate`: preferred simulation-only starter.
+- `simulate`: preferred simulation-only starter for the same C-capped
+  [LaNiO3/SrTiO3]x20/SrTiO3 stack. It writes a repeated multilayer ProjectSpec
+  without fitting datasets or varied fitting parameters.
 - `multilayer`: legacy simulation-only starter alias.
 
 ## Top-Level Structure
